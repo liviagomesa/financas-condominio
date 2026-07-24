@@ -90,15 +90,10 @@ restrições transversais antes de sua adoção no código.
 
 ## Fluxo de Commits
 
-- Mensagens de commit MUST ser curtas, de uma linha (`tipo: descrição curta`, ex.:
-  `fix: ...`, `feat: ...`, `docs: ...`), sem corpo com bullets.
-- Preferir um único commit por tarefa/rodada de mudanças. Só dividir em commits separados
-  quando houver unidades claramente distintas e independentes entre si (ex.: uma correção
-  de bug não relacionada descoberta no meio do caminho) — não dividir apenas porque a
-  mudança tocou várias camadas ou arquivos de uma mesma tarefa.
-- Ao final de uma rodada de correções/funcionalidades, o conteúdo do `README.md` MUST ser
-  atualizado com o que for necessário (novas decisões técnicas tomadas, erros apontados
-  pela usuária para revisão, melhorias identificadas para o futuro).
+- Mensagens de commit MUST ser curtas, de uma linha (`tipo: descrição curta`, ex.: `fix: ...`, `feat: ...`, `docs: ...`), sem corpo com bullets.
+- Preferir um único commit por tarefa/rodada de mudanças. Só dividir em commits separados quando houver unidades claramente distintas e independentes entre si (ex.: uma correção de bug não relacionada descoberta no meio do caminho) — não dividir apenas porque a mudança tocou várias camadas ou arquivos de uma mesma tarefa.
+- Ao final de uma rodada de correções/funcionalidades, o conteúdo do `README.md` MUST ser atualizado com o que for necessário (novas decisões técnicas tomadas, erros apontados pela usuária para revisão, melhorias identificadas para o futuro).
+- A cada comando do Spec Kit executado ou correção solicitada, sugerir uma mensagem de commit seguindo o padrão já definido (tipo: descrição curta), sem executar o commit automaticamente — apenas propor o texto para o usuário decidir quando e se commitar.
 
 ## Governance
 
