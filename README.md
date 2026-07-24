@@ -74,9 +74,47 @@ Utilizei o GitHub Spec Kit integrado ao Claude Code para conduzir o desenvolvime
 
 4. **Clarificação**: Em seguida, usei `/speckit.clarify` para varrer o spec e perguntar o que ficou faltando (não é preciso antecipar todas as possíveis lacunas no `/speckit.specify`).
 
-5. **Planejamento e implementação**: usei `/speckit.plan` e `/speckit.tasks` para definir a estrutura do projeto e quebrar o trabalho em tarefas menores. Em seguida, implementei com `speckit.implement`.
+5. **Planejamento**: usei `/speckit.plan` e `/speckit.tasks` para definir a estrutura do projeto e quebrar o trabalho em tarefas menores.
 
-6. **Edições de features já existentes**: para mudanças depois do fluxo completo dos comandos do Spec Kit, utilizei este template para prompt:
+6. **Implementação**: implementei com `/speckit.implement`.
+
+7. **Revisão da constituição**: depois de implementada a feature, peço uma revisão da
+   `constitution.md` à luz do `spec.md`/`plan.md`/`tasks.md` gerados, procurando decisões
+   que não são específicas daquela feature e que deveriam virar padrão do projeto em vez de
+   ficarem só documentadas ali — sem isso, cada feature roda numa sessão de IA isolada que
+   só compartilha a `constitution.md` com as demais (não os planos de features já
+   implementadas), e decisões técnicas genéricas (nome de pacote, ferramenta de build,
+   convenção de API, etc.) tomadas "no piloto automático" numa feature podem simplesmente
+   não se repetir na próxima. Uso este prompt, reaproveitável em qualquer projeto com Spec
+   Kit:
+
+  ```md
+  Agora que a feature atual foi implementada, quero uma varredura de padronização antes de
+  considerá-la encerrada. Leia `.specify/memory/constitution.md` e os artefatos gerados para
+  esta feature (`spec.md`, `plan.md`, `tasks.md`, e `research.md`/`data-model.md`/`contracts/`
+  quando existirem) e identifique decisões tomadas ali que NÃO são específicas das
+  entidades ou da funcionalidade desta feature, mas sim convenções técnicas ou estruturais
+  genéricas — coisas que qualquer feature futura deste projeto teria que decidir de novo se
+  não estivessem escritas em algum lugar compartilhado.
+
+  Exemplos do tipo de decisão que procuro (não se limite a esta lista): nome de
+  pacote/namespace base, ferramenta de build, ferramenta de migração de banco, convenção de
+  nomenclatura de pastas/camadas, onde exceptions/erros de negócio devem viver na estrutura
+  de pastas, convenção de rotas de API, formato padrão de resposta de erro, stack de testes,
+  política de reuso/atualização de versão de dependências, convenções de nomenclatura de
+  DTOs/contratos.
+
+  Para cada decisão candidata, verifique se ela já está coberta pela constitution.md atual.
+  Monte uma lista categorizada:
+  1. Vale formalizar na constitution agora (risco real de outra feature divergir).
+  2. Nice-to-have / prioridade menor.
+  3. Não vale — é específico desta feature, ou é detalhe de ambiente/implementação óbvio ao
+     olhar o código já existente.
+
+  NÃO edite a constitution ainda. Me mostre essa lista categorizada primeiro e espere minha confirmação de escopo. Depois que eu confirmar quais itens seguem, prepare a emenda (nova versão semântica) e aplique via `/speckit.constitution`, verificando ao final se os templates dependentes (`plan-template.md`, `spec-template.md`, `tasks-template.md`) continuam consistentes.
+  ```
+
+8. **Edições de features já existentes**: para mudanças depois do fluxo completo dos comandos do Spec Kit, utilizei este template para prompt:
 
   ```md
   Preciso atualizar a feature existente em `specs/[NÚMERO-NOME-DA-FEATURE]/`, sem criar uma feature nova nem uma branch nova. NÃO use os comandos /speckit.specify ou /speckit.plan — edite os arquivos diretamente, do jeito que vou descrever abaixo.
@@ -99,16 +137,32 @@ Utilizei o GitHub Spec Kit integrado ao Claude Code para conduzir o desenvolvime
   Pare aqui e me mostre um resumo do que mudou em cada arquivo (diff conceitual, não precisa ser diff literal) para eu revisar e aprovar explicitamente. Não escreva nem altere nenhum código de implementação até eu confirmar.
   ``` 
 
-7. **Fluxo de trabalho paralelo:** utilizei o `/remote-control` do Claude Code para acompanhar e aprovar tarefas em execução mesmo longe do computador. Também mantive, em paralelo, uma sessão de chat separada com o Claude para discutir decisões de arquitetura, revisar premissas e planejar próximos passos antes de repassar instruções ao Claude Code — isso ajudou a economizar contexto na sessão de execução e a chegar a cada tarefa com a decisão já pensada, em vez de deixar a ferramenta decidir sozinha.
+9. **Fluxo de trabalho paralelo:** utilizei o `/remote-control` do Claude Code para acompanhar e aprovar tarefas em execução mesmo longe do computador. Também mantive, em paralelo, uma sessão de chat separada com o Claude para discutir decisões de arquitetura, revisar premissas e planejar próximos passos antes de repassar instruções ao Claude Code — isso ajudou a economizar contexto na sessão de execução e a chegar a cada tarefa com a decisão já pensada, em vez de deixar a ferramenta decidir sozinha.
 
-8. **Novas features**: para novas features (que não existem no enunciado inicial), rodei o fluxo do speckit novamente. Com isso, cada feature tem uma branch dentro de `.specify/`. 
+10. **Novas features**: para novas features (que não existem no enunciado inicial), rodei o fluxo do speckit novamente. Com isso, cada feature tem uma branch dentro de `.specify/`. 
 
 > O problema disso: ao trabalhar numa feature, o Claude não sabe sobre o contexto das demais (somente o `constitution.md` é compartilhado entre features). Com isso, não há restrição que o impeça de editar e atrapalhar código originado de outras features já implementadas.
 > A garantia de não conflito vem de duas fontes combinadas: testes automatizados e revisão humana.
 
 ### Revisões e correções das entregas da IA
 
-[TO-DO, à medida que avançar no projeto]
+- **Padrões implícitos não viram regra de projeto sozinhos**: ao gerar o `plan.md` e o
+  `tasks.md` da primeira feature (cadastro de condôminos e unidades), o Claude tomou várias
+  decisões que não eram específicas dessa feature — nome do pacote base do backend,
+  ferramenta de build, ferramenta de migração de banco, onde exceptions de regra de negócio
+  devem viver dentro da estrutura `api/domain/infra/shared`, formato padrão de erro da API,
+  convenção de rotas REST. Nenhuma dessas decisões foi promovida à `constitution.md`
+  automaticamente — ficaram só documentadas no plano daquela feature. Como cada feature roda
+  numa sessão de IA isolada que só compartilha a `constitution.md` com as demais (não os
+  `plan.md`/`research.md` de features já implementadas), isso é um risco real: uma próxima
+  feature poderia divergir sem perceber (usar Gradle em vez de Maven, colocar uma exception
+  de negócio em `shared/` em vez de `domain/`, inventar outro formato de erro). Só notei o
+  risco ao revisar o plano e perguntei diretamente se aquilo não deveria virar padrão de
+  projeto; o Claude concordou e propôs uma emenda à constituição (v1.0.0 → v1.1.0)
+  formalizando essas decisões antes de qualquer código ser escrito.
+  **Lição**: ao revisar um `plan.md`/`tasks.md` gerado por IA, vale perguntar ativamente
+  quais decisões ali são genéricas o suficiente para virar regra na constituição, em vez de
+  assumir que a IA vai sinalizar isso sozinha.
 
 ## O que eu faria diferente ou melhoraria com mais tempo
 

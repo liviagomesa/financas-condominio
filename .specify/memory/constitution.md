@@ -1,21 +1,26 @@
 <!--
 Sync Impact Report
 ==================
-Versão: TEMPLATE → 1.0.0 (ratificação inicial)
+Versão: 1.0.0 → 1.1.0
 
-Princípios definidos:
-- I. Arquitetura em Camadas
-- II. Separação Controller → Service → Repository
-- III. Stack Técnica Definida
-- IV. Convenções de Código e Formatação
-- V. Idioma por Tipo de Conteúdo
+Princípios modificados:
+- I. Arquitetura em Camadas — expandido: fixa pacote base do backend (`com.financas`),
+  ferramenta de build (Maven), ferramenta de migração de schema (Flyway) e escopo exato da
+  pasta `shared/` (só recursos verdadeiramente transversais; exceptions de regra de negócio
+  de uma entidade vivem no `domain/` dela, não em `shared/`).
+- III. Stack Técnica Definida — expandido: versões principais já adotadas MUST ser
+  reutilizadas por novas features, em vez de re-pesquisadas a cada feature; a cláusula de
+  "última versão estável" vale só para a escolha inicial de cada dependência. Também passa a
+  fixar o stack de testes automatizados (backend: JUnit 5 + Mockito + Spring Boot Test;
+  frontend: Vitest), ausente da versão anterior.
 
-Seções adicionadas:
-- Restrições Transversais
-- Fluxo de Commits
-- Governança
+Princípios adicionados:
+- VI. Convenções de API REST — novo princípio fixando padrão de rotas
+  (`/api/{recurso-no-plural-em-inglês}` + verbos HTTP padrão), formato de erro padronizado
+  (`{ "message": string, "status": number }`) e a regra de que confirmação de ações
+  destrutivas é responsabilidade do frontend, não do backend.
 
-Seções removidas: nenhuma (primeira versão)
+Seções removidas: nenhuma
 
 Templates a verificar:
 - ✅ .specify/templates/plan-template.md — genérico, sem referências desatualizadas; "Constitution Check" é preenchido dinamicamente por feature
@@ -23,9 +28,14 @@ Templates a verificar:
 - ✅ .specify/templates/tasks-template.md — genérico, sem alterações necessárias
 - ✅ .claude/skills/speckit-*/SKILL.md — sem referências específicas de agente que precisem de ajuste
 - ⚠ README.md — manter alinhado conforme decisões técnicas evoluírem (regra já registrada na seção de Commits)
+- ⚠ specs/001-cadastro-condominos/plan.md e tasks.md — criados antes desta emenda com
+  `DuplicateUnitException`/`UnitHasResidentsException` em `shared/exceptions/`; ajustados
+  para `unit/domain/` para conformidade com o novo texto do Princípio I
+- ✅ specs/001-cadastro-condominos/contracts/api.md — já segue o formato de erro e a
+  convenção de rotas agora fixados no Princípio VI (decisão local antecipou a regra global)
 
 Itens pendentes (TODO):
-- Nenhum. Campos sem informação explícita foram preenchidos com "Por enquanto, não" conforme input do usuário.
+- Nenhum.
 -->
 
 # Finanças (Sistema de Gerenciamento de Condomínio) Constitution
@@ -34,14 +44,30 @@ Itens pendentes (TODO):
 
 ### I. Arquitetura em Camadas
 O sistema segue arquitetura em camadas, com frontend (Angular) e backend (Spring Boot)
-organizados por domínio. No backend, cada entidade de domínio possui sua própria pasta
-contendo `api/` (controllers e contratos/DTOs), `domain/` (entidade, enums, repository,
-service) e `infra/` (implementação do repository). Recursos compartilhados ficam em
-`shared/` (ex.: `GlobalExceptionHandler`, exceptions customizadas). No frontend, cada
-entidade de domínio possui sua pasta de componentes, com `core/` para tratamento de erros
-e `shared/` para models, services, validators e configuração de URL base da API.
+organizados por domínio. O pacote base do backend Java MUST ser `com.financas`, com cada
+entidade de domínio em seu próprio subpacote (ex.: `com.financas.unit`,
+`com.financas.resident`) contendo `api/` (controllers e contratos/DTOs), `domain/`
+(entidade, enums, repository, service, e as exceptions que representam regras de negócio
+daquela entidade — ex.: unicidade de um identificador, bloqueio de remoção por vínculo) e
+`infra/` (implementação do repository). A ferramenta de build do backend MUST ser Maven; a
+migração de schema de banco MUST ser feita via Flyway, com migrations versionadas em
+`src/main/resources/db/migration`.
+
+Recursos compartilhados ficam em `shared/`, mas essa pasta MUST conter apenas recursos
+verdadeiramente transversais a mais de uma entidade: `GlobalExceptionHandler`, exceptions
+genéricas de infraestrutura reaproveitáveis por qualquer entidade (ex.: um
+`NotFoundException`/`ConflictException` base) e configuração técnica (ex.: CORS). Uma
+exception que representa uma regra de negócio específica de uma entidade NUNCA deve viver
+em `shared/` — deve viver no `domain/` da própria entidade.
+
+No frontend, cada entidade de domínio possui sua pasta de componentes, com `core/` para
+tratamento de erros e `shared/` para models, services, validators e configuração de URL
+base da API.
+
 A estrutura de pastas proposta é uma referência, não uma regra rígida: pode ser adaptada
-sempre que o padrão de mercado ou a necessidade do projeto justificar o desvio.
+sempre que o padrão de mercado ou a necessidade do projeto justificar o desvio — exceto
+pacote base, ferramenta de build e ferramenta de migração definidos acima, que MUST
+permanecer estáveis entre features, salvo decisão explícita e documentada em contrário.
 
 ### II. Separação Controller → Service → Repository
 O `Service` concentra as regras de negócio e é o único ponto que chama a interface
@@ -52,11 +78,18 @@ centralizada e testável independentemente da camada de apresentação.
 
 ### III. Stack Técnica Definida
 O backend usa Java com Spring Boot (Spring Data JPA, Spring Security, Spring Web); o
-frontend usa Angular com TypeScript, Bootstrap e SCSS; a persistência usa PostgreSQL.
-As versões MUST ser as últimas estáveis e consolidadas no mercado no momento da
-implementação. Não há, por ora, bibliotecas específicas a evitar — decisões de
-descontinuação de uma biblioteca por experiência prévia negativa devem ser registradas
-aqui quando ocorrerem, para não serem repetidas.
+frontend usa Angular com TypeScript, Bootstrap e SCSS; a persistência usa PostgreSQL. As
+versões principais (linguagem, framework, banco) MUST ser as últimas estáveis e
+consolidadas no mercado no momento da escolha inicial de cada dependência. Uma vez que uma
+versão tenha sido adotada e já exista código do projeto usando-a, novas features MUST
+reutilizar essa mesma versão em vez de pesquisar/adotar "a mais recente do mercado"
+novamente — divergir de uma versão já adotada exige decisão explícita e deliberada,
+registrada nesta constituição como atualização, e não uma escolha implícita feita em uma
+nova sessão/feature. Testes automatizados usam JUnit 5 + Mockito + Spring Boot Test no
+backend e Vitest no frontend — mesma regra de reuso de versão já adotada se aplica a essas
+ferramentas. Não há, por ora, bibliotecas específicas a evitar — decisões de descontinuação
+de uma biblioteca por experiência prévia negativa devem ser registradas aqui quando
+ocorrerem, para não serem repetidas.
 
 ### IV. Convenções de Código e Formatação
 Datas exibidas ou registradas em conteúdo de domínio MUST seguir o formato DD/MM/AAAA.
@@ -79,6 +112,16 @@ antes de assumir um idioma.
 | Arquivos do Spec Kit: constitution.md, spec.md, plan.md, tasks.md | Português |
 | Mensagens de erro exibidas ao usuário final (API response, frontend) | Português |
 | README.md | Português |
+
+### VI. Convenções de API REST
+Rotas MUST seguir o padrão `/api/{recurso-no-plural-em-inglês}` (ex.: `/api/units`,
+`/api/residents`), usando os verbos HTTP padrão: `GET` para listagem/consulta, `POST` para
+criação, `PUT /{id}` para edição completa e `DELETE /{id}` para remoção. Toda resposta de
+erro (4xx) MUST seguir o formato padronizado `{ "message": string, "status": number }`, com
+`message` em português (ver Princípios IV e V). Confirmação de ações destrutivas (remoção)
+é responsabilidade exclusiva do frontend (diálogo de confirmação antes da chamada); o
+endpoint `DELETE` MUST executar a remoção diretamente quando chamado, sem etapa de
+confirmação própria no backend.
 
 ## Restrições Transversais
 
@@ -114,5 +157,5 @@ definidos aqui. Complexidade adicional (novas camadas, dependências, padrões) 
 justificada em relação aos princípios de simplicidade implícitos na arquitetura em camadas
 descrita no Princípio I.
 
-**Version**: 1.0.0 | **Ratified**: 2026-07-24 | **Last Amended**: 2026-07-24
+**Version**: 1.1.0 | **Ratified**: 2026-07-24 | **Last Amended**: 2026-07-24
 </content>

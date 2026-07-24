@@ -106,11 +106,18 @@ consolidadas no mercado")
 ## Tratamento de erros da API
 
 - **Decision**: `GlobalExceptionHandler` centralizado em `shared/`, mapeando
-  exceptions de domínio (ex.: `DuplicateUnitException` → 409,
-  `UnitHasResidentsException` → 409, `EntityNotFoundException` → 404,
-  `MethodArgumentNotValidException`/Bean Validation → 400) para um corpo de
+  exceptions de negócio de cada entidade (`DuplicateUnitException` e
+  `UnitHasResidentsException`, ambas vivendo em `unit/domain/` — não em
+  `shared/`, conforme constitution v1.1.0), além das exceptions genéricas de
+  `shared/exceptions/` (`NotFoundException`/`ConflictException`) e de
+  `MethodArgumentNotValidException`/Bean Validation → 400, para um corpo de
   resposta padronizado com mensagem em português.
-  **Rationale**: Consistente com o Princípio I (recursos compartilhados em
-  `shared/`) e evita duplicação de tratamento de erro em cada controller.
+  **Rationale**: O handler em si é transversal (evita duplicar tratamento de
+  erro em cada controller), mas as exceptions que carregam uma regra de negócio
+  de uma entidade específica pertencem ao `domain/` dela — só exceptions
+  genéricas e reaproveitáveis por qualquer entidade vivem em `shared/`.
   **Alternatives considered**: Tratamento de erro individual por controller —
   rejeitado por gerar duplicação e inconsistência de formato de resposta.
+  Colocar todas as exceptions de domínio em `shared/exceptions/` — rejeitado
+  pela emenda à constitution (v1.1.0), que reserva `shared/` a recursos
+  verdadeiramente transversais.

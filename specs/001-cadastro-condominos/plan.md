@@ -55,20 +55,25 @@ Condômino); 6 user stories, 17 requisitos funcionais
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-- **I. Arquitetura em Camadas**: PASS. Backend organizado por entidade de domínio
-  (`unit/`, `resident/`), cada uma com `api/`, `domain/` e `infra/`; recursos
-  compartilhados em `shared/`. Frontend organizado por entidade
-  (`unit/`, `resident/`) mais `core/` e `shared/`. Ver Project Structure abaixo.
+- **I. Arquitetura em Camadas**: PASS. Backend no pacote base `com.financas`,
+  organizado por entidade de domínio (`unit/`, `resident/`), cada uma com
+  `api/`, `domain/` (incluindo as exceptions de regra de negócio da própria
+  entidade — `DuplicateUnitException`, `UnitHasResidentsException`) e `infra/`;
+  `shared/` restrito a `GlobalExceptionHandler` e exceptions genéricas
+  (`NotFoundException`/`ConflictException`). Build via Maven; migrações de
+  schema via Flyway. Frontend organizado por entidade (`unit/`, `resident/`)
+  mais `core/` e `shared/`. Ver Project Structure abaixo.
 - **II. Separação Controller → Service → Repository**: PASS. Controllers chamam
   apenas Services; Services concentram as regras de negócio (unicidade normalizada
   de unidade, bloqueio de remoção com vínculo, validação de nome/unidade
   obrigatórios) e são os únicos a acessar o Repository.
 - **III. Stack Técnica Definida**: PASS. Java + Spring Boot (Spring Data JPA,
   Spring Web) no backend; Angular + TypeScript + Bootstrap + SCSS no frontend;
-  PostgreSQL na persistência — versões mais recentes estáveis do mercado (ver
-  Technical Context e research.md). Spring Security fica de fora por não haver
-  requisito de auth no spec; nenhuma biblioteca é descontinuada por experiência
-  prévia negativa nesta feature.
+  PostgreSQL na persistência — versões mais recentes estáveis do mercado no
+  momento desta escolha inicial (ver Technical Context e research.md); futuras
+  features MUST reutilizar essas mesmas versões em vez de re-pesquisar. Spring
+  Security fica de fora por não haver requisito de auth no spec; nenhuma
+  biblioteca é descontinuada por experiência prévia negativa nesta feature.
 - **IV. Convenções de Código e Formatação**: PASS. Nomes de entidades/campos em
   inglês (`Unit`/`Resident` a nível de código — ver nota de nomenclatura em
   research.md), mensagens de exceção internas em inglês, mensagens de erro
@@ -76,6 +81,11 @@ Condômino); 6 user stories, 17 requisitos funcionais
 - **V. Idioma por Tipo de Conteúdo**: PASS. Este plano, o spec e os demais
   artefatos do Spec Kit estão em português; código (classes, variáveis, tabelas)
   será em inglês; mensagens de erro de API/frontend em português.
+- **VI. Convenções de API REST**: PASS. Rotas `/api/units` e `/api/residents`
+  (plural, inglês) com `GET`/`POST`/`PUT /{id}`/`DELETE /{id}`; erros 4xx no
+  formato `{ "message": string, "status": number }` (ver contracts/api.md);
+  confirmação de remoção é responsabilidade do frontend, endpoints `DELETE`
+  executam diretamente.
 
 Nenhuma violação identificada — Complexity Tracking não se aplica.
 
@@ -101,7 +111,8 @@ backend/
 ├── src/main/java/com/financas/
 │   ├── unit/
 │   │   ├── api/               # UnitController, DTOs (request/response)
-│   │   ├── domain/             # Unit entity, UnitRepository (port), UnitService
+│   │   ├── domain/             # Unit entity, UnitRepository (port), UnitService,
+│   │   │                       # DuplicateUnitException, UnitHasResidentsException
 │   │   └── infra/              # UnitJpaRepository (Spring Data), UnitRepositoryImpl
 │   ├── resident/
 │   │   ├── api/                # ResidentController, DTOs
@@ -109,7 +120,7 @@ backend/
 │   │   └── infra/               # ResidentJpaRepository (Spring Data), ResidentRepositoryImpl
 │   └── shared/
 │       ├── GlobalExceptionHandler.java
-│       └── exceptions/          # DuplicateUnitException, UnitHasResidentsException, etc.
+│       └── exceptions/          # NotFoundException, ConflictException (bases genéricas)
 ├── src/main/resources/
 │   └── application.yml
 ├── src/test/java/com/financas/

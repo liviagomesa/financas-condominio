@@ -72,7 +72,7 @@ description: "Task list template for feature implementation"
 - [ ] T015 [US1] Implement `UnitService` (criar com validação de unicidade normalizada — trim + case-insensitive —, e listar) em `backend/src/main/java/com/financas/unit/domain/UnitService.java` (depends on T014)
 - [ ] T016 [P] [US1] Create DTOs `UnitRequest`/`UnitResponse` em `backend/src/main/java/com/financas/unit/api/`
 - [ ] T017 [US1] Implement `UnitController` (`POST /api/units`, `GET /api/units`) em `backend/src/main/java/com/financas/unit/api/UnitController.java` (depends on T015, T016)
-- [ ] T018 [P] [US1] Create `DuplicateUnitException` em `backend/src/main/java/com/financas/shared/exceptions/` e mapear para 409 com mensagem em português no `GlobalExceptionHandler` (depends on T006)
+- [ ] T018 [P] [US1] Create `DuplicateUnitException` em `backend/src/main/java/com/financas/unit/domain/` (regra de negócio da própria entidade — não em `shared/`) e mapear para 409 com mensagem em português no `GlobalExceptionHandler` (depends on T006)
 - [ ] T019 [P] [US1] Create model `Unit` em `frontend/src/app/shared/models/unit.model.ts`
 - [ ] T020 [P] [US1] Create `UnitService` (HttpClient) em `frontend/src/app/shared/services/unit.service.ts` (depends on T008, T019)
 - [ ] T021 [US1] Create componente `unit-list` (tabela simples com identificador) em `frontend/src/app/unit/unit-list/` (depends on T020)
@@ -166,7 +166,7 @@ description: "Task list template for feature implementation"
 
 ### Implementation for User Story 6
 
-- [ ] T047 [P] [US6] Create `UnitHasResidentsException` em `backend/src/main/java/com/financas/shared/exceptions/` e mapear para 409 com mensagem em português no `GlobalExceptionHandler` (depends on T006)
+- [ ] T047 [P] [US6] Create `UnitHasResidentsException` em `backend/src/main/java/com/financas/unit/domain/` (regra de negócio da própria entidade — não em `shared/`) e mapear para 409 com mensagem em português no `GlobalExceptionHandler` (depends on T006)
 - [ ] T048 [US6] Add `DELETE /api/units/{id}` ao `UnitController` e método de remoção ao `UnitService` (404 se não existir; 409 via `UnitHasResidentsException` se `ResidentRepository` indicar condômino vinculado), em `backend/src/main/java/com/financas/unit/` (depends on T015, T017, T026, T047)
 - [ ] T049 [US6] Add ação de remoção com diálogo de confirmação em `unit-list`, tratando erro 409 com a mensagem de vínculo, em `frontend/src/app/unit/unit-list/` (depends on T038, T048)
 
