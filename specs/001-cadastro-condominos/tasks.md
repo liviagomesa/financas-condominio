@@ -31,10 +31,10 @@ description: "Task list template for feature implementation"
 
 **Purpose**: Inicialização do repositório — `backend/`, `frontend/` e banco ainda não existem (primeira feature do projeto).
 
-- [ ] T001 [P] Create `docker-compose.yml` na raiz do repositório com serviço PostgreSQL 18.4 (porta, volume, credenciais de desenvolvimento)
-- [ ] T002 [P] Initialize Spring Boot backend project em `backend/` (Maven, Java 21, Spring Boot 4.1.x, base package `com.financas`) com dependências: `spring-boot-starter-web`, `spring-boot-starter-data-jpa`, `spring-boot-starter-validation`, `flyway-core`, `flyway-database-postgresql`, `org.postgresql:postgresql`, `spring-boot-starter-test`
-- [ ] T003 [P] Initialize Angular frontend project em `frontend/` (Angular 22, routing habilitado, estilos SCSS)
-- [ ] T004 [P] Add Bootstrap 5 ao frontend (`npm install bootstrap` em `frontend/`; import em `frontend/src/styles.scss`)
+- [X] T001 [P] Create `docker-compose.yml` na raiz do repositório com serviço PostgreSQL 18.4 (porta, volume, credenciais de desenvolvimento)
+- [X] T002 [P] Initialize Spring Boot backend project em `backend/` (Maven, Java 21, Spring Boot 4.1.x, base package `com.financas`) com dependências: `spring-boot-starter-webmvc`, `spring-boot-starter-data-jpa`, `spring-boot-starter-validation`, `spring-boot-starter-flyway`, `flyway-database-postgresql`, `org.postgresql:postgresql`, starters `-test` correspondentes
+- [X] T003 [P] Initialize Angular frontend project em `frontend/` (Angular 22, routing habilitado, estilos SCSS)
+- [X] T004 [P] Add Bootstrap 5 ao frontend (`npm install bootstrap` em `frontend/`; import em `frontend/src/styles.scss`)
 
 **Checkpoint**: Esqueleto de `backend/`, `frontend/` e `docker-compose.yml` criado — pronto para a fase Foundational.
 
@@ -46,12 +46,12 @@ description: "Task list template for feature implementation"
 
 **⚠️ CRITICAL**: Nenhuma user story pode começar antes desta fase estar completa
 
-- [ ] T005 [P] Configure `backend/src/main/resources/application.yml` com datasource PostgreSQL (compatível com `docker-compose.yml`), `spring.jpa.hibernate.ddl-auto=validate` (schema gerenciado por Flyway) e diretório de migrations `classpath:db/migration`
-- [ ] T006 [P] Create `GlobalExceptionHandler` e exceptions base (`NotFoundException`, `ConflictException`) em `backend/src/main/java/com/financas/shared/`
-- [ ] T007 [P] Configure CORS no backend liberando `http://localhost:4200`, em `backend/src/main/java/com/financas/shared/WebConfig.java`
-- [ ] T008 [P] Create configuração de URL base da API em `frontend/src/environments/environment.ts` (`http://localhost:8080/api`)
-- [ ] T009 [P] Create interceptor HTTP de tratamento de erro em `frontend/src/app/core/error.interceptor.ts`
-- [ ] T010 [P] Configure esqueleto de rotas Angular em `frontend/src/app/app.routes.ts` (vazio, pronto para as rotas de `unit` e `resident`)
+- [X] T005 [P] Configure `backend/src/main/resources/application.yml` com datasource PostgreSQL (compatível com `docker-compose.yml`), `spring.jpa.hibernate.ddl-auto=validate` (schema gerenciado por Flyway) e diretório de migrations `classpath:db/migration`
+- [X] T006 [P] Create `GlobalExceptionHandler` e exceptions base (`NotFoundException`, `ConflictException`) em `backend/src/main/java/com/financas/shared/`
+- [X] T007 [P] Configure CORS no backend liberando `http://localhost:4200`, em `backend/src/main/java/com/financas/shared/WebConfig.java`
+- [X] T008 [P] Create configuração de URL base da API em `frontend/src/environments/environment.ts` (`http://localhost:8080/api`)
+- [X] T009 [P] Create interceptor HTTP de tratamento de erro em `frontend/src/app/core/error.interceptor.ts`
+- [X] T010 [P] Configure esqueleto de rotas Angular em `frontend/src/app/app.routes.ts` (vazio, pronto para as rotas de `unit` e `resident`)
 
 **Checkpoint**: Fundação pronta — implementação das user stories pode começar.
 
@@ -65,19 +65,19 @@ description: "Task list template for feature implementation"
 
 ### Implementation for User Story 1
 
-- [ ] T011 [P] [US1] Create entidade JPA `Unit` (`id`, `identifier`) em `backend/src/main/java/com/financas/unit/domain/Unit.java`
-- [ ] T012 [US1] Create migration Flyway `backend/src/main/resources/db/migration/V1__create_unit_table.sql` (tabela `unit` + índice único funcional em `lower(trim(identifier))`, ver research.md)
-- [ ] T013 [P] [US1] Create interface de porta `UnitRepository` em `backend/src/main/java/com/financas/unit/domain/UnitRepository.java` (depends on T011)
-- [ ] T014 [US1] Create `UnitJpaRepository` (Spring Data) e `UnitRepositoryImpl` em `backend/src/main/java/com/financas/unit/infra/` (depends on T013)
-- [ ] T015 [US1] Implement `UnitService` (criar com validação de unicidade normalizada — trim + case-insensitive —, e listar) em `backend/src/main/java/com/financas/unit/domain/UnitService.java` (depends on T014)
-- [ ] T016 [P] [US1] Create DTOs `UnitRequest`/`UnitResponse` em `backend/src/main/java/com/financas/unit/api/`
-- [ ] T017 [US1] Implement `UnitController` (`POST /api/units`, `GET /api/units`) em `backend/src/main/java/com/financas/unit/api/UnitController.java` (depends on T015, T016)
-- [ ] T018 [P] [US1] Create `DuplicateUnitException` em `backend/src/main/java/com/financas/unit/domain/` (regra de negócio da própria entidade — não em `shared/`) e mapear para 409 com mensagem em português no `GlobalExceptionHandler` (depends on T006)
-- [ ] T019 [P] [US1] Create model `Unit` em `frontend/src/app/shared/models/unit.model.ts`
-- [ ] T020 [P] [US1] Create `UnitService` (HttpClient) em `frontend/src/app/shared/services/unit.service.ts` (depends on T008, T019)
-- [ ] T021 [US1] Create componente `unit-list` (tabela simples com identificador) em `frontend/src/app/unit/unit-list/` (depends on T020)
-- [ ] T022 [US1] Create componente `unit-form` (cadastro, validação de campo obrigatório e mensagem de duplicidade) em `frontend/src/app/unit/unit-form/` (depends on T020)
-- [ ] T023 [US1] Wire rotas de unidade em `frontend/src/app/app.routes.ts` (depends on T010, T021, T022)
+- [X] T011 [P] [US1] Create entidade JPA `Unit` (`id`, `identifier`) em `backend/src/main/java/com/financas/unit/domain/Unit.java`
+- [X] T012 [US1] Create migration Flyway `backend/src/main/resources/db/migration/V1__create_unit_table.sql` (tabela `unit` + índice único funcional em `lower(trim(identifier))`, ver research.md)
+- [X] T013 [P] [US1] Create interface de porta `UnitRepository` em `backend/src/main/java/com/financas/unit/domain/UnitRepository.java` (depends on T011)
+- [X] T014 [US1] Create `UnitJpaRepository` (Spring Data) e `UnitRepositoryImpl` em `backend/src/main/java/com/financas/unit/infra/` (depends on T013)
+- [X] T015 [US1] Implement `UnitService` (criar com validação de unicidade normalizada — trim + case-insensitive —, e listar) em `backend/src/main/java/com/financas/unit/domain/UnitService.java` (depends on T014)
+- [X] T016 [P] [US1] Create DTOs `UnitRequest`/`UnitResponse` em `backend/src/main/java/com/financas/unit/api/`
+- [X] T017 [US1] Implement `UnitController` (`POST /api/units`, `GET /api/units`) em `backend/src/main/java/com/financas/unit/api/UnitController.java` (depends on T015, T016)
+- [X] T018 [P] [US1] Create `DuplicateUnitException` em `backend/src/main/java/com/financas/unit/domain/` (regra de negócio da própria entidade — não em `shared/`) e mapear para 409 com mensagem em português no `GlobalExceptionHandler` (depends on T006)
+- [X] T019 [P] [US1] Create model `Unit` em `frontend/src/app/shared/models/unit.model.ts`
+- [X] T020 [P] [US1] Create `UnitService` (HttpClient) em `frontend/src/app/shared/services/unit.service.ts` (depends on T008, T019)
+- [X] T021 [US1] Create componente `unit-list` (tabela simples com identificador) em `frontend/src/app/unit/unit-list/` (depends on T020)
+- [X] T022 [US1] Create componente `unit-form` (cadastro, validação de campo obrigatório e mensagem de duplicidade) em `frontend/src/app/unit/unit-form/` (depends on T020)
+- [X] T023 [US1] Wire rotas de unidade em `frontend/src/app/app.routes.ts` (depends on T010, T021, T022)
 
 **Checkpoint**: User Story 1 completa e testável de forma independente (Acceptance Scenarios 1-3 do spec).
 
@@ -91,20 +91,20 @@ description: "Task list template for feature implementation"
 
 ### Implementation for User Story 2
 
-- [ ] T024 [P] [US2] Create entidade JPA `Resident` (`id`, `name`, `unit` ManyToOne obrigatório, `email` nullable, `phone` nullable) em `backend/src/main/java/com/financas/resident/domain/Resident.java`
-- [ ] T025 [US2] Create migration Flyway `backend/src/main/resources/db/migration/V2__create_resident_table.sql` (tabela `resident` com `unit_id` FK `NOT NULL`) (depends on T012)
-- [ ] T026 [P] [US2] Create interface de porta `ResidentRepository` em `backend/src/main/java/com/financas/resident/domain/ResidentRepository.java` (depends on T024)
-- [ ] T027 [US2] Create `ResidentJpaRepository` e `ResidentRepositoryImpl` em `backend/src/main/java/com/financas/resident/infra/` (depends on T026)
-- [ ] T028 [P] [US2] Create validador de telefone em formato brasileiro (DDD 2 dígitos + 8 ou 9 dígitos, ver research.md) em `backend/src/main/java/com/financas/resident/domain/PhoneNumber.java` (ou `ConstraintValidator` customizado)
-- [ ] T029 [US2] Implement `ResidentService` (criar com nome/unidade obrigatórios, checagem de existência da unidade referenciada, e listar) em `backend/src/main/java/com/financas/resident/domain/ResidentService.java` (depends on T027, T028, T015)
-- [ ] T030 [P] [US2] Create DTOs `ResidentRequest`/`ResidentResponse` (com `UnitResponse` aninhado) em `backend/src/main/java/com/financas/resident/api/`
-- [ ] T031 [US2] Implement `ResidentController` (`POST /api/residents`, `GET /api/residents`) em `backend/src/main/java/com/financas/resident/api/ResidentController.java` (depends on T029, T030)
-- [ ] T032 [P] [US2] Mapear unidade referenciada inexistente para 404 com mensagem orientando a cadastrar a unidade primeiro, no `GlobalExceptionHandler` (depends on T006)
-- [ ] T033 [P] [US2] Create model `Resident` em `frontend/src/app/shared/models/resident.model.ts`
-- [ ] T034 [P] [US2] Create `ResidentService` (HttpClient) em `frontend/src/app/shared/services/resident.service.ts` (depends on T008, T033)
-- [ ] T035 [US2] Create componente `resident-list` (lista simples por nome) em `frontend/src/app/resident/resident-list/` (depends on T034)
-- [ ] T036 [US2] Create componente `resident-form` (cadastro com seletor de unidade via `UnitService`, validação de nome/unidade obrigatórios, e-mail e telefone opcionais, orientação quando não há unidades) em `frontend/src/app/resident/resident-form/` (depends on T034, T020)
-- [ ] T037 [US2] Wire rotas de condômino em `frontend/src/app/app.routes.ts` (depends on T023, T035, T036)
+- [X] T024 [P] [US2] Create entidade JPA `Resident` (`id`, `name`, `unit` ManyToOne obrigatório, `email` nullable, `phone` nullable) em `backend/src/main/java/com/financas/resident/domain/Resident.java`
+- [X] T025 [US2] Create migration Flyway `backend/src/main/resources/db/migration/V2__create_resident_table.sql` (tabela `resident` com `unit_id` FK `NOT NULL`) (depends on T012)
+- [X] T026 [P] [US2] Create interface de porta `ResidentRepository` em `backend/src/main/java/com/financas/resident/domain/ResidentRepository.java` (depends on T024)
+- [X] T027 [US2] Create `ResidentJpaRepository` e `ResidentRepositoryImpl` em `backend/src/main/java/com/financas/resident/infra/` (depends on T026)
+- [X] T028 [P] [US2] Create validador de telefone em formato brasileiro (DDD 2 dígitos + 8 ou 9 dígitos, ver research.md) em `backend/src/main/java/com/financas/resident/domain/BrazilianPhone.java` + `BrazilianPhoneValidator.java` (`ConstraintValidator` customizado)
+- [X] T029 [US2] Implement `ResidentService` (criar com nome/unidade obrigatórios, checagem de existência da unidade referenciada, e listar) em `backend/src/main/java/com/financas/resident/domain/ResidentService.java` (depends on T027, T028, T015)
+- [X] T030 [P] [US2] Create DTOs `ResidentRequest`/`ResidentResponse` (com `UnitResponse` aninhado) em `backend/src/main/java/com/financas/resident/api/`
+- [X] T031 [US2] Implement `ResidentController` (`POST /api/residents`, `GET /api/residents`) em `backend/src/main/java/com/financas/resident/api/ResidentController.java` (depends on T029, T030)
+- [X] T032 [P] [US2] Mapear unidade referenciada inexistente para 404 com mensagem orientando a cadastrar a unidade primeiro, no `GlobalExceptionHandler` (depends on T006) — reaproveita o handler genérico de `NotFoundException`, sem código extra
+- [X] T033 [P] [US2] Create model `Resident` em `frontend/src/app/shared/models/resident.model.ts`
+- [X] T034 [P] [US2] Create `ResidentService` (HttpClient) em `frontend/src/app/shared/services/resident.service.ts` (depends on T008, T033)
+- [X] T035 [US2] Create componente `resident-list` (lista simples por nome) em `frontend/src/app/resident/resident-list/` (depends on T034)
+- [X] T036 [US2] Create componente `resident-form` (cadastro com seletor de unidade via `UnitService`, validação de nome/unidade obrigatórios, e-mail e telefone opcionais, orientação quando não há unidades) em `frontend/src/app/resident/resident-form/` (depends on T034, T020)
+- [X] T037 [US2] Wire rotas de condômino em `frontend/src/app/app.routes.ts` (depends on T023, T035, T036)
 
 **Checkpoint**: User Stories 1 e 2 funcionam de forma independente (Acceptance Scenarios do US2).
 
@@ -118,8 +118,8 @@ description: "Task list template for feature implementation"
 
 ### Implementation for User Story 3
 
-- [ ] T038 [P] [US3] Enhance `unit-list` para exibir mensagem de "nenhuma unidade cadastrada" quando a lista vier vazia, em `frontend/src/app/unit/unit-list/` (depends on T021)
-- [ ] T039 [P] [US3] Enhance `resident-list` para exibir todas as colunas (nome, unidade associada, e-mail, telefone) e mensagem de "nenhum condômino cadastrado" quando vazia, em `frontend/src/app/resident/resident-list/` (depends on T035)
+- [X] T038 [P] [US3] Enhance `unit-list` para exibir mensagem de "nenhuma unidade cadastrada" quando a lista vier vazia, em `frontend/src/app/unit/unit-list/` (depends on T021)
+- [X] T039 [P] [US3] Enhance `resident-list` para exibir todas as colunas (nome, unidade associada, e-mail, telefone) e mensagem de "nenhum condômino cadastrado" quando vazia, em `frontend/src/app/resident/resident-list/` (depends on T035)
 
 **Checkpoint**: Listagens completas conforme FR-013/FR-014 — US1, US2 e US3 funcionam de forma independente.
 
@@ -133,11 +133,11 @@ description: "Task list template for feature implementation"
 
 ### Implementation for User Story 4
 
-- [ ] T040 [US4] Add `PUT /api/units/{id}` ao `UnitController` e método de atualização (mesma validação de unicidade normalizada, 404 se não existir) ao `UnitService`, em `backend/src/main/java/com/financas/unit/` (depends on T015, T017)
-- [ ] T041 [US4] Add `PUT /api/residents/{id}` ao `ResidentController` e método de atualização (mesmas validações da criação, 404 se não existir) ao `ResidentService`, em `backend/src/main/java/com/financas/resident/` (depends on T029, T031)
-- [ ] T042 [P] [US4] Add modo de edição ao `unit-form` (pré-preenchimento + chamada PUT) em `frontend/src/app/unit/unit-form/` (depends on T022, T040)
-- [ ] T043 [P] [US4] Add modo de edição ao `resident-form` (pré-preenchimento + chamada PUT) em `frontend/src/app/resident/resident-form/` (depends on T036, T041)
-- [ ] T044 [P] [US4] Add ação "editar" nas linhas de `unit-list` e `resident-list` navegando ao formulário em modo edição, em `frontend/src/app/unit/unit-list/` e `frontend/src/app/resident/resident-list/` (depends on T038, T039)
+- [X] T040 [US4] Add `GET /api/units/{id}` (consulta usada pelo formulário de edição — não estava em contracts/api.md original, adicionada e documentada nesta fase) e `PUT /api/units/{id}` ao `UnitController`, com método de atualização (mesma validação de unicidade normalizada, 404 se não existir) ao `UnitService`, em `backend/src/main/java/com/financas/unit/` (depends on T015, T017)
+- [X] T041 [US4] Add `GET /api/residents/{id}` (idem, para o formulário de edição) e `PUT /api/residents/{id}` ao `ResidentController`, com método de atualização (mesmas validações da criação, 404 se não existir) ao `ResidentService`, em `backend/src/main/java/com/financas/resident/` (depends on T029, T031)
+- [X] T042 [P] [US4] Add modo de edição ao `unit-form` (pré-preenchimento + chamada PUT) em `frontend/src/app/unit/unit-form/` (depends on T022, T040)
+- [X] T043 [P] [US4] Add modo de edição ao `resident-form` (pré-preenchimento + chamada PUT) em `frontend/src/app/resident/resident-form/` (depends on T036, T041)
+- [X] T044 [P] [US4] Add ação "editar" nas linhas de `unit-list` e `resident-list` navegando ao formulário em modo edição, em `frontend/src/app/unit/unit-list/` e `frontend/src/app/resident/resident-list/` (depends on T038, T039)
 
 **Checkpoint**: Edição funcional para ambas as entidades, independente das demais stories.
 
@@ -151,8 +151,8 @@ description: "Task list template for feature implementation"
 
 ### Implementation for User Story 5
 
-- [ ] T045 [US5] Add `DELETE /api/residents/{id}` ao `ResidentController` e método de remoção (404 se não existir) ao `ResidentService`, em `backend/src/main/java/com/financas/resident/` (depends on T029, T031)
-- [ ] T046 [US5] Add ação de remoção com diálogo de confirmação em `resident-list`, em `frontend/src/app/resident/resident-list/` (depends on T039)
+- [X] T045 [US5] Add `DELETE /api/residents/{id}` ao `ResidentController` e método de remoção (404 se não existir) ao `ResidentService`, em `backend/src/main/java/com/financas/resident/` (depends on T029, T031)
+- [X] T046 [US5] Add ação de remoção com diálogo de confirmação em `resident-list`, em `frontend/src/app/resident/resident-list/` (depends on T039)
 
 **Checkpoint**: Remoção de condômino funcional de forma independente.
 
@@ -166,9 +166,9 @@ description: "Task list template for feature implementation"
 
 ### Implementation for User Story 6
 
-- [ ] T047 [P] [US6] Create `UnitHasResidentsException` em `backend/src/main/java/com/financas/unit/domain/` (regra de negócio da própria entidade — não em `shared/`) e mapear para 409 com mensagem em português no `GlobalExceptionHandler` (depends on T006)
-- [ ] T048 [US6] Add `DELETE /api/units/{id}` ao `UnitController` e método de remoção ao `UnitService` (404 se não existir; 409 via `UnitHasResidentsException` se `ResidentRepository` indicar condômino vinculado), em `backend/src/main/java/com/financas/unit/` (depends on T015, T017, T026, T047)
-- [ ] T049 [US6] Add ação de remoção com diálogo de confirmação em `unit-list`, tratando erro 409 com a mensagem de vínculo, em `frontend/src/app/unit/unit-list/` (depends on T038, T048)
+- [X] T047 [P] [US6] Create `UnitHasResidentsException` em `backend/src/main/java/com/financas/unit/domain/` (regra de negócio da própria entidade — não em `shared/`) e mapear para 409 com mensagem em português no `GlobalExceptionHandler` (depends on T006)
+- [X] T048 [US6] Add `DELETE /api/units/{id}` ao `UnitController` e método de remoção ao `UnitService` (404 se não existir; 409 via `UnitHasResidentsException` se `ResidentRepository` indicar condômino vinculado), em `backend/src/main/java/com/financas/unit/` (depends on T015, T017, T026, T047)
+- [X] T049 [US6] Add ação de remoção com diálogo de confirmação em `unit-list`, tratando erro 409 com a mensagem de vínculo, em `frontend/src/app/unit/unit-list/` (depends on T038, T048)
 
 **Checkpoint**: Todas as 6 user stories funcionam de forma independente.
 
@@ -178,9 +178,9 @@ description: "Task list template for feature implementation"
 
 **Purpose**: Validações finais e documentação
 
-- [ ] T050 [P] Run roteiro de validação manual de `quickstart.md` de ponta a ponta
-- [ ] T051 [P] Update `README.md` com decisões técnicas tomadas nesta feature (versões de stack, estrutura de pastas, ausência de Spring Security por ora), conforme Fluxo de Commits da constituição
-- [ ] T052 [P] Review mensagens de erro do `GlobalExceptionHandler` para garantir consistência em português (FR-016)
+- [X] T050 [P] Run roteiro de validação manual de `quickstart.md` de ponta a ponta — executado via API real (curl contra Postgres) e navegador real (Playwright headless), cobrindo os 6 cenários; encontrado e corrigido um bug real: a imagem `postgres:18.4` exige o volume montado em `/var/lib/postgresql` (não `/var/lib/postgresql/data`), e a porta 5432 do host já estava ocupada por um PostgreSQL nativo — `docker-compose.yml` ajustado para expor a porta `5433`
+- [X] T051 [P] Update `README.md` com decisões técnicas tomadas nesta feature (versões de stack, estrutura de pastas, ausência de Spring Security por ora), conforme Fluxo de Commits da constituição
+- [X] T052 [P] Review mensagens de erro do `GlobalExceptionHandler` para garantir consistência em português (FR-016) — confirmado nos testes end-to-end: todas as mensagens de erro (400/404/409) retornadas em português, no formato `{ "message", "status" }`
 
 ---
 

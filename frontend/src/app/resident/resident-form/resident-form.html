@@ -1,0 +1,56 @@
+<h1 class="h3 mb-3">{{ isEditMode ? 'Editar condômino' : 'Novo condômino' }}</h1>
+
+@if (!units().length) {
+  <div class="alert alert-warning">
+    Nenhuma unidade cadastrada. <a routerLink="/units/new">Cadastre uma unidade</a> antes de
+    associar um condômino a ela.
+  </div>
+} @else {
+  <form [formGroup]="form" (ngSubmit)="submit()" class="col-md-6">
+    <div class="mb-3">
+      <label for="name" class="form-label">Nome</label>
+      <input id="name" type="text" class="form-control" formControlName="name" />
+      @if (form.controls.name.invalid && form.controls.name.touched) {
+        <div class="text-danger small mt-1">O nome é obrigatório.</div>
+      }
+    </div>
+
+    <div class="mb-3">
+      <label for="unitId" class="form-label">Unidade</label>
+      <select id="unitId" class="form-select" formControlName="unitId">
+        <option [ngValue]="null">Selecione...</option>
+        @for (unit of units(); track unit.id) {
+          <option [ngValue]="unit.id">{{ unit.identifier }}</option>
+        }
+      </select>
+      @if (form.controls.unitId.invalid && form.controls.unitId.touched) {
+        <div class="text-danger small mt-1">A unidade é obrigatória.</div>
+      }
+    </div>
+
+    <div class="mb-3">
+      <label for="email" class="form-label">E-mail (opcional)</label>
+      <input id="email" type="email" class="form-control" formControlName="email" />
+      @if (form.controls.email.invalid && form.controls.email.touched) {
+        <div class="text-danger small mt-1">Informe um e-mail em formato válido.</div>
+      }
+    </div>
+
+    <div class="mb-3">
+      <label for="phone" class="form-label">Telefone (opcional)</label>
+      <input
+        id="phone"
+        type="text"
+        class="form-control"
+        formControlName="phone"
+        placeholder="Ex.: (11) 91234-5678"
+      />
+    </div>
+
+    @if (errorMessage()) {
+      <div class="alert alert-danger">{{ errorMessage() }}</div>
+    }
+
+    <button type="submit" class="btn btn-primary">Salvar</button>
+  </form>
+}

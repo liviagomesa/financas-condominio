@@ -27,6 +27,15 @@ Lista todas as unidades cadastradas (FR-003).
 ```
 Lista vazia (`[]`) quando não há unidades cadastradas (FR-014).
 
+### `GET /api/units/{id}`
+
+Consulta uma unidade específica (usado pelo formulário de edição — US4).
+
+**Response 200**: unidade, no mesmo formato do `GET /api/units`.
+
+**Erros**:
+- `404` — unidade `{id}` não encontrada (FR-016).
+
 ### `POST /api/units`
 
 Cadastra uma nova unidade (FR-001).
@@ -90,6 +99,15 @@ Lista todos os condôminos cadastrados, com unidade associada (FR-013).
 ```
 `email`/`phone` podem ser `null`. Lista vazia (`[]`) quando não há condôminos
 cadastrados (FR-014).
+
+### `GET /api/residents/{id}`
+
+Consulta um condômino específico (usado pelo formulário de edição — US4).
+
+**Response 200**: condômino, no mesmo formato do `GET /api/residents`.
+
+**Erros**:
+- `404` — condômino `{id}` não encontrado (FR-016).
 
 ### `POST /api/residents`
 

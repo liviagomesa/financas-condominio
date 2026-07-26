@@ -1,0 +1,16 @@
+spring:
+  application:
+    name: financas-backend
+  datasource:
+    url: jdbc:postgresql://localhost:5433/financas
+    username: financas
+    password: financas
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    locations: classpath:db/migration
+
+server:
+  port: 8080

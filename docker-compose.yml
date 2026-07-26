@@ -1,0 +1,17 @@
+services:
+  postgres:
+    image: postgres:18.4
+    container_name: financas-postgres
+    environment:
+      POSTGRES_DB: financas
+      POSTGRES_USER: financas
+      POSTGRES_PASSWORD: financas
+    # Porta 5433 no host (não 5432) para evitar conflito com um PostgreSQL
+    # nativo já instalado na máquina de desenvolvimento.
+    ports:
+      - "5433:5432"
+    volumes:
+      - financas-postgres-data:/var/lib/postgresql
+
+volumes:
+  financas-postgres-data:

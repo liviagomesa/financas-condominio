@@ -14,6 +14,9 @@ Na raiz do projeto:
 docker compose up -d
 ```
 
+O container expõe o PostgreSQL na porta `5433` do host (não `5432`), para não
+conflitar com uma instalação nativa de PostgreSQL já presente na máquina.
+
 ## 2. Subir o backend
 
 ```powershell
