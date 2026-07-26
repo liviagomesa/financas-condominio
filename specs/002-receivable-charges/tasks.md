@@ -101,23 +101,32 @@ orientação para cadastrar uma unidade primeiro.
   a unidade primeiro (FR-011) — reaproveita o handler genérico de `NotFoundException` no
   `GlobalExceptionHandler`, sem código extra (mesmo padrão de `POST /api/residents` na
   feature 001) (depends on T006)
-- [ ] T010 [P] [US1] Create models `Receivable`, `ReceivableRequest` e union type
+- [ ] T010 [P] [US1] Add `@ExceptionHandler(HttpMessageNotReadableException.class)` ao
+  `GlobalExceptionHandler` (retorna 400 no formato padrão `{ "message", "status" }` com
+  mensagem genérica em português, ex.: "Dados inválidos.") em
+  `backend/src/main/java/com/financas/shared/GlobalExceptionHandler.java` — cobre JSON
+  malformado, `targetAccount` fora do conjunto fixo do enum (FR-013) e `dueDate` fora do
+  formato `dd/MM/yyyy`, casos em que a deserialização do Jackson falha antes da validação
+  Bean Validation rodar e que hoje cairiam no formato de erro padrão do Spring, violando o
+  Princípio VI da constituição (nenhuma dependência de outra tarefa desta feature — corrige
+  também a mesma exposição já latente em `ResidentRequest.unitId` da feature 001)
+- [ ] T011 [P] [US1] Create models `Receivable`, `ReceivableRequest` e union type
   `TargetAccount` em `frontend/src/app/shared/models/receivable.model.ts`
-- [ ] T011 [P] [US1] Create `ReceivableService` (HttpClient, com `findAll`, `findByUnitId`,
+- [ ] T012 [P] [US1] Create `ReceivableService` (HttpClient, com `findAll`, `findByUnitId`,
   `findById`, `create`, `update`, `delete`) em
-  `frontend/src/app/shared/services/receivable.service.ts` (depends on T008, T010)
-- [ ] T012 [US1] Create componente `receivable-form` (lançamento individual: seletor de
+  `frontend/src/app/shared/services/receivable.service.ts` (depends on T008, T011)
+- [ ] T013 [US1] Create componente `receivable-form` (lançamento individual: seletor de
   unidade via `UnitService` da feature 001, campos valor/vencimento/descrição/conta
   destino/tipo, validação de obrigatórios e valor positivo, orientação quando não há
-  unidades cadastradas) em `frontend/src/app/receivable/receivable-form/` (depends on T011)
-- [ ] T013 [US1] Create componente `receivable-list` (tabela com valor, vencimento,
+  unidades cadastradas) em `frontend/src/app/receivable/receivable-form/` (depends on T012)
+- [ ] T014 [US1] Create componente `receivable-list` (tabela com valor, vencimento,
   descrição, conta destino e tipo) em `frontend/src/app/receivable/receivable-list/`
-  (depends on T011)
-- [ ] T014 [US1] Wire rotas de lançamento em `frontend/src/app/app.routes.ts` (depends on T012, T013)
+  (depends on T012)
+- [ ] T015 [US1] Wire rotas de lançamento em `frontend/src/app/app.routes.ts` (depends on T013, T014)
 
 ### Tests for User Story 1 ⚠️ (obrigatório pela constituição — Princípio III)
 
-- [ ] T015 [P] [US1] Create testes unitários de `ReceivableService` (Mockito: criação com
+- [ ] T016 [P] [US1] Create testes unitários de `ReceivableService` (Mockito: criação com
   valor zero/negativo rejeitada — FR-003 —, criação com `unitId` inexistente lança
   `NotFoundException` — FR-002/FR-011 —, criação válida persiste com todos os campos)
   em `backend/src/test/java/com/financas/receivable/domain/ReceivableServiceTest.java`
@@ -140,36 +149,38 @@ retroativamente; confirmar orientação quando não há nenhuma unidade cadastra
 
 ### Implementation for User Story 2
 
-- [ ] T016 [US2] Add `createForAllUnits(...)` ao `ReceivableService`, injetando
+- [ ] T017 [US2] Add `createForAllUnits(...)` ao `ReceivableService`, injetando
   `UnitRepository` (já existente da feature 001): busca todas as `Unit` cadastradas no
   momento da chamada e cria um `Receivable` independente por unidade, com os mesmos
   valor/vencimento/descrição/conta destino/tipo (FR-004/FR-005) em
   `backend/src/main/java/com/financas/receivable/domain/ReceivableService.java` (depends on T006)
-- [ ] T017 [P] [US2] Create `NoUnitsRegisteredException` (regra de negócio da própria
+- [ ] T018 [P] [US2] Create `NoUnitsRegisteredException` (regra de negócio da própria
   operação de lote — não em `shared/`) em
   `backend/src/main/java/com/financas/receivable/domain/`, lançada quando não há nenhuma
   unidade cadastrada (FR-011), e mapear para 409 com mensagem em português no
   `GlobalExceptionHandler` (reaproveita o handler genérico de `ConflictException`, sem código
   extra) (depends on T006)
-- [ ] T018 [P] [US2] Create DTO `ReceivableBulkRequest` (igual a `ReceivableRequest`, sem
+- [ ] T019 [P] [US2] Create DTO `ReceivableBulkRequest` (igual a `ReceivableRequest`, sem
   `unitId`) em `backend/src/main/java/com/financas/receivable/api/`
-- [ ] T019 [US2] Add `POST /api/receivables/bulk` ao `ReceivableController`, retornando a
+- [ ] T020 [US2] Add `POST /api/receivables/bulk` ao `ReceivableController`, retornando a
   lista de `ReceivableResponse` criados (201) em
-  `backend/src/main/java/com/financas/receivable/api/ReceivableController.java` (depends on T016, T017, T018)
-- [ ] T020 [P] [US2] Add método `createBulk` ao `ReceivableService` (frontend) em
-  `frontend/src/app/shared/services/receivable.service.ts` (depends on T011, T019)
-- [ ] T021 [US2] Add ação "lançar para todas as unidades" ao `receivable-form` (alterna entre
+  `backend/src/main/java/com/financas/receivable/api/ReceivableController.java` (depends on T017, T018, T019)
+- [ ] T021 [P] [US2] Add método `createBulk` ao `ReceivableService` (frontend) em
+  `frontend/src/app/shared/services/receivable.service.ts` (depends on T012, T020)
+- [ ] T022 [US2] Add ação "lançar para todas as unidades" ao `receivable-form` (alterna entre
   selecionar uma unidade específica ou aplicar a todas, ocultando o seletor de unidade nesse
-  modo) em `frontend/src/app/receivable/receivable-form/` (depends on T012, T020)
+  modo; exibe a mesma orientação de "cadastre uma unidade primeiro" do modo individual quando
+  não há nenhuma unidade cadastrada — FR-011) em
+  `frontend/src/app/receivable/receivable-form/` (depends on T013, T021)
 
 ### Tests for User Story 2 ⚠️ (obrigatório pela constituição — Princípio III)
 
-- [ ] T022 [P] [US2] Create testes unitários de lançamento em lote no
+- [ ] T023 [P] [US2] Create testes unitários de lançamento em lote no
   `ReceivableServiceTest` (Mockito: cria exatamente um `Receivable` por unidade retornada
   pelo `UnitRepository` no momento da chamada — FR-004/FR-005 —, lança
   `NoUnitsRegisteredException` quando `UnitRepository.findAll()` retorna lista vazia —
   FR-011) em `backend/src/test/java/com/financas/receivable/domain/ReceivableServiceTest.java`
-  (depends on T016, T017, T015)
+  (depends on T017, T018, T016)
 
 **Checkpoint**: User Stories 1 e 2 funcionam de forma independente (Acceptance Scenarios do US2).
 
@@ -187,12 +198,12 @@ cadastrado".
 
 ### Implementation for User Story 3
 
-- [ ] T023 [P] [US3] Enhance `receivable-list` para exibir mensagem de "nenhum lançamento
+- [ ] T024 [P] [US3] Enhance `receivable-list` para exibir mensagem de "nenhum lançamento
   cadastrado" quando a lista vier vazia (FR-007), em
-  `frontend/src/app/receivable/receivable-list/` (depends on T013)
-- [ ] T024 [US3] Add filtro/seletor de unidade na tela de lançamentos, consumindo `GET
+  `frontend/src/app/receivable/receivable-list/` (depends on T014)
+- [ ] T025 [US3] Add filtro/seletor de unidade na tela de lançamentos, consumindo `GET
   /api/receivables?unitId=` (FR-006), em `frontend/src/app/receivable/receivable-list/`
-  (depends on T013, T011)
+  (depends on T014, T012)
 
 **Checkpoint**: Listagem por unidade conforme FR-006/FR-007 — US1, US2 e US3 funcionam de
 forma independente.
@@ -201,38 +212,42 @@ forma independente.
 
 ## Phase 6: User Story 4 - Editar e remover um lançamento (Priority: P3)
 
-**Goal**: Permitir editar valor, vencimento, descrição, conta destino e tipo de um
-lançamento existente, e removê-lo mediante confirmação explícita.
+**Goal**: Permitir editar valor, vencimento, descrição, conta destino, tipo e unidade
+associada de um lançamento existente, e removê-lo mediante confirmação explícita.
 
-**Independent Test**: Editar um lançamento existente e confirmar que a listagem reflete o
-novo valor, incluindo rejeição de valor inválido; remover um lançamento e confirmar que ele
-some da listagem da unidade correspondente; tentar editar/remover um lançamento inexistente
-e confirmar mensagem de não encontrado.
+**Independent Test**: Editar um lançamento existente (incluindo trocar sua unidade
+associada) e confirmar que a listagem reflete os novos valores, incluindo rejeição de valor
+inválido e de unidade inexistente; remover um lançamento e confirmar que ele some da
+listagem da unidade correspondente; tentar editar/remover um lançamento inexistente e
+confirmar mensagem de não encontrado.
 
 ### Implementation for User Story 4
 
-- [ ] T025 [US4] Add `GET /api/receivables/{id}` (consulta usada pelo formulário de edição)
+- [ ] T026 [US4] Add `GET /api/receivables/{id}` (consulta usada pelo formulário de edição)
   e `PUT /api/receivables/{id}` ao `ReceivableController`, com método de atualização (mesma
-  validação de valor positivo e campos obrigatórios da criação, 404 se não existir) ao
-  `ReceivableService`, em `backend/src/main/java/com/financas/receivable/` (depends on T006, T008)
-- [ ] T026 [US4] Add `DELETE /api/receivables/{id}` ao `ReceivableController` e método de
+  validação de valor positivo e campos obrigatórios da criação — incluindo troca de unidade
+  associada, com a mesma checagem de existência da criação, FR-002/FR-008 —, 404 se o
+  lançamento ou a nova unidade não existirem) ao `ReceivableService`, em
+  `backend/src/main/java/com/financas/receivable/` (depends on T006, T008)
+- [ ] T027 [US4] Add `DELETE /api/receivables/{id}` ao `ReceivableController` e método de
   remoção (404 se não existir) ao `ReceivableService`, em
   `backend/src/main/java/com/financas/receivable/` (depends on T006, T008)
-- [ ] T027 [P] [US4] Add modo de edição ao `receivable-form` (pré-preenchimento + chamada
-  PUT) em `frontend/src/app/receivable/receivable-form/` (depends on T012, T025)
-- [ ] T028 [P] [US4] Add ação de remoção com diálogo de confirmação em `receivable-list` em
-  `frontend/src/app/receivable/receivable-list/` (depends on T013, T026)
-- [ ] T029 [US4] Add ação "editar" nas linhas de `receivable-list` navegando ao formulário em
-  modo edição (depends on T023, T027)
+- [ ] T028 [P] [US4] Add modo de edição ao `receivable-form` (pré-preenchimento + chamada
+  PUT, permitindo trocar a unidade no mesmo seletor usado na criação) em
+  `frontend/src/app/receivable/receivable-form/` (depends on T013, T026)
+- [ ] T029 [P] [US4] Add ação de remoção com diálogo de confirmação em `receivable-list` em
+  `frontend/src/app/receivable/receivable-list/` (depends on T014, T027)
+- [ ] T030 [US4] Add ação "editar" nas linhas de `receivable-list` navegando ao formulário em
+  modo edição (depends on T024, T028)
 
 ### Tests for User Story 4 ⚠️ (obrigatório pela constituição — Princípio III)
 
-- [ ] T030 [P] [US4] Create testes unitários de edição e remoção no `ReceivableServiceTest`
-  (Mockito: edição com valor zero/negativo rejeitada — FR-008 —, edição de `unitId`
-  inexistente lança `NotFoundException`, edição/remoção de lançamento inexistente lança
-  `NotFoundException` — FR-010) em
-  `backend/src/test/java/com/financas/receivable/domain/ReceivableServiceTest.java`
-  (depends on T025, T026, T015)
+- [ ] T031 [P] [US4] Create testes unitários de edição e remoção no `ReceivableServiceTest`
+  (Mockito: edição com valor zero/negativo rejeitada — FR-008 —, edição trocando para um
+  `unitId` existente persiste a nova unidade — FR-008 —, edição de `unitId` inexistente lança
+  `NotFoundException`, edição/remoção de lançamento inexistente lança `NotFoundException` —
+  FR-010) em `backend/src/test/java/com/financas/receivable/domain/ReceivableServiceTest.java`
+  (depends on T026, T027, T016)
 
 **Checkpoint**: Todas as 4 user stories funcionam de forma independente.
 
@@ -242,16 +257,17 @@ e confirmar mensagem de não encontrado.
 
 **Purpose**: Validações finais e documentação
 
-- [ ] T031 [P] Run roteiro de validação manual de `quickstart.md` de ponta a ponta (API real
+- [ ] T032 [P] Run roteiro de validação manual de `quickstart.md` de ponta a ponta (API real
   + navegador), incluindo o cenário 9 (bloqueio de remoção de unidade com lançamento
   vinculado), que depende de `specs/001-cadastro-condominos/tasks.md` Phase 11 (T056-T058)
   já ter sido implementada
-- [ ] T032 [P] Update `README.md` com decisões técnicas tomadas nesta feature (serialização
-  de data `dd/MM/yyyy`, modelagem de `targetAccount`/`recurring`, endpoint dedicado de lote),
-  conforme Fluxo de Commits da constituição
-- [ ] T033 [P] Review mensagens de erro do `GlobalExceptionHandler` para os novos casos desta
-  feature (400/404/409 de `receivables`), garantindo consistência em português (Convenções de
-  API REST)
+- [ ] T033 [P] Update `README.md` com decisões técnicas tomadas nesta feature (serialização
+  de data `dd/MM/yyyy`, modelagem de `targetAccount`/`recurring`, endpoint dedicado de lote,
+  tratamento padronizado de JSON malformado via `HttpMessageNotReadableException`), conforme
+  Fluxo de Commits da constituição
+- [ ] T034 [P] Review mensagens de erro do `GlobalExceptionHandler` para os novos casos desta
+  feature (400/404/409 de `receivables`, incluindo o novo handler de JSON malformado),
+  garantindo consistência em português (Convenções de API REST)
 
 ---
 
@@ -262,10 +278,10 @@ e confirmar mensagem de não encontrado.
 - **Setup (Phase 1)** e **Foundational (Phase 2)**: Sem tarefas novas — já entregues pela
   feature 001
 - **User Story 1 (Phase 3)**: Depende apenas da infraestrutura já existente (feature 001)
-- **User Story 2 (Phase 4)**: Depende de US1 (T006, T008, T011, T012) e do `UnitRepository`
+- **User Story 2 (Phase 4)**: Depende de US1 (T006, T008, T012, T013) e do `UnitRepository`
   já existente (feature 001)
-- **User Story 3 (Phase 5)**: Depende das listagens/filtro básicos criados em US1 (T011, T013)
-- **User Story 4 (Phase 6)**: Depende de US1 (T006, T008, T012) e da listagem de US3 (T023)
+- **User Story 3 (Phase 5)**: Depende das listagens/filtro básicos criados em US1 (T012, T014)
+- **User Story 4 (Phase 6)**: Depende de US1 (T006, T008, T013) e da listagem de US3 (T024)
 - **Polish (Phase 7)**: Depende de todas as user stories desejadas estarem completas
 
 ### Impacto cruzado com a feature 001
@@ -285,12 +301,12 @@ spec.
 
 ### Parallel Opportunities
 
-- T001, T002, T004, T007 (US1) podem rodar em paralelo entre si antes das tarefas que
+- T001, T002, T004, T007, T010 (US1) podem rodar em paralelo entre si antes das tarefas que
   dependem deles
-- T017, T018 (US2) podem rodar em paralelo entre si
-- T020 (US2), T023 (US3), T027, T028 (US4) podem rodar em paralelo com outras tarefas [P] de
+- T018, T019 (US2) podem rodar em paralelo entre si
+- T021 (US2), T024 (US3), T028, T029 (US4) podem rodar em paralelo com outras tarefas [P] de
   arquivos diferentes dentro da mesma fase
-- T015, T022, T030 (testes) podem rodar em paralelo entre si caso implementadas em arquivos
+- T016, T023, T031 (testes) podem rodar em paralelo entre si caso implementadas em arquivos
   de teste separados, ou sequencialmente se acumuladas no mesmo `ReceivableServiceTest.java`
 
 ---
@@ -322,7 +338,7 @@ Task: "Create ReceivableService (HttpClient) em frontend/src/app/shared/services
 1. US1 → lançamento individual funcionando (MVP)
 2. US2 → lançamento em lote reaproveitando US1
 3. US3 → listagem completa com filtro por unidade e estado vazio
-4. US4 → edição e remoção
+4. US4 → edição (incluindo troca de unidade) e remoção
 5. (Cross-feature) Extensão de `UnitService` na feature 001 (Phase 11 de `specs/001-cadastro-condominos/tasks.md`) — bloqueia remoção de unidade com lançamento vinculado
 
 ---

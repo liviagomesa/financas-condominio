@@ -109,15 +109,17 @@ descrição visíveis.
 ### User Story 4 - Editar e remover um lançamento (Priority: P3)
 
 Como responsável pela gestão do condomínio, quero editar ou remover um lançamento de conta a
-receber já criado, para corrigir um valor, vencimento, descrição, conta destino ou tipo
-informados incorretamente, ou para desfazer um lançamento feito por engano.
+receber já criado, para corrigir um valor, vencimento, descrição, conta destino, tipo ou a
+unidade associada informados incorretamente (ex.: lançamento feito na unidade errada por
+engano), ou para desfazer um lançamento feito por engano.
 
 **Why this priority**: É uma operação de correção/manutenção, útil mas menos frequente que criar
 e listar lançamentos — o sistema já é utilizável apenas com criação e listagem.
 
-**Independent Test**: Pode ser testada isoladamente editando um lançamento existente e
-confirmando que a listagem reflete o novo valor; e, separadamente, removendo um lançamento e
-confirmando que ele deixa de aparecer na listagem da unidade.
+**Independent Test**: Pode ser testada isoladamente editando um lançamento existente
+(incluindo trocar sua unidade associada) e confirmando que a listagem reflete os novos
+valores; e, separadamente, removendo um lançamento e confirmando que ele deixa de aparecer da
+listagem da unidade.
 
 **Acceptance Scenarios**:
 
@@ -131,6 +133,13 @@ confirmando que ele deixa de aparecer na listagem da unidade.
 4. **Given** uma tentativa de editar ou remover um lançamento que já não existe mais (ex.:
    removido em outra sessão), **When** a ação é realizada, **Then** o sistema informa que o
    lançamento não foi encontrado.
+5. **Given** um lançamento cadastrado por engano para a unidade "Bloco A - 101", **When** a
+   usuária edita o lançamento para associá-lo à unidade correta "Bloco A - 102" (já
+   cadastrada) e salva, **Then** o lançamento passa a aparecer na listagem de lançamentos de
+   "Bloco A - 102" e deixa de aparecer na de "Bloco A - 101".
+6. **Given** um lançamento cadastrado, **When** a usuária tenta editá-lo associando-o a uma
+   unidade inexistente, **Then** o sistema rejeita a alteração e informa que a unidade não
+   foi encontrada.
 
 ---
 
@@ -171,8 +180,9 @@ confirmando que ele deixa de aparecer na listagem da unidade.
   mostrando valor, data de vencimento, descrição, conta destino e tipo de cada lançamento.
 - **FR-007**: O sistema MUST indicar de forma clara quando uma unidade não possuir nenhum
   lançamento de conta a receber em sua listagem.
-- **FR-008**: O sistema MUST permitir editar valor, data de vencimento, descrição, conta destino
-  e tipo de um lançamento já criado, respeitando a mesma validação de valor positivo (FR-003).
+- **FR-008**: O sistema MUST permitir editar valor, data de vencimento, descrição, conta
+  destino, tipo e unidade associada de um lançamento já criado, respeitando a mesma validação
+  de valor positivo (FR-003) e de unidade existente (FR-002).
 - **FR-009**: O sistema MUST permitir remover um lançamento de conta a receber, mediante
   confirmação explícita da usuária antes da exclusão definitiva.
 - **FR-010**: O sistema MUST informar a usuária quando uma operação de edição ou remoção for

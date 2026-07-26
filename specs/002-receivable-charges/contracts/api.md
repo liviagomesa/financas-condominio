@@ -14,6 +14,11 @@ REST):
 
 Datas trafegam em JSON no formato `dd/MM/yyyy` (ver research.md).
 
+JSON malformado, `targetAccount` fora do conjunto fixo do enum ou `dueDate` fora do formato
+`dd/MM/yyyy` também retornam `400` no mesmo formato padrão acima (mensagem genérica, ex.:
+"Dados inválidos."), via handler dedicado de `HttpMessageNotReadableException` — ver tasks.md
+T010.
+
 ## Lançamentos — `/api/receivables`
 
 ### `GET /api/receivables`
