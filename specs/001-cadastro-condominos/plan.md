@@ -33,7 +33,11 @@ acessado pelo backend via Spring Data JPA
 **Testing**: Backend — JUnit 5 + Mockito + Spring Boot Test (`@DataJpaTest` para
 repository, `@WebMvcTest`/`@SpringBootTest` para controller/service). Frontend —
 Vitest (test runner padrão do Angular CLI a partir da v20+) + Angular Testing
-utilities para componentes.
+utilities para componentes. Retrofit pós-implementação (ver Phase 10 de
+`tasks.md`): testes unitários com Mockito para `UnitService`, `ResidentService`
+e `BrazilianPhoneValidator`, cobrindo as regras de negócio da feature —
+exigência que passou a valer para toda feature a partir da emenda à
+constitution (Princípio III).
 
 **Target Platform**: Aplicação web (API REST + SPA em navegador), execução local
 via Docker Compose (Postgres) + servidores de desenvolvimento (backend e `ng
@@ -74,6 +78,10 @@ Condômino); 6 user stories, 17 requisitos funcionais
   features MUST reutilizar essas mesmas versões em vez de re-pesquisar. Spring
   Security fica de fora por não haver requisito de auth no spec; nenhuma
   biblioteca é descontinuada por experiência prévia negativa nesta feature.
+  Cobertura de teste automatizado para regras de negócio (exigida pela emenda
+  à constitution) atendida em retrofit: `UnitServiceTest`, `ResidentServiceTest`
+  e `BrazilianPhoneValidatorTest`, com JUnit 5 + Mockito (ver Phase 10 de
+  `tasks.md`).
 - **IV. Convenções de Código e Formatação**: PASS. Nomes de entidades/campos em
   inglês (`Unit`/`Resident` a nível de código — ver nota de nomenclatura em
   research.md), mensagens de exceção internas em inglês, mensagens de erro

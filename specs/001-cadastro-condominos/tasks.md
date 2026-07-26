@@ -184,6 +184,31 @@ description: "Task list template for feature implementation"
 
 ---
 
+## Phase 10: Retrofit — Testes automatizados de regras de negócio
+
+**Purpose**: adicionado numa revisão pós-implementação (constitution emendada para exigir
+cobertura de teste automatizado para regras de negócio — ver `constitution.md` Princípio
+III). Sem tarefas de spec/plan novas: não há mudança de requisito funcional, só cobertura
+de teste para o que já foi implementado.
+
+- [X] T053 [P] Create testes unitários de `UnitService` (Mockito: criação com identificador
+  duplicado — incluindo variação de caixa/espaços —, edição mantendo o próprio identificador
+  vs. colidindo com outra unidade, `findById` inexistente, remoção bloqueada com condômino
+  vinculado e permitida sem vínculo) em
+  `backend/src/test/java/com/financas/unit/domain/UnitServiceTest.java`
+- [X] T054 [P] Create testes unitários de `ResidentService` (Mockito: criação com unidade
+  inexistente, `findById`/remoção de condômino inexistente, edição referenciando unidade
+  inexistente) em `backend/src/test/java/com/financas/resident/domain/ResidentServiceTest.java`
+- [X] T055 [P] Create testes parametrizados de `BrazilianPhoneValidator` (formatos válidos
+  com/sem formatação, DDD + 8 ou 9 dígitos; formatos inválidos; nulo/vazio aceito por ser
+  campo opcional) em
+  `backend/src/test/java/com/financas/resident/domain/BrazilianPhoneValidatorTest.java`
+
+**Checkpoint**: `mvn test` — 24 testes, 0 falhas (1 de contexto Spring + 10 do validador de
+telefone + 6 do `ResidentService` + 7 do `UnitService`).
+
+---
+
 ## Dependencies & Execution Order
 
 ### Phase Dependencies

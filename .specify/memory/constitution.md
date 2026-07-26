@@ -1,6 +1,58 @@
 <!--
 Sync Impact Report
 ==================
+Versão: 1.1.0 → 1.2.0
+
+Princípios modificados:
+- I. Arquitetura em Camadas — expandido: estado local de componente Angular
+  MUST usar `signal()` (não campo simples nem `BehaviorSubject`), consequência
+  do app rodar zoneless; rotas de frontend MUST seguir o padrão
+  `/{recurso-plural}`, `/{recurso-plural}/new`, `/{recurso-plural}/:id/edit`.
+- VI. Convenções de API REST — expandido: DTOs de resposta MUST expor factory
+  estático `from(Entity)`; relacionamentos em DTOs de resposta MUST embutir o
+  DTO completo da entidade referenciada, não só o id; o interceptor HTTP do
+  frontend MUST normalizar erros no objeto `ApiError`, consumido pelos
+  componentes em vez de `HttpErrorResponse` bruto.
+- III. Stack Técnica Definida — expandido: cobertura de teste automatizado
+  para regras de negócio passa a ser obrigatória (não opcional como no
+  template genérico do Spec Kit), para servir de proteção contra regressão
+  entre features que rodam em sessões de IA isoladas.
+
+Seções adicionadas:
+- Revisão da Constituição Pós-Implementação — procedimento antes só documentado
+  como prompt reaproveitável no README, agora formalizado aqui para poder ser
+  invocado por referência curta em vez de prompt longo.
+- Edição de Features Já Implementadas — idem, para o fluxo de mudança em
+  feature existente sem rodar specify/plan/tasks do zero.
+
+Seção expandida:
+- Fluxo de Commits — detalha exatamente o que MUST entrar em cada uma das três
+  subseções do README ("Decisões técnicas e premissas", "Revisões e correções
+  das entregas da IA", "O que eu faria diferente...") em vez de uma instrução
+  genérica.
+
+Motivação: decisões que emergiram durante a implementação da feature
+001-cadastro-condominos (código real, não só planejamento) e que se aplicam a
+qualquer entidade futura, não só a Unit/Resident. A obrigatoriedade de testes
+foi adicionada numa revisão posterior, quando a usuária questionou como
+validar que o código funciona sem testes automatizados — a resposta revelou
+que o template padrão do Spec Kit trata testes como opcionais por padrão, o
+que exigiria lembrar de pedir isso a cada feature nova sem essa regra. Os dois
+fluxos de processo (revisão da constituição e edição de feature existente)
+foram movidos do README para cá para poderem ser referenciados de forma curta
+em vez de exigir colar o prompt inteiro a cada vez.
+
+Templates a verificar:
+- ✅ .specify/templates/plan-template.md — genérico, sem alterações necessárias
+- ✅ .specify/templates/spec-template.md — genérico, sem alterações necessárias
+- ✅ .specify/templates/tasks-template.md — genérico, sem alterações necessárias
+
+Itens pendentes (TODO): nenhum.
+-->
+
+<!--
+Sync Impact Report (histórico — emenda anterior)
+==================
 Versão: 1.0.0 → 1.1.0
 
 Princípios modificados:
@@ -62,7 +114,11 @@ em `shared/` — deve viver no `domain/` da própria entidade.
 
 No frontend, cada entidade de domínio possui sua pasta de componentes, com `core/` para
 tratamento de erros e `shared/` para models, services, validators e configuração de URL
-base da API.
+base da API. Estado local de componente MUST ser gerenciado via `signal()` do Angular —
+não por campo simples nem `BehaviorSubject` — consequência do app rodar em modo zoneless
+(sem Zone.js). Rotas MUST seguir o padrão `/{recurso-plural}` (listagem),
+`/{recurso-plural}/new` (criação) e `/{recurso-plural}/:id/edit` (edição), espelhando a
+convenção de rotas de API do Princípio VI.
 
 A estrutura de pastas proposta é uma referência, não uma regra rígida: pode ser adaptada
 sempre que o padrão de mercado ou a necessidade do projeto justificar o desvio — exceto
@@ -87,9 +143,16 @@ novamente — divergir de uma versão já adotada exige decisão explícita e de
 registrada nesta constituição como atualização, e não uma escolha implícita feita em uma
 nova sessão/feature. Testes automatizados usam JUnit 5 + Mockito + Spring Boot Test no
 backend e Vitest no frontend — mesma regra de reuso de versão já adotada se aplica a essas
-ferramentas. Não há, por ora, bibliotecas específicas a evitar — decisões de descontinuação
-de uma biblioteca por experiência prévia negativa devem ser registradas aqui quando
-ocorrerem, para não serem repetidas.
+ferramentas. Toda regra de negócio (validações, unicidade, bloqueios de exclusão por
+vínculo, cálculos) MUST ter cobertura de teste automatizado antes de a funcionalidade ser
+considerada concluída — diferente do padrão genérico de templates do Spec Kit, que trata
+testes como opcionais salvo pedido explícito, este projeto exige que `/speckit.tasks` gere
+tarefas de teste para regras de negócio em toda feature, independentemente de solicitação
+explícita a cada vez; a garantia de que uma feature não quebra outra, dado que cada uma é
+implementada numa sessão de IA isolada, vem de revisão humana combinada com essa cobertura
+de teste. Não há, por ora, bibliotecas específicas a evitar — decisões de descontinuação de
+uma biblioteca por experiência prévia negativa devem ser registradas aqui quando ocorrerem,
+para não serem repetidas.
 
 ### IV. Convenções de Código e Formatação
 Datas exibidas ou registradas em conteúdo de domínio MUST seguir o formato DD/MM/AAAA.
@@ -123,6 +186,14 @@ erro (4xx) MUST seguir o formato padronizado `{ "message": string, "status": num
 endpoint `DELETE` MUST executar a remoção diretamente quando chamado, sem etapa de
 confirmação própria no backend.
 
+DTOs de resposta MUST expor um factory estático `from(Entity)` que constrói o DTO a
+partir da entidade de domínio. Quando um DTO de resposta representa uma entidade que
+referencia outra, MUST embutir o DTO de resposta completo da entidade referenciada (ex.:
+`ResidentResponse.unit: UnitResponse`), nunca apenas o identificador. No frontend, o
+interceptor HTTP MUST normalizar toda resposta de erro no formato acima em um objeto
+`ApiError` consumido pelos componentes — componentes NUNCA devem ler `HttpErrorResponse`
+bruto diretamente.
+
 ## Restrições Transversais
 
 Não há, por enquanto, regras de negócio ou técnicas universais obrigatórias (ex.: formato
@@ -135,8 +206,62 @@ restrições transversais antes de sua adoção no código.
 
 - Mensagens de commit MUST ser curtas, de uma linha (`tipo: descrição curta`, ex.: `fix: ...`, `feat: ...`, `docs: ...`), sem corpo com bullets.
 - Preferir um único commit por tarefa/rodada de mudanças. Só dividir em commits separados quando houver unidades claramente distintas e independentes entre si (ex.: uma correção de bug não relacionada descoberta no meio do caminho) — não dividir apenas porque a mudança tocou várias camadas ou arquivos de uma mesma tarefa.
-- Ao final de uma rodada de correções/funcionalidades, o conteúdo do `README.md` MUST ser atualizado com o que for necessário (novas decisões técnicas tomadas, erros apontados pela usuária para revisão, melhorias identificadas para o futuro).
+- Ao final de uma rodada de correções/funcionalidades, o conteúdo do `README.md` MUST ser atualizado. Especificamente:
+  - **"Decisões técnicas e premissas"**: toda decisão técnica nova tomada na rodada (escolha de stack, convenção, trade-off, ajuste de configuração de ambiente) — registrar o porquê, não só o quê.
+  - **"Revisões e correções das entregas da IA"**: listagem (não precisa detalhar muito, é mais um registro) de erros, desvios ou correções que a usuária identificou no trabalho entregue naquela rodada.
+  - **"O que eu faria diferente ou melhoraria com mais tempo"**: melhorias ou ideias mencionadas na conversa que ficaram fora do escopo da rodada atual, registradas para retomar no futuro.
 - A cada comando do Spec Kit executado ou correção solicitada, sugerir uma mensagem de commit seguindo o padrão já definido (tipo: descrição curta), sem executar o commit automaticamente — apenas propor o texto para o usuário decidir quando e se commitar.
+
+## Revisão da Constituição Pós-Implementação
+
+Depois de implementada uma feature (ou uma correção relevante), antes de considerá-la
+encerrada, MUST ser feita uma varredura de padronização: ler esta constituição, os
+artefatos da feature (`spec.md`, `plan.md`, `tasks.md`, e `research.md`/`data-model.md`/
+`contracts/` quando existirem) e o código implementado, e identificar decisões tomadas que
+NÃO são específicas das entidades ou da funcionalidade daquela feature, mas sim convenções
+técnicas ou estruturais genéricas — coisas que qualquer feature futura teria que decidir de
+novo se não estivessem escritas aqui.
+
+Exemplos do tipo de decisão a procurar (lista não exaustiva): nome de pacote/namespace
+base, ferramenta de build, ferramenta de migração de banco, convenção de nomenclatura de
+pastas/camadas, onde exceptions/erros de negócio devem viver na estrutura de pastas,
+convenção de rotas de API, formato padrão de resposta de erro, stack de testes, política de
+reuso/atualização de versão de dependências, convenções de nomenclatura de DTOs/contratos,
+padrões de estado/arquitetura de frontend.
+
+Para cada decisão candidata, verificar se já está coberta por esta constituição. Depois, 
+checar se a última alteração da constitution já foi commitada (`git status`/`git log`). 
+Se sim, aplicar a emenda com nova versão semântica; se não, incorporar as mudanças na mesma 
+emenda ainda não commitada, sem bump de versão. Verificar ao final se os templates 
+dependentes (`plan-template.md`, `spec-template.md`, `tasks-template.md`) permanecem 
+consistentes.
+
+## Edição de Features Já Implementadas
+
+Para mudanças em uma feature já implementada (comportamento, regra de negócio, ou correção)
+que não justificam rodar `/speckit.specify`/`/speckit.plan`/`/speckit.tasks` do zero: NÃO
+criar uma feature nova nem uma branch nova; editar os arquivos existentes em
+`specs/[NÚMERO-NOME-DA-FEATURE]/` diretamente, nesta ordem:
+
+1. **spec.md**: atualizar apenas as seções afetadas pela mudança (requisitos funcionais,
+   regras de negócio, edge cases), preservando o resto do arquivo intacto. Se a mudança
+   introduzir ambiguidade nova, sinalizar com `[NEEDS CLARIFICATION]` em vez de assumir uma
+   resposta.
+2. **plan.md**: atualizar apenas as seções tecnicamente impactadas, sem regenerar o arquivo
+   inteiro. Ao final, confirmar explicitamente, princípio por princípio desta constituição,
+   como cada um relevante continua sendo respeitado após a mudança — mesmo que a resposta
+   seja "sem alteração necessária".
+3. **tasks.md**: adicionar apenas as tarefas novas necessárias, sem regenerar a lista
+   inteira e sem alterar o status de tarefas já concluídas (`[X]`). Se uma tarefa já
+   concluída precisar ser refeita por causa da mudança, marcá-la explicitamente como
+   pendente de novo, explicando o motivo, em vez de resetar tudo.
+4. **contracts/api.md** (se existir e for afetado): atualizar apenas os contratos de
+   endpoint impactados.
+
+Antes de implementar: parar e mostrar um resumo do que mudou em cada arquivo (diff
+conceitual) para a usuária revisar e aprovar explicitamente. Não escrever nem alterar
+código de implementação até a confirmação, a menos que a usuária já tenha pedido para
+pular essa espera na própria solicitação.
 
 ## Governance
 
@@ -157,5 +282,5 @@ definidos aqui. Complexidade adicional (novas camadas, dependências, padrões) 
 justificada em relação aos princípios de simplicidade implícitos na arquitetura em camadas
 descrita no Princípio I.
 
-**Version**: 1.1.0 | **Ratified**: 2026-07-24 | **Last Amended**: 2026-07-24
+**Version**: 1.2.0 | **Ratified**: 2026-07-24 | **Last Amended**: 2026-07-26
 </content>

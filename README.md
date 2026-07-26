@@ -22,9 +22,9 @@ dados PostgreSQL (container Docker) e frontend em Angular.
 
 ### Pré-requisitos
 
-- [TO-DO]
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/) (para o container do banco)
-- [Node.js LTS](https://nodejs.org/) + Angular CLI (`npm install -g @angular/cli`)
+- Java 21 (LTS) + [Maven](https://maven.apache.org/)
+- [Node.js LTS](https://nodejs.org/) (>= 22.22 ou >= 24.13.1) + Angular CLI (`npm install -g @angular/cli`)
 
 ### 1. Banco de dados
 
@@ -34,17 +34,25 @@ Na raiz do projeto:
 docker compose up -d
 ```
 
-Sobe um único container com o PostgreSQL.
+Sobe um único container com o PostgreSQL, exposto na porta `5433` do host
+(não `5432`, para não conflitar com uma instalação nativa de PostgreSQL que
+já possa existir na máquina).
 
 ### 2. Backend (API)
 
-[TO-DO]
+```powershell
+cd backend
+mvn spring-boot:run
+```
 
-A API sobe em [TO-DO].
+A API sobe em `http://localhost:8080/api`.
 
 ### 3. Testes automatizados do backend
 
-[TO-DO]
+```powershell
+cd backend
+mvn test
+```
 
 ### 4. Frontend
 
@@ -58,7 +66,45 @@ Acesse `http://localhost:4200`.
 
 ## Decisões técnicas e premissas
 
-[TO-DO, à medida que avançar no projeto]
+- **Stack**: Java 21 (LTS) + Spring Boot 4.1.x (Spring Data JPA, Spring Web) no
+  backend, com Maven como build tool e Flyway para migrations; Angular 22 +
+  TypeScript 6 + Bootstrap 5 no frontend; PostgreSQL 18.4. Versões escolhidas
+  por já estarem instaladas na máquina de desenvolvimento e coincidirem com as
+  mais recentes estáveis do mercado no momento (ver `research.md` da feature
+  001 para o detalhamento). Novas features devem reutilizar essas mesmas
+  versões (regra registrada na `constitution.md`).
+- **Sem Spring Security por enquanto**: não há requisito de
+  autenticação/autorização até o momento; a dependência só será adicionada
+  quando essa necessidade surgir de fato.
+- **Estrutura por entidade**: backend organizado em `unit/`, `resident/` e
+  `shared/`, cada um com `api/`/`domain/`/`infra/`; `shared/` reservado a
+  recursos verdadeiramente transversais (`GlobalExceptionHandler`, exceptions
+  genéricas `NotFoundException`/`ConflictException`). Exceptions de regra de
+  negócio de uma entidade (ex.: `DuplicateUnitException`) vivem no `domain/`
+  dela, não em `shared/`.
+- **Convenções de API**: rotas REST no padrão `/api/{recurso-plural-inglês}`;
+  erros 4xx sempre no formato `{ "message": string, "status": number }`;
+  confirmação de exclusão é responsabilidade do frontend (o backend executa a
+  remoção diretamente quando chamado).
+- **Porta do PostgreSQL no host**: o `docker-compose.yml` expõe o Postgres na
+  porta `5433`, não `5432` — durante a implementação, um PostgreSQL nativo já
+  instalado na máquina de desenvolvimento estava ocupando a porta padrão, e o
+  backend acabou se conectando ao serviço nativo (autenticação falhando) em
+  vez do container. Só foi percebido rodando a aplicação de verdade contra o
+  banco, não apenas compilando/testando com mocks.
+- **Volume do PostgreSQL 18+**: a partir da versão 18, a imagem oficial do
+  Postgres espera o volume montado em `/var/lib/postgresql` (não mais em
+  `/var/lib/postgresql/data` como nas versões anteriores) — o container
+  simplesmente não sobe com o mount antigo. Também só foi percebido ao rodar
+  `docker compose up` de verdade.
+- **Teste automatizado de regra de negócio é obrigatório**: a primeira versão
+  desta feature foi implementada sem testes (o template padrão do Spec Kit
+  trata testes como opcionais salvo pedido explícito). Ao questionar como
+  validar o código sem testes, ficou claro que isso deixaria toda feature
+  futura exposta ao mesmo problema — daí a `constitution.md` (Princípio III)
+  passar a exigir cobertura de teste para toda regra de negócio, e
+  `UnitServiceTest`/`ResidentServiceTest`/`BrazilianPhoneValidatorTest` terem
+  sido adicionados em retrofit (24 testes, `mvn test`).
 
 ## Uso de IA
 
@@ -79,63 +125,20 @@ Utilizei o GitHub Spec Kit integrado ao Claude Code para conduzir o desenvolvime
 6. **Implementação**: implementei com `/speckit.implement`.
 
 7. **Revisão da constituição**: depois de implementada a feature, peço uma revisão da
-   `constitution.md` à luz do `spec.md`/`plan.md`/`tasks.md` gerados, procurando decisões
-   que não são específicas daquela feature e que deveriam virar padrão do projeto em vez de
-   ficarem só documentadas ali — sem isso, cada feature roda numa sessão de IA isolada que
-   só compartilha a `constitution.md` com as demais (não os planos de features já
-   implementadas), e decisões técnicas genéricas (nome de pacote, ferramenta de build,
-   convenção de API, etc.) tomadas "no piloto automático" numa feature podem simplesmente
-   não se repetir na próxima. Uso este prompt, reaproveitável em qualquer projeto com Spec
-   Kit:
+   `constitution.md` à luz dos artefatos gerados e do código implementado, procurando
+   decisões que não são específicas daquela feature e que deveriam virar padrão do projeto
+   em vez de ficarem só documentadas ali — sem isso, cada feature roda numa sessão de IA
+   isolada que só compartilha a `constitution.md` com as demais (não os planos de features
+   já implementadas). O procedimento inteiro (o que procurar, como categorizar, quando
+   commitar) está formalizado na própria `constitution.md`, na seção "Revisão da
+   Constituição Pós-Implementação" — para acionar, basta pedir algo como "pode rodar a
+   revisão da constituição agora", sem precisar repetir um prompt grande a cada vez.
 
-  ```md
-  Agora que a feature atual foi implementada, quero uma varredura de padronização antes de
-  considerá-la encerrada. Leia `.specify/memory/constitution.md` e os artefatos gerados para
-  esta feature (`spec.md`, `plan.md`, `tasks.md`, e `research.md`/`data-model.md`/`contracts/`
-  quando existirem) e identifique decisões tomadas ali que NÃO são específicas das
-  entidades ou da funcionalidade desta feature, mas sim convenções técnicas ou estruturais
-  genéricas — coisas que qualquer feature futura deste projeto teria que decidir de novo se
-  não estivessem escritas em algum lugar compartilhado.
-
-  Exemplos do tipo de decisão que procuro (não se limite a esta lista): nome de
-  pacote/namespace base, ferramenta de build, ferramenta de migração de banco, convenção de
-  nomenclatura de pastas/camadas, onde exceptions/erros de negócio devem viver na estrutura
-  de pastas, convenção de rotas de API, formato padrão de resposta de erro, stack de testes,
-  política de reuso/atualização de versão de dependências, convenções de nomenclatura de
-  DTOs/contratos.
-
-  Para cada decisão candidata, verifique se ela já está coberta pela constitution.md atual.
-  Monte uma lista categorizada:
-  1. Vale formalizar na constitution agora (risco real de outra feature divergir).
-  2. Nice-to-have / prioridade menor.
-  3. Não vale — é específico desta feature, ou é detalhe de ambiente/implementação óbvio ao
-     olhar o código já existente.
-
-  NÃO edite a constitution ainda. Me mostre essa lista categorizada primeiro e espere minha confirmação de escopo. Depois que eu confirmar quais itens seguem, prepare a emenda (nova versão semântica) e aplique via `/speckit.constitution`, verificando ao final se os templates dependentes (`plan-template.md`, `spec-template.md`, `tasks-template.md`) continuam consistentes.
-  ```
-
-8. **Edições de features já existentes**: para mudanças depois do fluxo completo dos comandos do Spec Kit, utilizei este template para prompt:
-
-  ```md
-  Preciso atualizar a feature existente em `specs/[NÚMERO-NOME-DA-FEATURE]/`, sem criar uma feature nova nem uma branch nova. NÃO use os comandos /speckit.specify ou /speckit.plan — edite os arquivos diretamente, do jeito que vou descrever abaixo.
-
-  ## Mudança solicitada
-  [Descreva aqui, em algumas frases, o que precisa mudar — comportamento, regra de negócio, ou correção]
-
-  ## O que fazer, em ordem
-
-  1. **spec.md**: atualize apenas as seções afetadas pela mudança acima (requisitos funcionais, regras de negócio, edge cases). Preserve todo o resto do arquivo intacto. Se a mudança introduzir ambiguidade nova, sinalize com [NEEDS CLARIFICATION] em vez de assumir uma resposta.
-
-  2. **plan.md**: atualize apenas as seções tecnicamente impactadas por essa mudança específica. Não regenere o arquivo inteiro do zero. Ao final, confirme explicitamente, princípio por princípio da constitution, como cada um relevante continua sendo respeitado após essa mudança (arquitetura de camadas, idioma, stack) — mesmo que a resposta seja "sem alteração necessária".
-
-  3. **tasks.md**: adicione apenas as tarefas novas necessárias para implementar essa mudança. NÃO regenere a lista inteira. NÃO altere o status de tarefas já marcadas como concluídas [x]. Se alguma tarefa já concluída precisar ser refeita por causa dessa mudança, marque-a explicitamente como pendente de novo e explique o motivo, em vez de simplesmente resetar tudo.
-
-  4. **contracts/api.md** (se existir e for afetado): atualize apenas os contratos de endpoint impactados pela mudança.
-
-  ## Antes de implementar
-
-  Pare aqui e me mostre um resumo do que mudou em cada arquivo (diff conceitual, não precisa ser diff literal) para eu revisar e aprovar explicitamente. Não escreva nem altere nenhum código de implementação até eu confirmar.
-  ``` 
+8. **Edições de features já existentes**: para mudanças depois do fluxo completo dos
+   comandos do Spec Kit (sem criar feature ou branch nova, sem rodar `/speckit.specify` ou
+   `/speckit.plan` de novo), o procedimento está formalizado na `constitution.md`, seção
+   "Edição de Features Já Implementadas" — basta descrever a mudança desejada e referenciar
+   esse fluxo.
 
 9. **Fluxo de trabalho paralelo:** utilizei o `/remote-control` do Claude Code para acompanhar e aprovar tarefas em execução mesmo longe do computador. Também mantive, em paralelo, uma sessão de chat separada com o Claude para discutir decisões de arquitetura, revisar premissas e planejar próximos passos antes de repassar instruções ao Claude Code — isso ajudou a economizar contexto na sessão de execução e a chegar a cada tarefa com a decisão já pensada, em vez de deixar a ferramenta decidir sozinha.
 
