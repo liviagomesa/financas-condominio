@@ -206,7 +206,9 @@ tentando remover uma unidade com condôminos vinculados e confirmando o bloqueio
 - **FR-005**: O sistema MUST permitir remover uma unidade cadastrada, mediante confirmação
   explícita da usuária antes da exclusão definitiva.
 - **FR-006**: O sistema MUST impedir a remoção de uma unidade que possua ao menos um condômino
-  associado, exibindo mensagem de erro explicando o motivo.
+  associado, exibindo mensagem de erro explicando o motivo. Esta regra foi estendida pela
+  feature 002 (`specs/002-receivable-charges/spec.md`, FR-012): a remoção também MUST ser
+  impedida quando a unidade possuir ao menos um lançamento de conta a receber vinculado.
 - **FR-007**: O sistema MUST permitir cadastrar um novo condômino informando nome (obrigatório)
   e associando-o a uma unidade já cadastrada (obrigatório).
 - **FR-008**: O sistema MUST permitir informar e-mail e telefone de contato como campos
@@ -260,6 +262,7 @@ tentando remover uma unidade com condôminos vinculados e confirmando o bloqueio
 - Como este é o primeiro cadastro do sistema, ainda não existem outras entidades (contas a
   receber, cobranças) dependentes de unidade ou condômino; o comportamento de remoção quando
   houver vínculos com outras funcionalidades será tratado quando essas features forem
-  especificadas.
+  especificadas. **Atualização (feature 002)**: a feature de lançamentos de contas a receber
+  já especificou esse vínculo — ver FR-006 atualizado acima.
 - O sistema é de uso pessoal, com poucas dezenas de unidades, portanto as listagens não
   precisam de paginação ou busca avançada nesta primeira versão.

@@ -209,6 +209,32 @@ telefone + 6 do `ResidentService` + 7 do `UnitService`).
 
 ---
 
+## Phase 11: Extensão — Bloqueio de remoção de unidade com lançamentos vinculados (feature 002)
+
+**Purpose**: adicionado durante o planejamento da feature `002-receivable-charges`, que
+estendeu o FR-006 desta feature (ver spec.md/plan.md, seção "Atualização (feature 002)").
+Depende da entidade `Receivable` da feature 002 já existir (`ReceivableRepository`).
+
+- [ ] T056 [US6] Create `UnitHasReceivablesException` em
+  `backend/src/main/java/com/financas/unit/domain/` (regra de negócio da própria entidade —
+  mesmo padrão de `UnitHasResidentsException`) e mapear para 409 com mensagem em português no
+  `GlobalExceptionHandler` (reaproveita o handler genérico de `ConflictException`, sem código
+  extra)
+- [ ] T057 [US6] Update `UnitService.delete()` para também verificar
+  `ReceivableRepository.existsByUnitId(id)`, lançando `UnitHasReceivablesException` quando
+  houver lançamento vinculado, em
+  `backend/src/main/java/com/financas/unit/domain/UnitService.java` (depends on T048 desta
+  feature, e na entidade `Receivable` da feature 002)
+- [ ] T058 [P] [US6] Update tratamento de erro 409 em `unit-list` (frontend) para exibir a
+  mensagem correta também quando o vínculo for por lançamento de conta a receber (a mensagem
+  já vem pronta do backend — sem lógica nova no frontend além de exibir o texto retornado),
+  em `frontend/src/app/unit/unit-list/` (depends on T049, T057)
+
+**Checkpoint**: `DELETE /api/units/{id}` bloqueia remoção tanto por condômino quanto por
+lançamento de conta a receber vinculado.
+
+---
+
 ## Dependencies & Execution Order
 
 ### Phase Dependencies
@@ -222,6 +248,8 @@ telefone + 6 do `ResidentService` + 7 do `UnitService`).
 - **User Story 5 (Phase 7)**: Depende de US2 (T029, T031) e US3 (T039)
 - **User Story 6 (Phase 8)**: Depende de US1 (T015, T017), US2 (T026, para checar vínculo) e US3 (T038)
 - **Polish (Phase 9)**: Depende de todas as user stories desejadas estarem completas
+- **Extensão US6 (Phase 11)**: Depende de US6 (T048, T049) desta feature e da entidade
+  `Receivable` da feature `002-receivable-charges` já existir
 
 ### Notas de dependência entre stories
 

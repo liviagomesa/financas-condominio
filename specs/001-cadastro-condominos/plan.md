@@ -97,6 +97,35 @@ Condômino); 6 user stories, 17 requisitos funcionais
 
 Nenhuma violação identificada — Complexity Tracking não se aplica.
 
+### Atualização (feature 002 — extensão do FR-006)
+
+A feature `002-receivable-charges` estende o FR-006 desta feature (bloqueio de remoção de
+unidade) para também considerar lançamentos de conta a receber vinculados, além de
+condôminos. Confirmação princípio a princípio de que a mudança continua respeitando esta
+constituição:
+
+- **I. Arquitetura em Camadas**: SEM ALTERAÇÃO NECESSÁRIA. A nova exceção
+  `UnitHasReceivablesException` vive em `com.financas.unit.domain` (regra de negócio da
+  própria entidade `Unit`), mesmo padrão de `UnitHasResidentsException`; não entra em
+  `shared/`.
+- **II. Separação Controller → Service → Repository**: SEM ALTERAÇÃO NECESSÁRIA.
+  `UnitService.delete()` continua sendo o único ponto que decide o bloqueio, agora
+  consultando também `ReceivableRepository.existsByUnitId` (interface de outra entidade,
+  injetada da mesma forma que `ResidentRepository` já é hoje).
+- **III. Stack Técnica Definida**: SEM ALTERAÇÃO NECESSÁRIA. Nenhuma dependência ou versão
+  nova é introduzida por esta extensão.
+- **IV. Convenções de Código e Formatação**: SEM ALTERAÇÃO NECESSÁRIA. Nome de classe em
+  inglês, mensagem de erro ao usuário em português, seguindo o padrão já usado por
+  `UnitHasResidentsException`.
+- **V. Idioma por Tipo de Conteúdo**: SEM ALTERAÇÃO NECESSÁRIA.
+- **VI. Convenções de API REST**: SEM ALTERAÇÃO NECESSÁRIA no formato de erro; `DELETE
+  /api/units/{id}` passa a poder retornar `409` também por este novo motivo, mesmo código e
+  formato já documentados em `contracts/api.md`; mensagem de erro específica muda conforme o
+  tipo de vínculo (condômino vs. lançamento).
+
+Nenhuma violação introduzida por esta extensão — Complexity Tracking continua não se
+aplicando.
+
 ## Project Structure
 
 ### Documentation (this feature)

@@ -4,8 +4,8 @@
 - **Qual problema esse produto resolve, e para quem?** Esse produto facilita o gerenciamento de condôminos, mensalidades, pagamentos, cálculos e taxas extras do meu condomínio. Eu mesma irei utilizá-lo nas minhas tarefas.
 - **Quais são as 3 a 5 funcionalidades centrais que definem o que ele é?**
   - Cadastro de condôminos
-  - Lançamentos de contas a receber (por condômino, com opção de adicionar para todos simultaneamente)
-  - Lançamentos de contas a pagar
+  - Lançamentos de contas a receber (por unidade, com opção de adicionar para todas simultaneamente)
+  - Lançamentos de contas a pagar (com identificação do fornecedor)
   - Solução para facilitar cobranças e pagamentos recorrentes, com valor fixo (mas que podem sofrer reajuste aproximadamente 1x por ano)
   - Cálculos automáticos
   - Visualização de condôminos devedores e saldos pendentes

@@ -73,7 +73,9 @@ Remove uma unidade (FR-005).
 
 **Erros**:
 - `404` — unidade `{id}` não encontrada (FR-016).
-- `409` — unidade possui ao menos um condômino associado (FR-006).
+- `409` — unidade possui ao menos um condômino associado (FR-006), ou ao menos um lançamento
+  de conta a receber associado (FR-006, estendido pela feature 002 — ver
+  `specs/002-receivable-charges/contracts/api.md`).
 
 > Confirmação explícita da usuária antes da chamada é responsabilidade do
 > frontend (diálogo de confirmação); o endpoint executa a remoção diretamente
