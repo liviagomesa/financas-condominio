@@ -7,6 +7,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.financas.receivable.domain.ReceivableRepository;
 import com.financas.resident.domain.ResidentRepository;
 import com.financas.shared.exceptions.NotFoundException;
 import java.util.Optional;
@@ -26,11 +27,14 @@ class UnitServiceTest {
     @Mock
     private ResidentRepository residentRepository;
 
+    @Mock
+    private ReceivableRepository receivableRepository;
+
     private UnitService service;
 
     @BeforeEach
     void setUp() {
-        service = new UnitService(repository, residentRepository);
+        service = new UnitService(repository, residentRepository, receivableRepository);
     }
 
     @Test
@@ -100,6 +104,30 @@ class UnitServiceTest {
         when(residentRepository.existsByUnitId(1L)).thenReturn(true);
 
         assertThatThrownBy(() -> service.delete(1L)).isInstanceOf(UnitHasResidentsException.class);
+
+        verify(repository, never()).deleteById(any());
+    }
+
+    @Test
+    void deleteRemovesUnitWithoutReceivables() {
+        Unit existing = withId(new Unit("Bloco A - 101"), 1L);
+        when(repository.findById(1L)).thenReturn(Optional.of(existing));
+        when(residentRepository.existsByUnitId(1L)).thenReturn(false);
+        when(receivableRepository.existsByUnitId(1L)).thenReturn(false);
+
+        service.delete(1L);
+
+        verify(repository).deleteById(1L);
+    }
+
+    @Test
+    void deleteRejectsUnitWithReceivablesLinked() {
+        Unit existing = withId(new Unit("Bloco A - 101"), 1L);
+        when(repository.findById(1L)).thenReturn(Optional.of(existing));
+        when(residentRepository.existsByUnitId(1L)).thenReturn(false);
+        when(receivableRepository.existsByUnitId(1L)).thenReturn(true);
+
+        assertThatThrownBy(() -> service.delete(1L)).isInstanceOf(UnitHasReceivablesException.class);
 
         verify(repository, never()).deleteById(any());
     }

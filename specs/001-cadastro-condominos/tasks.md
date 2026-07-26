@@ -215,20 +215,28 @@ telefone + 6 do `ResidentService` + 7 do `UnitService`).
 estendeu o FR-006 desta feature (ver spec.md/plan.md, seção "Atualização (feature 002)").
 Depende da entidade `Receivable` da feature 002 já existir (`ReceivableRepository`).
 
-- [ ] T056 [US6] Create `UnitHasReceivablesException` em
+- [X] T056 [US6] Create `UnitHasReceivablesException` em
   `backend/src/main/java/com/financas/unit/domain/` (regra de negócio da própria entidade —
   mesmo padrão de `UnitHasResidentsException`) e mapear para 409 com mensagem em português no
   `GlobalExceptionHandler` (reaproveita o handler genérico de `ConflictException`, sem código
   extra)
-- [ ] T057 [US6] Update `UnitService.delete()` para também verificar
+- [X] T057 [US6] Update `UnitService.delete()` para também verificar
   `ReceivableRepository.existsByUnitId(id)`, lançando `UnitHasReceivablesException` quando
   houver lançamento vinculado, em
   `backend/src/main/java/com/financas/unit/domain/UnitService.java` (depends on T048 desta
   feature, e na entidade `Receivable` da feature 002)
-- [ ] T058 [P] [US6] Update tratamento de erro 409 em `unit-list` (frontend) para exibir a
+- [X] T058 [P] [US6] Update tratamento de erro 409 em `unit-list` (frontend) para exibir a
   mensagem correta também quando o vínculo for por lançamento de conta a receber (a mensagem
   já vem pronta do backend — sem lógica nova no frontend além de exibir o texto retornado),
-  em `frontend/src/app/unit/unit-list/` (depends on T049, T057)
+  em `frontend/src/app/unit/unit-list/` (depends on T049, T057) — confirmado sem alteração de
+  código necessária: `unit-list.ts` já exibia `err.message` genericamente antes desta feature
+- [X] T059 [P] Create testes unitários da nova regra em `UnitServiceTest` (Mockito: remoção
+  permitida quando não há condômino nem lançamento vinculado, remoção bloqueada quando há
+  lançamento vinculado) em
+  `backend/src/test/java/com/financas/unit/domain/UnitServiceTest.java` — tarefa adicionada
+  durante a implementação da feature 002 para fechar a exigência de cobertura de teste de
+  regra de negócio (Princípio III), que não tinha sido incluída nesta Phase 11 originalmente
+  (depends on T057)
 
 **Checkpoint**: `DELETE /api/units/{id}` bloqueia remoção tanto por condômino quanto por
 lançamento de conta a receber vinculado.

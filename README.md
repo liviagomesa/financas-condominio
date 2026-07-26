@@ -92,19 +92,15 @@ Acesse `http://localhost:4200`.
   backend acabou se conectando ao serviço nativo (autenticação falhando) em
   vez do container. Só foi percebido rodando a aplicação de verdade contra o
   banco, não apenas compilando/testando com mocks.
-- **Volume do PostgreSQL 18+**: a partir da versão 18, a imagem oficial do
-  Postgres espera o volume montado em `/var/lib/postgresql` (não mais em
-  `/var/lib/postgresql/data` como nas versões anteriores) — o container
-  simplesmente não sobe com o mount antigo. Também só foi percebido ao rodar
-  `docker compose up` de verdade.
-- **Teste automatizado de regra de negócio é obrigatório**: a primeira versão
-  desta feature foi implementada sem testes (o template padrão do Spec Kit
-  trata testes como opcionais salvo pedido explícito). Ao questionar como
-  validar o código sem testes, ficou claro que isso deixaria toda feature
-  futura exposta ao mesmo problema — daí a `constitution.md` (Princípio III)
-  passar a exigir cobertura de teste para toda regra de negócio, e
-  `UnitServiceTest`/`ResidentServiceTest`/`BrazilianPhoneValidatorTest` terem
-  sido adicionados em retrofit (24 testes, `mvn test`).
+- **Playwright como devDependency permanente do frontend**: usado para
+  validar visualmente cada mudança de UI em navegador headless. Inicialmente
+  era instalado sob demanda (`npm install --no-save`) e removido depois
+  (`rm -rf node_modules && npm install`) para não sujar o lockfile — mas o
+  passo de remoção reinstalava as ~460 dependências do projeto do zero
+  (~1 min), enquanto o Playwright em si (binário do Chromium já em cache
+  local) instala em segundos. Como toda mudança de frontend acaba exigindo
+  essa validação, manter o Playwright como devDependency declarada elimina
+  esse custo repetido de reinstalação completa.
 
 ## Uso de IA
 
@@ -120,9 +116,9 @@ Utilizei o GitHub Spec Kit integrado ao Claude Code para conduzir o desenvolvime
 
 4. **Clarificação**: Em seguida, usei `/speckit.clarify` para varrer o spec e perguntar o que ficou faltando (não é preciso antecipar todas as possíveis lacunas no `/speckit.specify`).
 
-5. **Planejamento**: usei `/speckit.plan` e `/speckit.tasks` para definir a estrutura do projeto e quebrar o trabalho em tarefas menores.
+5. **Planejamento**: usei `/speckit.plan` e `/speckit.tasks` para definir a estrutura do projeto e quebrar o trabalho em tarefas menores. Em seguida, usei `/speckit.analyze` para cruzar spec/plan/tasks contra a constitution e apontar conflito.
 
-6. **Implementação**: implementei com `/speckit.implement`.
+6. **Implementação**: implementei com `/speckit.implement` e rodei `/speckit.converge` para checar o código já implementado contra spec/plan/tasks.
 
 7. **Revisão da constituição**: depois de implementada a feature, peço uma revisão da
    `constitution.md` à luz dos artefatos gerados e do código implementado, procurando
@@ -170,4 +166,7 @@ Utilizei o GitHub Spec Kit integrado ao Claude Code para conduzir o desenvolvime
 ## O que eu faria diferente ou melhoraria com mais tempo
 
 - **Soft delete de condôminos**: em vez de remover o registro definitivamente, marcar o condômino como inativo. Isso evita quebrar dados históricos de cobrança já existentes (o condômino deixaria de aparecer nas listagens de cadastro, mas continuaria sendo referenciado onde já existir vínculo). Para respeitar a LGPD, ao acessar um condômino inativo pelos registros em que ele é referenciado, apenas nome e unidade seriam exibidos — telefone e e-mail seriam removidos/ocultados junto com a inativação.
+- **Registro de pagamento/quitação de um lançamento**: a feature de lançamentos de contas a receber cobre só a criação/edição/remoção do valor devido — não há nenhum controle de "isso já foi pago" ainda. É o pré-requisito natural para a funcionalidade de "condôminos devedores e saldos pendentes" citada no `CLAUDE.md` como núcleo do produto, mas ficou fora do escopo desta rodada por decisão explícita (ver Assumptions do `spec.md` da feature).
+- **`TargetAccount` como cadastro dinâmico em vez de enum fixo**: hoje "conta destino" tem 3 valores fixos no código (Piscina/Jardim Piscina/Jardim Lateral). Se o condomínio criar um novo centro de custo no futuro (ex.: uma nova área comum), isso exigiria alteração de código e nova migration em vez de um cadastro simples pela própria usuária — um trade-off consciente pela simplicidade agora, que valeria revisitar se a lista mudar com alguma frequência na prática.
+- **Geração automática/recorrente de lançamentos mensais**: hoje tanto o lançamento individual quanto o em lote (`POST /api/receivables/bulk`) são ações manuais disparadas pela usuária todo mês. Uma automação (ex.: job agendado gerando a taxa condominial do mês automaticamente para lançamentos marcados como `recurring`) reduziria ainda mais o trabalho manual, mas dependeria de definir regras de idempotência (não duplicar o lançamento do mês se a ação manual também for usada).
 

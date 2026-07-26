@@ -1,5 +1,6 @@
 package com.financas.unit.domain;
 
+import com.financas.receivable.domain.ReceivableRepository;
 import com.financas.resident.domain.ResidentRepository;
 import com.financas.shared.exceptions.NotFoundException;
 import java.util.List;
@@ -11,10 +12,15 @@ public class UnitService {
 
     private final UnitRepository repository;
     private final ResidentRepository residentRepository;
+    private final ReceivableRepository receivableRepository;
 
-    public UnitService(UnitRepository repository, ResidentRepository residentRepository) {
+    public UnitService(
+            UnitRepository repository,
+            ResidentRepository residentRepository,
+            ReceivableRepository receivableRepository) {
         this.repository = repository;
         this.residentRepository = residentRepository;
+        this.receivableRepository = receivableRepository;
     }
 
     public Unit create(String identifier) {
@@ -42,6 +48,9 @@ public class UnitService {
         findById(id);
         if (residentRepository.existsByUnitId(id)) {
             throw new UnitHasResidentsException();
+        }
+        if (receivableRepository.existsByUnitId(id)) {
+            throw new UnitHasReceivablesException();
         }
         repository.deleteById(id);
     }
