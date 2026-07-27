@@ -12,8 +12,6 @@ import { Unit } from '../../shared/models/unit.model';
 import { ReceivableService } from '../../shared/services/receivable.service';
 import { UnitService } from '../../shared/services/unit.service';
 
-const DUE_DATE_PATTERN = /^\d{2}\/\d{2}\/\d{4}$/;
-
 @Component({
   selector: 'app-receivable-form',
   imports: [ReactiveFormsModule, RouterLink],
@@ -36,12 +34,13 @@ export class ReceivableForm implements OnInit {
     }),
     dueDate: new FormControl('', {
       nonNullable: true,
-      validators: [Validators.required, Validators.pattern(DUE_DATE_PATTERN)],
+      validators: [Validators.required],
     }),
     description: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
     targetAccount: new FormControl<TargetAccount | null>(null, { validators: [Validators.required] }),
-    recurring: new FormControl<boolean | null>(null, { validators: [Validators.required] }),
+    recurring: new FormControl(false, { nonNullable: true }),
     unitId: new FormControl<number | null>(null, { validators: [Validators.required] }),
+    paymentDate: new FormControl('', { nonNullable: true }),
   });
 
   constructor(
@@ -66,6 +65,7 @@ export class ReceivableForm implements OnInit {
           targetAccount: receivable.targetAccount,
           recurring: receivable.recurring,
           unitId: receivable.unit.id,
+          paymentDate: receivable.paymentDate ?? '',
         });
       });
     }
@@ -96,7 +96,8 @@ export class ReceivableForm implements OnInit {
       dueDate: raw.dueDate,
       description: raw.description,
       targetAccount: raw.targetAccount as TargetAccount,
-      recurring: raw.recurring as boolean,
+      recurring: raw.recurring,
+      paymentDate: raw.paymentDate || null,
     };
 
     const onSuccess = () => this.router.navigateByUrl('/receivables');

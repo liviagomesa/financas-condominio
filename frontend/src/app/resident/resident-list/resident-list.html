@@ -3,10 +3,27 @@
   <a class="btn btn-primary" routerLink="/residents/new">Novo condômino</a>
 </div>
 
+@if (errorMessage()) {
+  <div class="alert alert-danger">{{ errorMessage() }}</div>
+}
+
+<app-bulk-actions-bar
+  [selectedCount]="selection.selectedCount()"
+  entityLabelPlural="condôminos"
+  (remove)="removeSelected()"
+/>
+
 @if (residents().length) {
   <table class="table table-striped">
     <thead>
       <tr>
+        <th>
+          <input
+            type="checkbox"
+            [checked]="selection.isAllSelected(residents())"
+            (change)="selection.toggleAll(residents())"
+          />
+        </th>
         <th>Nome</th>
         <th>Unidade</th>
         <th>E-mail</th>
@@ -17,6 +34,13 @@
     <tbody>
       @for (resident of residents(); track resident.id) {
         <tr>
+          <td>
+            <input
+              type="checkbox"
+              [checked]="selection.isSelected(resident)"
+              (change)="selection.toggle(resident)"
+            />
+          </td>
           <td>{{ resident.name }}</td>
           <td>{{ resident.unit.identifier }}</td>
           <td>{{ resident.email || '-' }}</td>

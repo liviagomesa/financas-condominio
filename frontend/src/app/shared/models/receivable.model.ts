@@ -15,6 +15,7 @@ export interface Receivable {
   description: string;
   targetAccount: TargetAccount;
   recurring: boolean;
+  paymentDate: string | null;
   unit: Unit;
 }
 
@@ -25,6 +26,7 @@ export interface ReceivableRequest {
   targetAccount: TargetAccount;
   recurring: boolean;
   unitId: number;
+  paymentDate: string | null;
 }
 
 export interface ReceivableBulkRequest {
@@ -33,4 +35,17 @@ export interface ReceivableBulkRequest {
   description: string;
   targetAccount: TargetAccount;
   recurring: boolean;
+  paymentDate: string | null;
+}
+
+export interface ReceivablePaymentRequest {
+  paymentDate: string;
+}
+
+export interface ReceivableFilters {
+  unitId?: number;
+  paid?: boolean;
+  overdue?: boolean;
+  dueYearMonth?: string;
+  paymentYearMonth?: string;
 }

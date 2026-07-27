@@ -1,0 +1,8 @@
+@if (selectedCount() > 0) {
+  <div class="d-flex align-items-center justify-content-between alert alert-secondary py-2 px-3 mb-3">
+    <span>{{ selectedCount() }} {{ entityLabelPlural() }} selecionado(s)</span>
+    <button type="button" class="btn btn-sm btn-outline-danger" (click)="confirmAndRemove()">
+      Remover selecionados
+    </button>
+  </div>
+}

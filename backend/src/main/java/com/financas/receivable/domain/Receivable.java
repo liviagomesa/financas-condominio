@@ -38,6 +38,9 @@ public class Receivable {
     @Column(nullable = false)
     private boolean recurring;
 
+    @Column(name = "payment_date")
+    private LocalDate paymentDate;
+
     @ManyToOne(optional = false)
     @JoinColumn(name = "unit_id", nullable = false)
     private Unit unit;
@@ -52,12 +55,24 @@ public class Receivable {
             TargetAccount targetAccount,
             boolean recurring,
             Unit unit) {
+        this(amount, dueDate, description, targetAccount, recurring, unit, null);
+    }
+
+    public Receivable(
+            BigDecimal amount,
+            LocalDate dueDate,
+            String description,
+            TargetAccount targetAccount,
+            boolean recurring,
+            Unit unit,
+            LocalDate paymentDate) {
         this.amount = amount;
         this.dueDate = dueDate;
         this.description = description;
         this.targetAccount = targetAccount;
         this.recurring = recurring;
         this.unit = unit;
+        this.paymentDate = paymentDate;
     }
 
     public Long getId() {
@@ -110,5 +125,17 @@ public class Receivable {
 
     public void setUnit(Unit unit) {
         this.unit = unit;
+    }
+
+    public LocalDate getPaymentDate() {
+        return paymentDate;
+    }
+
+    public void setPaymentDate(LocalDate paymentDate) {
+        this.paymentDate = paymentDate;
+    }
+
+    public boolean isPaid() {
+        return paymentDate != null;
     }
 }

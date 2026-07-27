@@ -7,10 +7,23 @@
   <div class="alert alert-danger">{{ errorMessage() }}</div>
 }
 
+<app-bulk-actions-bar
+  [selectedCount]="selection.selectedCount()"
+  entityLabelPlural="unidades"
+  (remove)="removeSelected()"
+/>
+
 @if (units().length) {
   <table class="table table-striped">
     <thead>
       <tr>
+        <th>
+          <input
+            type="checkbox"
+            [checked]="selection.isAllSelected(units())"
+            (change)="selection.toggleAll(units())"
+          />
+        </th>
         <th>Identificador</th>
         <th></th>
       </tr>
@@ -18,6 +31,13 @@
     <tbody>
       @for (unit of units(); track unit.id) {
         <tr>
+          <td>
+            <input
+              type="checkbox"
+              [checked]="selection.isSelected(unit)"
+              (change)="selection.toggle(unit)"
+            />
+          </td>
           <td>{{ unit.identifier }}</td>
           <td class="text-end">
             <a class="btn btn-sm btn-outline-secondary" [routerLink]="['/units', unit.id, 'edit']"

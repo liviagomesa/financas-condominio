@@ -25,8 +25,10 @@ já adotada na feature 001 (Constituição, Princípio III)
 backend; Angular 22 + Bootstrap 5 + SCSS no frontend — mesmas dependências e versões já em uso
 no projeto, reaproveitadas sem nova pesquisa de mercado (Princípio III)
 
-**Storage**: PostgreSQL 18.4 via Docker Compose (porta 5433 do host), acessado via Spring Data
-JPA — mesmo container já criado pela feature 001
+**Storage**: PostgreSQL 18.4 via Docker Compose (porta 5434 do host — ajustada durante a
+rodada de correções desta feature; a porta intermediária 5433 usada originalmente passou a
+ser interceptada por um port-forward do VS Code nesta máquina, ver README.md), acessado via
+Spring Data JPA — mesmo container já criado pela feature 001
 
 **Testing**: Backend — JUnit 5 + Mockito + Spring Boot Test (`@DataJpaTest`/`@WebMvcTest`).
 Frontend — Vitest + Angular Testing utilities. Cobertura obrigatória das regras de negócio

@@ -5,6 +5,8 @@ import { environment } from '../../../environments/environment';
 import {
   Receivable,
   ReceivableBulkRequest,
+  ReceivableFilters,
+  ReceivablePaymentRequest,
   ReceivableRequest,
 } from '../models/receivable.model';
 
@@ -14,8 +16,13 @@ export class ReceivableService {
 
   constructor(private readonly http: HttpClient) {}
 
-  findAll(unitId?: number): Observable<Receivable[]> {
-    const params = unitId != null ? { unitId } : undefined;
+  findAll(filters?: ReceivableFilters): Observable<Receivable[]> {
+    const params: Record<string, string | number | boolean> = {};
+    if (filters?.unitId != null) params['unitId'] = filters.unitId;
+    if (filters?.paid != null) params['paid'] = filters.paid;
+    if (filters?.overdue != null) params['overdue'] = filters.overdue;
+    if (filters?.dueYearMonth) params['dueYearMonth'] = filters.dueYearMonth;
+    if (filters?.paymentYearMonth) params['paymentYearMonth'] = filters.paymentYearMonth;
     return this.http.get<Receivable[]>(this.baseUrl, { params });
   }
 
@@ -33,6 +40,10 @@ export class ReceivableService {
 
   update(id: number, request: ReceivableRequest): Observable<Receivable> {
     return this.http.put<Receivable>(`${this.baseUrl}/${id}`, request);
+  }
+
+  registerPayment(id: number, request: ReceivablePaymentRequest): Observable<Receivable> {
+    return this.http.post<Receivable>(`${this.baseUrl}/${id}/pay`, request);
   }
 
   delete(id: number): Observable<void> {

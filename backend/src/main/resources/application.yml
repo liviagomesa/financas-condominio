@@ -2,7 +2,7 @@ spring:
   application:
     name: financas-backend
   datasource:
-    url: jdbc:postgresql://localhost:5433/financas
+    url: jdbc:postgresql://localhost:5434/financas
     username: financas
     password: financas
   jpa:

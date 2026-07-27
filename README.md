@@ -34,9 +34,11 @@ Na raiz do projeto:
 docker compose up -d
 ```
 
-Sobe um único container com o PostgreSQL, exposto na porta `5433` do host
+Sobe um único container com o PostgreSQL, exposto na porta `5434` do host
 (não `5432`, para não conflitar com uma instalação nativa de PostgreSQL que
-já possa existir na máquina).
+já possa existir na máquina; nem `5433`, usada inicialmente mas depois
+liberada por conflitar com um port-forward do VS Code nesta máquina de
+desenvolvimento).
 
 ### 2. Backend (API)
 
@@ -87,11 +89,18 @@ Acesse `http://localhost:4200`.
   confirmação de exclusão é responsabilidade do frontend (o backend executa a
   remoção diretamente quando chamado).
 - **Porta do PostgreSQL no host**: o `docker-compose.yml` expõe o Postgres na
-  porta `5433`, não `5432` — durante a implementação, um PostgreSQL nativo já
+  porta `5434`, não `5432` — durante a implementação, um PostgreSQL nativo já
   instalado na máquina de desenvolvimento estava ocupando a porta padrão, e o
   backend acabou se conectando ao serviço nativo (autenticação falhando) em
   vez do container. Só foi percebido rodando a aplicação de verdade contra o
-  banco, não apenas compilando/testando com mocks.
+  banco, não apenas compilando/testando com mocks. A porta intermediária
+  `5433` (usada até a rodada de correções de 002-receivable-charges) foi
+  abandonada depois por outro motivo: um port-forward do VS Code nesta
+  máquina passou a interceptar conexões `localhost:5433`, respondendo com um
+  erro de autenticação genuíno (mas de outro Postgres) em vez de alcançar o
+  container — só percebido rodando a aplicação de verdade de novo, mesma
+  lição de sempre validar contra o banco real antes de considerar uma rodada
+  concluída.
 - **Playwright como devDependency permanente do frontend**: usado para
   validar visualmente cada mudança de UI em navegador headless. Inicialmente
   era instalado sob demanda (`npm install --no-save`) e removido depois
@@ -101,6 +110,35 @@ Acesse `http://localhost:4200`.
   local) instala em segundos. Como toda mudança de frontend acaba exigindo
   essa validação, manter o Playwright como devDependency declarada elimina
   esse custo repetido de reinstalação completa.
+- **Datas: ISO-8601 internamente, DD/MM/AAAA só na UI, sem utilitário de
+  conversão**: `dueDate` e `paymentDate` trafegam no contrato de API e são
+  persistidas no formato ISO-8601 padrão do `LocalDate` (`yyyy-MM-dd`), sem
+  `@JsonFormat` customizado. A exibição em DD/MM/AAAA e a leitura da entrada
+  da usuária ficam só no frontend, usando recursos nativos do Angular/HTML —
+  `<input type="date">` (e `<input type="month">` para os filtros de
+  mês/ano) e o `DatePipe` (`| date:'dd/MM/yyyy'`) — sem nenhum utilitário de
+  conversão customizado, já que esses controles nativos resolvem as duas
+  pontas sozinhos.
+- **Registro de pagamento como campo único (`paymentDate`), sem `paid`
+  redundante**: um lançamento é "pago" quando `paymentDate` não é nulo; não
+  existe um campo `paid` separado, para não correr o risco dos dois ficarem
+  inconsistentes entre si. `paymentDate` pode ser informado já na criação
+  (individual ou em lote) — lançamento já nasce pago — ou registrado depois
+  via `POST /api/receivables/{id}/pay`, uma sub-rota de ação dedicada
+  (mesmo espírito da sub-rota `/bulk` já usada para criação em massa).
+- **Filtros de listagem em memória**: `GET /api/receivables` aceita filtros
+  combináveis (`paid`, `overdue`, `dueYearMonth`, `paymentYearMonth`),
+  aplicados em memória sobre a lista já carregada em `ReceivableService`, em
+  vez de consultas SQL dedicadas — dado o volume pequeno de registros
+  (poucas dezenas), a filtragem é feita em memória, sem necessidade de
+  índices ou consultas otimizadas dedicadas.
+- **Seleção múltipla e remoção em lote como utilitários compartilhados**:
+  `list-selection.ts` (estado de seleção, signal-based) e `bulk-delete.ts`
+  (remoção item a item, melhor esforço, sem endpoint transacional novo) +
+  o componente `bulk-actions-bar` ficam em `frontend/src/app/shared/`,
+  reaproveitados por `receivable-list`, `unit-list` e `resident-list` —
+  cada tela mantém sua própria tabela/colunas, só a seleção e a ação em
+  lote são compartilhadas.
 
 ## Uso de IA
 
@@ -162,11 +200,23 @@ Utilizei o GitHub Spec Kit integrado ao Claude Code para conduzir o desenvolvime
   **Lição**: ao revisar um `plan.md`/`tasks.md` gerado por IA, vale perguntar ativamente
   quais decisões ali são genéricas o suficiente para virar regra na constituição, em vez de
   assumir que a IA vai sinalizar isso sozinha.
+- **Formato de data levado longe demais na primeira tentativa**: ao planejar a feature de
+  lançamentos de contas a receber, a IA seguiu a constituição ao pé da letra e exigiu
+  `dd/MM/yyyy` também no contrato de API (não só na UI), forçando conversão manual
+  desnecessária no backend. Questionei essa decisão, e a correção inicial ainda propôs um
+  utilitário de conversão dedicado no frontend — perguntei se isso era mesmo necessário, já
+  que `<input type="date">` e o `DatePipe` do Angular já resolvem a exibição/entrada sem
+  código customizado. Foi confirmado que sim, o utilitário era desnecessário, e a constituição
+  foi ajustada de novo antes de qualquer código ser escrito.
+- **Correções pedidas antes da implementação da rodada de pagamento**: pagamento já na
+  criação do lançamento (sem precisar criar e só depois marcar como pago em uma ação
+  separada), remoção do campo `paid` redundante (o status "pago" passou a ser derivado só de
+  `paymentDate` não ser nulo) e, como mencionado acima, remoção de um utilitário de conversão
+  de data dedicado, em favor de `DatePipe`/`<input type="date">` nativos.
 
 ## O que eu faria diferente ou melhoraria com mais tempo
 
 - **Soft delete de condôminos**: em vez de remover o registro definitivamente, marcar o condômino como inativo. Isso evita quebrar dados históricos de cobrança já existentes (o condômino deixaria de aparecer nas listagens de cadastro, mas continuaria sendo referenciado onde já existir vínculo). Para respeitar a LGPD, ao acessar um condômino inativo pelos registros em que ele é referenciado, apenas nome e unidade seriam exibidos — telefone e e-mail seriam removidos/ocultados junto com a inativação.
-- **Registro de pagamento/quitação de um lançamento**: a feature de lançamentos de contas a receber cobre só a criação/edição/remoção do valor devido — não há nenhum controle de "isso já foi pago" ainda. É o pré-requisito natural para a funcionalidade de "condôminos devedores e saldos pendentes" citada no `CLAUDE.md` como núcleo do produto, mas ficou fora do escopo desta rodada por decisão explícita (ver Assumptions do `spec.md` da feature).
 - **`TargetAccount` como cadastro dinâmico em vez de enum fixo**: hoje "conta destino" tem 3 valores fixos no código (Piscina/Jardim Piscina/Jardim Lateral). Se o condomínio criar um novo centro de custo no futuro (ex.: uma nova área comum), isso exigiria alteração de código e nova migration em vez de um cadastro simples pela própria usuária — um trade-off consciente pela simplicidade agora, que valeria revisitar se a lista mudar com alguma frequência na prática.
 - **Geração automática/recorrente de lançamentos mensais**: hoje tanto o lançamento individual quanto o em lote (`POST /api/receivables/bulk`) são ações manuais disparadas pela usuária todo mês. Uma automação (ex.: job agendado gerando a taxa condominial do mês automaticamente para lançamentos marcados como `recurring`) reduziria ainda mais o trabalho manual, mas dependeria de definir regras de idempotência (não duplicar o lançamento do mês se a ação manual também for usada).
 

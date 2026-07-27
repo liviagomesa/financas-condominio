@@ -6,10 +6,11 @@ services:
       POSTGRES_DB: financas
       POSTGRES_USER: financas
       POSTGRES_PASSWORD: financas
-    # Porta 5433 no host (não 5432) para evitar conflito com um PostgreSQL
-    # nativo já instalado na máquina de desenvolvimento.
+    # Porta 5434 no host (não 5432, ocupada por um PostgreSQL nativo já
+    # instalado na máquina; nem 5433, que passou a ser interceptada por um
+    # port-forward do VS Code nesta máquina).
     ports:
-      - "5433:5432"
+      - "5434:5432"
     volumes:
       - financas-postgres-data:/var/lib/postgresql
 

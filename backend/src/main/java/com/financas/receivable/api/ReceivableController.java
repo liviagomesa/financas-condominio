@@ -27,8 +27,15 @@ public class ReceivableController {
     }
 
     @GetMapping
-    public List<ReceivableResponse> findAll(@RequestParam(required = false) Long unitId) {
-        return service.findAll(unitId).stream().map(ReceivableResponse::from).toList();
+    public List<ReceivableResponse> findAll(
+            @RequestParam(required = false) Long unitId,
+            @RequestParam(required = false) Boolean paid,
+            @RequestParam(required = false) Boolean overdue,
+            @RequestParam(required = false) String dueYearMonth,
+            @RequestParam(required = false) String paymentYearMonth) {
+        return service.findAll(unitId, paid, overdue, dueYearMonth, paymentYearMonth).stream()
+                .map(ReceivableResponse::from)
+                .toList();
     }
 
     @GetMapping("/{id}")
@@ -44,7 +51,8 @@ public class ReceivableController {
                 request.description(),
                 request.targetAccount(),
                 request.recurring(),
-                request.unitId());
+                request.unitId(),
+                request.paymentDate());
         return ResponseEntity.status(HttpStatus.CREATED).body(ReceivableResponse.from(receivable));
     }
 
@@ -57,7 +65,8 @@ public class ReceivableController {
                         request.dueDate(),
                         request.description(),
                         request.targetAccount(),
-                        request.recurring())
+                        request.recurring(),
+                        request.paymentDate())
                 .stream()
                 .map(ReceivableResponse::from)
                 .toList();
@@ -73,7 +82,14 @@ public class ReceivableController {
                 request.description(),
                 request.targetAccount(),
                 request.recurring(),
-                request.unitId());
+                request.unitId(),
+                request.paymentDate());
+        return ReceivableResponse.from(receivable);
+    }
+
+    @PostMapping("/{id}/pay")
+    public ReceivableResponse pay(@PathVariable Long id, @Valid @RequestBody ReceivablePaymentRequest request) {
+        Receivable receivable = service.registerPayment(id, request.paymentDate());
         return ReceivableResponse.from(receivable);
     }
 

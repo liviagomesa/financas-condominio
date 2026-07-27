@@ -14,8 +14,10 @@ Na raiz do projeto:
 docker compose up -d
 ```
 
-O container expõe o PostgreSQL na porta `5433` do host (não `5432`), para não
-conflitar com uma instalação nativa de PostgreSQL já presente na máquina.
+O container expõe o PostgreSQL na porta `5434` do host (não `5432`, ocupada
+por uma instalação nativa de PostgreSQL já presente na máquina; nem `5433`,
+usada inicialmente e depois liberada por conflitar com um port-forward do
+VS Code nesta máquina — ver README.md).
 
 ## 2. Subir o backend
 

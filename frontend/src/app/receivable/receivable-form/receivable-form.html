@@ -67,15 +67,9 @@
 
     <div class="mb-3">
       <label for="dueDate" class="form-label">Vencimento</label>
-      <input
-        id="dueDate"
-        type="text"
-        class="form-control"
-        formControlName="dueDate"
-        placeholder="DD/MM/AAAA"
-      />
+      <input id="dueDate" type="date" class="form-control" formControlName="dueDate" />
       @if (form.controls.dueDate.invalid && form.controls.dueDate.touched) {
-        <div class="text-danger small mt-1">Informe a data de vencimento no formato DD/MM/AAAA.</div>
+        <div class="text-danger small mt-1">A data de vencimento é obrigatória.</div>
       }
     </div>
 
@@ -106,16 +100,20 @@
       }
     </div>
 
+    <div class="mb-3 form-check">
+      <input
+        id="recurring"
+        type="checkbox"
+        class="form-check-input"
+        formControlName="recurring"
+      />
+      <label for="recurring" class="form-check-label">Recorrente</label>
+    </div>
+
     <div class="mb-3">
-      <label for="recurring" class="form-label">Tipo</label>
-      <select id="recurring" class="form-select" formControlName="recurring">
-        <option [ngValue]="null">Selecione...</option>
-        <option [ngValue]="true">Recorrente</option>
-        <option [ngValue]="false">Extra</option>
-      </select>
-      @if (form.controls.recurring.invalid && form.controls.recurring.touched) {
-        <div class="text-danger small mt-1">O tipo é obrigatório.</div>
-      }
+      <label for="paymentDate" class="form-label">Data de pagamento (opcional)</label>
+      <input id="paymentDate" type="date" class="form-control" formControlName="paymentDate" />
+      <div class="form-text">Preencha somente se o lançamento já estiver pago.</div>
     </div>
 
     @if (errorMessage()) {
