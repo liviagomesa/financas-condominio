@@ -39,23 +39,124 @@ III). As decisões abaixo cobrem pontos de design específicos desta feature.
   por ser mais verboso que necessário para o caso de uso atual, ciente do trade-off de uma
   eventual migração se surgir um terceiro tipo no futuro.
 
-## Serialização de `dueDate` na API
+## Serialização de `dueDate`/`paymentDate` na API (revisado 2026-07-26, em duas partes)
 
-- **Decision**: `dueDate` é `LocalDate` no domínio; nos DTOs de request/response, o campo é
-  anotado com `@JsonFormat(pattern = "dd/MM/yyyy")`, aceitando e retornando a data nesse
-  formato em JSON (ex.: `"10/08/2026"`).
-- **Rationale**: Princípio IV da constituição exige formato `DD/MM/AAAA` para datas
-  "exibidas ou registradas em conteúdo de domínio" — esta é a primeira feature do projeto com
-  um campo de data, então não havia convenção de serialização já estabelecida a reaproveitar.
-- **Nota para a Revisão da Constituição pós-implementação**: esta decisão (formato de
-  serialização de datas em JSON) é genérica o suficiente para qualquer feature futura com
-  campo de data — deve ser levada à varredura de padronização ao final desta feature, para
-  virar convenção registrada na constituição em vez de decisão implícita repetida a cada
-  feature.
-- **Alternatives considered**: ISO-8601 (`yyyy-MM-dd`), padrão do Jackson por omissão —
-  mais comum em APIs REST, mas conflita diretamente com o Princípio IV, que rege conteúdo de
-  domínio (não apenas texto exibido) — não apenas a UI, mas a resposta de API já é
-  considerada "conteúdo de domínio" registrado.
+- **Decision**: `dueDate` e a nova `paymentDate` são `LocalDate` no domínio; nos DTOs de
+  request/response, **sem** anotação `@JsonFormat` customizada — trafegam em JSON no formato
+  ISO-8601 padrão do Jackson (ex.: `"2026-08-10"`). O formato `DD/MM/AAAA` fica só na UI,
+  resolvido pelos recursos **nativos** do Angular/HTML, sem nenhum utilitário de conversão
+  dedicado: `<input type="date">` já envia/recebe o valor em ISO-8601 (é o formato nativo
+  desse controle HTML, independente de locale), e o `DatePipe` (`| date:'dd/MM/yyyy'`) do
+  Angular já formata a exibição a partir de uma string ISO, sem exigir parsing manual.
+- **Histórico (parte 1)**: a decisão original desta feature usava
+  `@JsonFormat(pattern = "dd/MM/yyyy")` no contrato de API, por leitura estrita do Princípio IV
+  então vigente. A usuária questionou essa leitura: o formato brasileiro é uma necessidade de
+  **exibição** (UX), não de armazenamento/contrato. Correção feita diretamente no Princípio IV
+  (`.specify/memory/constitution.md`), incorporada à emenda 1.2.0 → 1.3.0 ainda não commitada
+  (sem novo bump de versão).
+- **Histórico (parte 2)**: a primeira correção ainda previa um utilitário de frontend dedicado
+  (`date-format.util.ts`) para converter ISO ⇄ DD/MM/AAAA manualmente. A usuária então
+  perguntou se isso era mesmo necessário, já que o próprio `<input type="date">` HTML e o
+  `DatePipe` do Angular resolvem as duas pontas sem código customizado — confirmado como
+  correto; o utilitário foi removido do plano/tasks, e o Princípio IV da constituição foi
+  ajustado para não prescrever mais um utilitário específico, só o resultado (conversão isolada
+  no frontend).
+- **Ressalva aceita**: o formato **exibido** por `<input type="date">` (o "widget" do
+  calendário/campo de texto) segue o locale do navegador/SO da usuária, não é travado em
+  DD/MM/AAAA por configuração da aplicação — diferente do `DatePipe`, que usa um padrão
+  explícito (`dd/MM/yyyy`) e por isso é 100% independente de locale. Como o uso é pessoal e o
+  navegador da usuária já está em pt-BR, essa é uma peculiaridade aceita conscientemente
+  (mesmo espírito pragmático de outras decisões do projeto, ex.: sem autenticação por ora),
+  não um requisito rígido de exibição.
+- **Rationale**: ISO-8601 é o padrão de fato para contratos de API REST e o que o Jackson já
+  produz sem configuração; usar os recursos nativos do Angular no frontend, em vez de um
+  utilitário próprio, elimina código de conversão que não agrega nada além do que a
+  plataforma já oferece de graça.
+- **Alternatives considered**: manter `dd/MM/yyyy` na API (decisão original, revertida);
+  utilitário de conversão de frontend dedicado (decisão intermediária, também revertida por
+  ser desnecessária); `dueDate`/`paymentDate` como `String` livre no DTO (perderia a validação
+  de formato de data gratuita que `LocalDate` já dá via Jackson).
+
+## Campo de pagamento (`paymentDate`, sem campo `paid` separado)
+
+- **Decision**: um único novo campo em `Receivable`: `paymentDate` (`LocalDate`, nullable).
+  Não existe um campo `paid` booleano — "pago" é sempre derivado de `paymentDate != null`.
+  `ReceivableRequest`/`ReceivableBulkRequest` ganham `paymentDate` como campo **opcional**
+  (sem `@NotNull`), permitindo criar um lançamento já pago diretamente. Além disso, o
+  endpoint de ação `POST /api/receivables/{id}/pay` continua existindo, recebendo
+  `{ "paymentDate": "..." }`, para marcar/atualizar o pagamento de um lançamento já existente
+  sem precisar reenviar o lançamento inteiro.
+- **Rationale**: um campo `paid` ao lado de `paymentDate` seria um dado derivado guardado
+  redundantemente — nada impede (a nível de código) que `paid = true` e `paymentDate = null`
+  coexistam por um bug de sincronização entre os dois campos; eliminar `paid` remove essa
+  classe de inconsistência por construção. Permitir `paymentDate` já na criação atende ao
+  caso de uso real da usuária de lançar uma cobrança que já sabe estar paga (ex.: lançamento
+  retroativo de um mês já quitado), sem forçar sempre um segundo passo. O endpoint dedicado de
+  pagamento continua fazendo sentido como atalho de UX para o caso mais comum (marcar como
+  pago depois, sem reabrir o formulário completo de edição).
+- **Alternatives considered**: manter `paid` boolean redundante (rejeitado pela usuária —
+  risco de inconsistência sem benefício real); enum de status (`PENDING`/`PAID`) — mesma razão
+  de antes para preferir um valor simples (`recurring` também é boolean); remover o endpoint
+  dedicado `/pay` e depender só do `PUT`/`POST` com `paymentDate` — rejeitado porque um atalho
+  de UX dedicado para "só marcar como pago" é mais direto do que reenviar o formulário inteiro
+  de edição.
+
+## Filtros de listagem (`paid`, `overdue`, `dueYearMonth`, `paymentYearMonth`)
+
+- **Decision**: `GET /api/receivables` ganha quatro novos query params opcionais e
+  combináveis (E lógico) com o `unitId` já existente: `paid` (boolean), `overdue` (boolean —
+  pendente com `dueDate` anterior a hoje), `dueYearMonth` (`yyyy-MM`) e `paymentYearMonth`
+  (`yyyy-MM`, só combina com lançamentos pagos). Implementados como filtro em memória sobre o
+  resultado de `repository.findAll()`/`findByUnitId(id)` dentro de `ReceivableService`, sem
+  métodos novos no `ReceivableRepository` (porta) nem consultas SQL dedicadas.
+- **Rationale**: a escala do projeto (poucas dezenas de lançamentos, ver Assumptions do spec)
+  não justifica a complexidade de expressar 4 filtros combináveis como consultas JPA/SQL
+  dedicadas (ou Specifications); um `Stream` filtrando em memória é direto, fácil de testar
+  unitariamente, e evita inflar a interface do repositório com múltiplas variações de
+  `findByXAndY`. `overdue` é calculado com `LocalDate.now()` diretamente no `ReceivableService`
+  (sem abstração de `Clock` — não há necessidade de controlar o "agora" em testes de forma
+  mais sofisticada do que construir datas relativas a `LocalDate.now()` no próprio teste).
+- **Alternatives considered**: métodos de repositório dedicados por combinação de filtro
+  (rejeitado — explode combinatoriamente e é otimização prematura para o volume de dados
+  real); um único parâmetro de "status" (`PENDING`/`PAID`/`OVERDUE`) em vez de dois
+  (`paid`+`overdue`) — rejeitado porque `overdue` e `paid` respondem perguntas diferentes e
+  compostas (a usuária pode querer só "vencidos", que já implica pendente, sem precisar
+  combinar dois valores de um enum de status).
+
+## Remoção em lote na listagem
+
+- **Decision**: sem endpoint novo no backend — o frontend chama `DELETE
+  /api/receivables/{id}` individualmente para cada item selecionado (melhor esforço),
+  agregando sucessos e falhas num utilitário compartilhado
+  (`frontend/src/app/shared/bulk-delete.ts`) para exibir ao final quais foram removidos e
+  quais falharam (e por quê).
+- **Rationale**: decisão da usuária (ver AskUserQuestion desta rodada) — mais simples que um
+  endpoint transacional "tudo ou nada", e reaproveita a regra de remoção individual já
+  validada (incluindo qualquer bloqueio de negócio futuro por vínculo, hoje já existente para
+  `Unit`).
+- **Alternatives considered**: endpoint `DELETE /api/receivables/bulk` transacional (tudo ou
+  nada) — rejeitado pela usuária por maior escopo sem necessidade real hoje.
+
+## Componente de lista compartilhado (frontend)
+
+- **Decision**: em vez de um componente genérico único que tenta renderizar qualquer tabela
+  (colunas variam muito entre `unit`, `resident` e `receivable`), a parte comum vira dois
+  blocos reutilizáveis: `shared/list-selection.ts` (estado de seleção múltipla, signal-based) e
+  `shared/components/bulk-actions-bar/` (barra "N selecionados" + botão remover, usando
+  `shared/bulk-delete.ts`). Cada tela de listagem mantém sua própria tabela/colunas, mas
+  reaproveita esses dois blocos para a coluna de checkbox e a ação em lote.
+- **Rationale**: Angular não tem um jeito idiomático de "table genérica com colunas
+  quaisquer" sem recorrer a projeção de conteúdo complexa; concentrar só o que é
+  **realmente** comum (estado de seleção + orquestração de remoção em lote + a UI da barra de
+  ação) atende ao pedido da usuária de "concentrar configurações em comum" sem forçar uma
+  abstração de tabela genérica que lutaria contra formatos de coluna muito diferentes entre as
+  3 telas.
+- **Impacto cruzado**: aplicado também a `unit-list` e `resident-list` (feature 001, já
+  implementada) — ver processo "Edição de Features Já Implementadas" e atualização de
+  `specs/001-cadastro-condominos/spec.md`/`plan.md`/`tasks.md` (Phase 12).
+- **Alternatives considered**: componente de tabela genérico com `ng-content`/column
+  templates — mais "DRY" no papel, mas adiciona complexidade de templating desproporcional ao
+  tamanho do projeto (poucas telas, colunas pouco parecidas entre si).
 
 ## Endpoint de lançamento em lote
 

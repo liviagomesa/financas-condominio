@@ -67,11 +67,16 @@ nova (`Receivable`); 4 user stories, 14 requisitos funcionais
   nenhuma nova pesquisa de versão "mais recente do mercado" foi feita, conforme exigido pela
   constituição. Cobertura de teste de regra de negócio será entregue junto da implementação
   (não em retrofit), atendendo à exigência já vigente da constituição para toda feature nova.
-- **IV. Convenções de Código e Formatação**: PASS. `dueDate` é `LocalDate` no domínio,
-  serializado como string `dd/MM/yyyy` na API (ver research.md — primeira feature do projeto
-  com campo de data, decisão a ser levada à Revisão da Constituição pós-implementação).
-  Entidade/enum/coluna em inglês (`Receivable`, `TargetAccount`, `target_account`); mensagens
-  de erro internas em inglês, mensagens ao usuário em português.
+- **IV. Convenções de Código e Formatação**: PASS. `dueDate` e a nova `paymentDate` são
+  `LocalDate` no domínio, serializadas no formato ISO-8601 padrão (`yyyy-MM-dd`), sem
+  anotação `@JsonFormat` customizada — correção feita nesta rodada, já registrada
+  diretamente no Princípio IV da constituição (não fica mais pendente de Revisão da
+  Constituição pós-implementação, ver research.md). O formato DD/MM/AAAA passa a ser
+  responsabilidade só do frontend, resolvido pelos recursos nativos do Angular (`DatePipe`
+  para exibição, `<input type="date">` para entrada) — sem utilitário de conversão
+  customizado (ver Project Structure). Entidade/enum/coluna em inglês (`Receivable`,
+  `TargetAccount`, `target_account`); mensagens de erro internas em inglês, mensagens ao
+  usuário em português.
 - **V. Idioma por Tipo de Conteúdo**: PASS. Artefatos deste plano em português; código em
   inglês; mensagens de erro de API/frontend em português.
 - **VI. Convenções de API REST**: PASS. Rota `/api/receivables` (plural, inglês); ação de
@@ -91,6 +96,48 @@ regenerar nem alterar tarefas já concluídas) — com um resumo apresentado à 
 aprovação explícita antes de qualquer edição desses arquivos ou do código. Esse passo é
 tratado separadamente, fora deste plano (ver Completion Report), e é pré-requisito antes de
 `/speckit-tasks` gerar a tarefa correspondente de alteração em `UnitService`.
+
+### Atualização (correção pós-implementação 2026-07-26 — pagamento, formato de data, tipo como checkbox, remoção em lote, filtros)
+
+Rodada de correções solicitada após a implementação inicial desta feature, em duas partes (a
+segunda parte adicionou pagamento já na criação, remoção do campo `paid` redundante, filtros
+de listagem, e simplificou a abordagem de conversão de data). Confirmação princípio a
+princípio:
+
+- **I. Arquitetura em Camadas**: SEM ALTERAÇÃO NECESSÁRIA. `paymentDate` e os métodos de
+  registro de pagamento/filtro continuam em `com.financas.receivable.domain`; os componentes
+  de seleção múltipla/remoção em lote do frontend são recursos verdadeiramente transversais
+  (usados por `unit`/`resident`/`receivable`) e por isso vivem em `frontend/src/app/shared/`,
+  consistente com o critério já estabelecido para essa pasta. Não há mais um utilitário de
+  conversão de data dedicado (ver Princípio IV abaixo) — um arquivo a menos que o previsto na
+  primeira parte desta rodada.
+- **II. Separação Controller → Service → Repository**: SEM ALTERAÇÃO NECESSÁRIA. O novo
+  endpoint de pagamento e os novos filtros de `GET /api/receivables` passam por
+  `ReceivableController` → `ReceivableService`, mesmo padrão já usado pelos demais endpoints;
+  a remoção em lote não introduz um endpoint novo no backend (o frontend chama o `DELETE
+  /{id}` já existente uma vez por item selecionado).
+- **III. Stack Técnica Definida**: SEM ALTERAÇÃO NECESSÁRIA. Nenhuma dependência nova; testes
+  de `registerPayment` e dos novos filtros seguem JUnit 5 + Mockito, mesma exigência já
+  vigente.
+- **IV. Convenções de Código e Formatação**: ALTERAÇÃO NECESSÁRIA E JÁ APLICADA — ver bullet
+  acima e emenda ao Princípio IV em `.specify/memory/constitution.md` (incorporada à emenda
+  1.2.0 → 1.3.0 ainda não commitada, sem novo bump de versão, conforme regra da própria
+  constituição para amendas pendentes); a segunda parte desta rodada removeu até a exigência
+  de um utilitário de conversão dedicado, em favor de `DatePipe`/`<input type="date">` nativos.
+- **V. Idioma por Tipo de Conteúdo**: SEM ALTERAÇÃO NECESSÁRIA.
+- **VI. Convenções de API REST**: PASS com extensões pontuais — `POST
+  /api/receivables/{id}/pay` é uma sub-rota de ação (registra/atualiza o pagamento), no mesmo
+  espírito da sub-rota `POST /{recurso}/bulk` já usada para criação em massa: uma ação que não
+  é nem substituição completa do recurso (`PUT`) nem criação de um novo recurso (`POST` no
+  recurso plano), então ganha sua própria sub-rota explícita; os novos filtros (`paid`,
+  `overdue`, `dueYearMonth`, `paymentYearMonth`) são query params adicionais no mesmo `GET
+  /api/receivables` já existente (mesmo padrão do `unitId` atual), sem rota nova. Formato de
+  erro padrão mantido. Remoção em lote MUST NOT introduzir uma convenção de rota nova —
+  reaproveita o `DELETE /{id}` existente, chamado repetidamente pelo frontend (decisão
+  registrada em research.md).
+
+Nenhuma violação da constituição identificada nesta rodada de correção — Complexity Tracking
+não se aplica.
 
 Nenhuma violação da constituição identificada dentro do escopo da feature 002 — Complexity
 Tracking não se aplica.
@@ -120,28 +167,40 @@ backend/
 │   ├── resident/                # inalterado
 │   ├── receivable/
 │   │   ├── api/                 # ReceivableController, ReceivableRequest,
-│   │   │                        # ReceivableBulkRequest, ReceivableResponse
-│   │   ├── domain/              # Receivable entity, TargetAccount enum,
+│   │   │                        # ReceivableBulkRequest, ReceivablePaymentRequest (nova),
+│   │   │                        # ReceivableResponse
+│   │   ├── domain/              # Receivable entity (+ paymentDate), TargetAccount enum,
 │   │   │                        # ReceivableRepository (port), ReceivableService
+│   │   │                        # (+ registerPayment, filtros paid/overdue/dueYearMonth/
+│   │   │                        # paymentYearMonth aplicados em memória)
 │   │   └── infra/               # ReceivableJpaRepository, ReceivableRepositoryImpl
 │   └── shared/                  # inalterado
 ├── src/main/resources/db/migration/
-│   └── V3__create_receivable_table.sql
+│   ├── V3__create_receivable_table.sql
+│   └── V4__add_payment_fields_to_receivable.sql     # nova (correção pós-implementação)
 ├── src/test/java/com/financas/
 │   └── receivable/
 └── pom.xml                      # inalterado (sem novas dependências)
 
 frontend/
 ├── src/app/
-│   ├── unit/                    # inalterado
-│   ├── resident/                # inalterado
+│   ├── unit/                    # unit-list ganha seleção múltipla + remoção em lote (impacto
+│   │                             # cruzado — ver Phase 12 de specs/001-cadastro-condominos/tasks.md)
+│   ├── resident/                # resident-list, idem
 │   ├── receivable/
-│   │   ├── receivable-list/
-│   │   └── receivable-form/
+│   │   ├── receivable-list/     # + status pago/pendente, filtros, seleção múltipla, remoção
+│   │   │                        # em lote — datas exibidas via DatePipe nativo
+│   │   └── receivable-form/     # + data de pagamento opcional na criação/edição, ação de
+│   │                             # registrar pagamento, "Recorrente" como checkbox,
+│   │                             # <input type="date"> nativo (sem parsing manual)
 │   ├── core/                    # inalterado
 │   └── shared/
-│       ├── models/receivable.model.ts
-│       └── services/receivable.service.ts
+│       ├── models/receivable.model.ts       # + paymentDate (sem campo paid)
+│       ├── services/receivable.service.ts   # + registerPayment, filtros em findAll
+│       ├── list-selection.ts                 # novo — estado de seleção múltipla (signal-based)
+│       ├── bulk-delete.ts                     # novo — remoção em lote "melhor esforço"
+│       └── components/
+│           └── bulk-actions-bar/              # novo — barra "N selecionados" + remover selecionados
 └── package.json                 # inalterado (sem novas dependências)
 ```
 

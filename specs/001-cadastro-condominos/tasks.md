@@ -243,6 +243,34 @@ lançamento de conta a receber vinculado.
 
 ---
 
+## Phase 12: Extensão — Seleção múltipla e remoção em lote (feature 002, FR-018)
+
+**Purpose**: adicionado durante uma rodada de correções pós-implementação da feature
+`002-receivable-charges`, que introduziu seleção múltipla + remoção em lote (melhor esforço)
+na listagem de lançamentos e criou, para isso, um par de utilitários compartilhados de
+frontend. Esta fase aplica o mesmo padrão às listagens desta feature (ver spec.md/plan.md,
+seção "Atualização (feature 002 — seleção múltipla e remoção em lote, FR-018)"). Depende de
+`frontend/src/app/shared/list-selection.ts`, `bulk-delete.ts` e
+`shared/components/bulk-actions-bar/` (feature 002, Phase 8: T063-T065) já existirem.
+
+- [ ] T060 [P] Apply seleção múltipla (coluna de checkbox por linha + "selecionar todos") e o
+  `bulk-actions-bar` a `unit-list`, reaproveitando `list-selection.ts`/`bulk-delete.ts`/
+  `bulk-actions-bar` da feature 002, em `frontend/src/app/unit/unit-list/` (depends on
+  T063-T065 de `specs/002-receivable-charges/tasks.md`)
+- [ ] T061 [P] Apply o mesmo padrão a `resident-list`, em
+  `frontend/src/app/resident/resident-list/` (depends on T063-T065 de
+  `specs/002-receivable-charges/tasks.md`)
+- [ ] T062 [P] Run roteiro de validação manual do cenário de remoção em lote em `unit-list`
+  (incluindo o caso de melhor esforço: selecionar uma unidade com condôminos vinculados junto
+  de outra sem vínculo, e confirmar que só a segunda é removida, com a primeira reportada como
+  falha) e em `resident-list`, atualizando `quickstart.md` desta feature com o roteiro
+
+**Checkpoint**: `unit-list` e `resident-list` permitem selecionar múltiplos registros e
+removê-los em uma única ação, com o mesmo comportamento de melhor esforço já validado em
+`receivable-list`.
+
+---
+
 ## Dependencies & Execution Order
 
 ### Phase Dependencies
@@ -258,6 +286,9 @@ lançamento de conta a receber vinculado.
 - **Polish (Phase 9)**: Depende de todas as user stories desejadas estarem completas
 - **Extensão US6 (Phase 11)**: Depende de US6 (T048, T049) desta feature e da entidade
   `Receivable` da feature `002-receivable-charges` já existir
+- **Extensão seleção múltipla (Phase 12)**: Depende de US3 (T038, T039 — listagens já
+  exibindo estado vazio) desta feature e dos utilitários compartilhados T063-T065 da feature
+  `002-receivable-charges` (Phase 8) já existirem
 
 ### Notas de dependência entre stories
 

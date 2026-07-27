@@ -152,6 +152,9 @@ confirmando que ele deixa de aparecer na listagem, sem afetar a unidade à qual 
    **Then** ele deixa de aparecer na listagem e a unidade à qual pertencia permanece cadastrada.
 2. **Given** uma solicitação de remoção de condômino, **When** a usuária inicia a ação,
    **Then** o sistema pede confirmação antes de remover definitivamente o registro.
+3. **Given** vários condôminos cadastrados, **When** a usuária seleciona mais de um na
+   listagem e aciona "Remover selecionados", **Then** todos os selecionados são removidos em
+   uma única ação, mediante confirmação explícita (ver FR-018, introduzido pela feature 002).
 
 ---
 
@@ -175,6 +178,10 @@ tentando remover uma unidade com condôminos vinculados e confirmando o bloqueio
 2. **Given** uma unidade cadastrada com pelo menos um condômino associado, **When** a usuária
    tenta remover essa unidade, **Then** o sistema rejeita a remoção e exibe mensagem informando
    que a unidade possui condôminos vinculados.
+3. **Given** várias unidades cadastradas, algumas com condôminos vinculados e outras sem,
+   **When** a usuária seleciona todas na listagem e aciona "Remover selecionados", **Then** o
+   sistema remove as unidades sem vínculo e mantém as demais, informando quais falharam e o
+   motivo (ver FR-018, introduzido pela feature 002).
 
 ---
 
@@ -230,6 +237,13 @@ tentando remover uma unidade com condôminos vinculados e confirmando o bloqueio
 - **FR-016**: O sistema MUST informar a usuária quando uma operação de edição ou remoção for
   tentada sobre uma unidade ou condômino que não existe (ou não existe mais).
 - **FR-017**: O sistema MUST validar que o telefone informado, quando preenchido, siga o formato brasileiro (DDD com 2 dígitos seguido do número com 8 ou 9 dígitos), rejeitando valores fora desse padrão antes de salvar o cadastro do condômino.
+- **FR-018**: O sistema MUST permitir selecionar múltiplas unidades ou múltiplos condôminos na
+  respectiva listagem e removê-los em uma única ação, aplicando a mesma regra de remoção
+  individual (FR-005/FR-006/FR-015) a cada item selecionado — em caso de falha em algum item
+  (ex.: unidade com condôminos ou lançamentos vinculados), o sistema remove os demais (melhor
+  esforço) e informa quais falharam e por quê. Regra introduzida pela feature 002
+  (`specs/002-receivable-charges/spec.md`, FR-019), estendida também às listagens desta
+  feature por reaproveitar o mesmo componente compartilhado de seleção/remoção em lote.
 
 ### Key Entities
 
@@ -266,3 +280,7 @@ tentando remover uma unidade com condôminos vinculados e confirmando o bloqueio
   já especificou esse vínculo — ver FR-006 atualizado acima.
 - O sistema é de uso pessoal, com poucas dezenas de unidades, portanto as listagens não
   precisam de paginação ou busca avançada nesta primeira versão.
+- **Atualização (feature 002)**: a feature de lançamentos de contas a receber introduziu
+  seleção múltipla + remoção em lote (best-effort) nas listagens; a mesma capacidade foi
+  estendida às listagens desta feature (unidades e condôminos) reaproveitando o mesmo
+  componente compartilhado — ver FR-018 atualizado acima.

@@ -126,6 +126,31 @@ constituição:
 Nenhuma violação introduzida por esta extensão — Complexity Tracking continua não se
 aplicando.
 
+### Atualização (feature 002 — seleção múltipla e remoção em lote, FR-018)
+
+A feature `002-receivable-charges` introduziu, numa rodada de correções pós-implementação, um
+par de utilitários de frontend compartilhados (`shared/list-selection.ts`,
+`shared/bulk-delete.ts`) e um componente (`shared/components/bulk-actions-bar/`) para seleção
+múltipla + remoção em lote (melhor esforço) nas listagens. Esta feature estende o mesmo padrão
+a `unit-list` e `resident-list` (FR-018 do spec). Confirmação princípio a princípio:
+
+- **I. Arquitetura em Camadas**: SEM ALTERAÇÃO NECESSÁRIA. Os componentes reaproveitados vivem
+  em `frontend/src/app/shared/` (feature 002), local correto para recursos transversais a mais
+  de uma entidade; `unit-list`/`resident-list` continuam em suas pastas por entidade,
+  apenas passando a consumir esses utilitários compartilhados.
+- **II. Separação Controller → Service → Repository**: SEM ALTERAÇÃO NECESSÁRIA. A remoção em
+  lote não introduz endpoint novo — o frontend chama `DELETE /api/units/{id}` e `DELETE
+  /api/residents/{id}` (já existentes) uma vez por item selecionado.
+- **III. Stack Técnica Definida**: SEM ALTERAÇÃO NECESSÁRIA. Nenhuma dependência nova.
+- **IV. Convenções de Código e Formatação**: SEM ALTERAÇÃO NECESSÁRIA.
+- **V. Idioma por Tipo de Conteúdo**: SEM ALTERAÇÃO NECESSÁRIA.
+- **VI. Convenções de API REST**: SEM ALTERAÇÃO NECESSÁRIA. Nenhuma rota nova; erros 409 de
+  `DELETE /api/units/{id}` (unidade com vínculo) já existentes continuam sendo reportados por
+  item, agora agregados pela UI numa mensagem de "melhor esforço" (quais falharam e por quê).
+
+Nenhuma violação introduzida por esta extensão — Complexity Tracking continua não se
+aplicando.
+
 ## Project Structure
 
 ### Documentation (this feature)
@@ -168,13 +193,14 @@ backend/
 frontend/
 ├── src/app/
 │   ├── unit/
-│   │   ├── unit-list/
+│   │   ├── unit-list/            # + seleção múltipla/remoção em lote (feature 002, FR-018)
 │   │   └── unit-form/
 │   ├── resident/
-│   │   ├── resident-list/
+│   │   ├── resident-list/        # + seleção múltipla/remoção em lote (feature 002, FR-018)
 │   │   └── resident-form/
 │   ├── core/                    # error interceptor/handling
-│   └── shared/                  # models, services, validators, API base URL config
+│   └── shared/                  # models, services, validators, API base URL config,
+│       │                        # list-selection.ts/bulk-delete.ts/bulk-actions-bar (feature 002)
 └── package.json
 
 docker-compose.yml               # container do PostgreSQL

@@ -1,6 +1,55 @@
 <!--
 Sync Impact Report
 ==================
+Versão: 1.2.0 → 1.3.0
+
+Princípios modificados:
+- I. Arquitetura em Camadas — expandido: `shared/exceptions/` passa a ter três bases
+  genéricas (`NotFoundException` 404, `ConflictException` 409, `BadRequestException` 400,
+  esta última nova); critério explícito de quando reforçar uma validação no `Service` via
+  `BadRequestException` em vez de confiar só em Bean Validation no DTO (regra reaplicada em
+  mais de um método, ou regra de negócio não puramente sintática).
+- III. Stack Técnica Definida — expandido: Playwright fixado como devDependency permanente
+  do frontend para validação manual em navegador (não faz parte da suíte de testes
+  automatizados), reaproveitado a cada feature em vez de instalado/removido a cada rodada.
+- IV. Convenções de Código e Formatação — expandido: datas em DTOs de API MUST trafegar no
+  formato ISO-8601 padrão do `LocalDate` (`yyyy-MM-dd`, sem anotação `@JsonFormat`
+  customizada); o formato DD/MM/AAAA fica restrito à UI, resolvido pelos recursos nativos do
+  Angular/HTML (`DatePipe` para exibição, `<input type="date">` para entrada) sem exigir
+  utilitário de conversão customizado (correção feita em duas rodadas ainda durante a
+  implementação de 002-receivable-charges, antes do commit desta emenda: primeiro a primeira
+  redação exigia dd/MM/yyyy também no contrato de API, o que forçava conversão manual
+  desnecessária no backend; depois a usuária notou que os componentes nativos do Angular já
+  fazem a conversão de exibição/entrada, tornando desnecessário até um utilitário de frontend
+  dedicado); enums de domínio persistidos MUST usar `@Enumerated(EnumType.STRING)`, nunca
+  `ORDINAL`.
+- VI. Convenções de API REST — expandido: convenção de sub-rota `POST /{recurso}/bulk` para
+  ações de criação em massa; formato padrão de erro 4xx agora explicitamente cobre JSON
+  malformado/valor de campo inválido antes da Bean Validation rodar, via handler de
+  `HttpMessageNotReadableException` já implementado em `GlobalExceptionHandler`.
+
+Motivação: decisões que emergiram durante a implementação da feature
+002-receivable-charges (primeira feature com campo de data, campo enum, ação de criação em
+lote, e uma segunda exception genérica de infraestrutura) e que se aplicam a qualquer
+entidade futura com essas mesmas necessidades, não só a `Receivable`. O gap de tratamento de
+JSON malformado foi encontrado pelo `/speckit.analyze` antes da implementação (risco real de
+violar o Princípio VI em runtime, não coberto por nenhum teste de caminho feliz) — a correção
+já é código genérico reaproveitável, e esta emenda só documenta que ela existe e por quê,
+para não ser removida ou duplicada por engano numa feature futura. A decisão sobre Playwright
+veio de a usuária notar que a dança de instalar/remover a cada rodada de validação era o
+gargalo real (reinstalação completa de `node_modules`), não o Playwright em si.
+
+Templates a verificar:
+- ✅ .specify/templates/plan-template.md — genérico, sem alterações necessárias
+- ✅ .specify/templates/spec-template.md — genérico, sem alterações necessárias
+- ✅ .specify/templates/tasks-template.md — genérico, sem alterações necessárias
+
+Itens pendentes (TODO): nenhum.
+-->
+
+<!--
+Sync Impact Report (histórico — emenda anterior)
+==================
 Versão: 1.1.0 → 1.2.0
 
 Princípios modificados:
@@ -107,10 +156,17 @@ migração de schema de banco MUST ser feita via Flyway, com migrations versiona
 
 Recursos compartilhados ficam em `shared/`, mas essa pasta MUST conter apenas recursos
 verdadeiramente transversais a mais de uma entidade: `GlobalExceptionHandler`, exceptions
-genéricas de infraestrutura reaproveitáveis por qualquer entidade (ex.: um
-`NotFoundException`/`ConflictException` base) e configuração técnica (ex.: CORS). Uma
-exception que representa uma regra de negócio específica de uma entidade NUNCA deve viver
-em `shared/` — deve viver no `domain/` da própria entidade.
+genéricas de infraestrutura reaproveitáveis por qualquer entidade (`NotFoundException` → 404,
+`ConflictException` → 409, `BadRequestException` → 400) e configuração técnica (ex.: CORS).
+`BadRequestException` MUST ser usada quando uma regra de validação (ex.: "valor deve ser
+positivo") precisa ser reforçada no `Service` — porque é reaplicada em mais de um método
+(criar, editar, criar em lote) ou porque a regra de negócio em si não é puramente sintática —
+em vez de depender só de Bean Validation no DTO; quando a regra é puramente sintática e vale
+para um único ponto de entrada (campo obrigatório, formato), Bean Validation no DTO
+(`@NotBlank`, `@Positive`, etc.) já basta, sem duplicar a checagem no `Service`. Uma exception
+que representa uma regra de negócio específica de uma entidade NUNCA deve viver em
+`shared/` — deve viver no `domain/` da própria entidade, mesmo que estenda uma das três bases
+acima (ex.: `UnitHasResidentsException extends ConflictException`).
 
 No frontend, cada entidade de domínio possui sua pasta de componentes, com `core/` para
 tratamento de erros e `shared/` para models, services, validators e configuração de URL
@@ -154,11 +210,30 @@ de teste. Não há, por ora, bibliotecas específicas a evitar — decisões de 
 uma biblioteca por experiência prévia negativa devem ser registradas aqui quando ocorrerem,
 para não serem repetidas.
 
+Playwright é usado como ferramenta de validação manual em navegador headless durante a
+implementação (não faz parte da suíte de testes automatizados definida acima, que continua
+sendo só JUnit 5 + Mockito + Spring Boot Test / Vitest). Uma vez que o frontend tenha telas
+para validar, o Playwright MUST ser mantido como devDependency permanente de
+`frontend/package.json` (`npm install --save-dev playwright`) e reaproveitado diretamente a
+cada feature, em vez de instalado/removido a cada rodada — a reinstalação completa de
+`node_modules` necessária para limpar uma instalação temporária custa bem mais tempo do que a
+instalação do Playwright em si (binário do Chromium fica em cache local, fora do projeto).
+
 ### IV. Convenções de Código e Formatação
-Datas exibidas ou registradas em conteúdo de domínio MUST seguir o formato DD/MM/AAAA.
-Nomes de variáveis, classes, métodos, propriedades e tabelas de banco de dados MUST estar
-em inglês. Mensagens de erro internas (exceptions, logs) MUST estar em inglês. Mensagens
-de erro exibidas ao usuário final (respostas de API, frontend) MUST estar em português.
+Datas exibidas à usuária final (UI) MUST seguir o formato DD/MM/AAAA. Internamente —
+persistência e contrato de API (JSON de request/response) — todo campo de data MUST ser
+`LocalDate`, trafegando no formato ISO-8601 padrão do Jackson (`yyyy-MM-dd`), sem anotação
+`@JsonFormat` customizada; o backend NUNCA converte para o formato brasileiro. A conversão
+para exibição/entrada em DD/MM/AAAA é responsabilidade exclusiva do frontend, usando os
+recursos nativos do Angular/HTML já suficientes para isso — `DatePipe` (`| date:'dd/MM/yyyy'`)
+para exibição e `<input type="date">` para entrada, cujo valor já trafega em ISO-8601 nativamente
+— sem introduzir um utilitário de conversão customizado quando esses recursos nativos já
+resolvem. Enums de
+domínio persistidos via JPA MUST usar `@Enumerated(EnumType.STRING)`, nunca `ORDINAL` (evita
+corromper dados existentes se a ordem de declaração dos valores do enum mudar no futuro).
+Nomes de variáveis, classes, métodos, propriedades e tabelas de banco de dados MUST estar em
+inglês. Mensagens de erro internas (exceptions, logs) MUST estar em inglês. Mensagens de erro
+exibidas ao usuário final (respostas de API, frontend) MUST estar em português.
 
 ### V. Idioma por Tipo de Conteúdo
 Todo conteúdo gerado neste projeto (por pessoas ou por IA) MUST respeitar a tabela abaixo.
@@ -179,12 +254,22 @@ antes de assumir um idioma.
 ### VI. Convenções de API REST
 Rotas MUST seguir o padrão `/api/{recurso-no-plural-em-inglês}` (ex.: `/api/units`,
 `/api/residents`), usando os verbos HTTP padrão: `GET` para listagem/consulta, `POST` para
-criação, `PUT /{id}` para edição completa e `DELETE /{id}` para remoção. Toda resposta de
-erro (4xx) MUST seguir o formato padronizado `{ "message": string, "status": number }`, com
-`message` em português (ver Princípios IV e V). Confirmação de ações destrutivas (remoção)
-é responsabilidade exclusiva do frontend (diálogo de confirmação antes da chamada); o
-endpoint `DELETE` MUST executar a remoção diretamente quando chamado, sem etapa de
-confirmação própria no backend.
+criação, `PUT /{id}` para edição completa e `DELETE /{id}` para remoção. Quando um recurso
+precisar de uma ação de criação em massa (aplicar os mesmos dados a todas as instâncias de
+outro recurso relacionado), essa ação MUST ser exposta como sub-rota `POST
+/{recurso}/bulk`, com corpo igual ao do `POST` individual menos o identificador do recurso
+relacionado (que passa a ser implícito — "todas as instâncias existentes no momento da
+chamada"), nunca sobrecarregando o `POST` individual com um identificador opcional.
+
+Toda resposta de erro (4xx) MUST seguir o formato padronizado `{ "message": string, "status":
+number }`, com `message` em português (ver Princípios IV e V) — isso inclui JSON malformado
+ou um valor de campo que quebre a deserialização antes da validação Bean Validation rodar
+(ex.: um valor de enum fora do conjunto esperado), cobertos por um
+`@ExceptionHandler(HttpMessageNotReadableException.class)` genérico já implementado no
+`GlobalExceptionHandler`, reaproveitado automaticamente por qualquer entidade nova sem
+precisar de código extra. Confirmação de ações destrutivas (remoção) é responsabilidade
+exclusiva do frontend (diálogo de confirmação antes da chamada); o endpoint `DELETE` MUST
+executar a remoção diretamente quando chamado, sem etapa de confirmação própria no backend.
 
 DTOs de resposta MUST expor um factory estático `from(Entity)` que constrói o DTO a
 partir da entidade de domínio. Quando um DTO de resposta representa uma entidade que
@@ -282,5 +367,5 @@ definidos aqui. Complexidade adicional (novas camadas, dependências, padrões) 
 justificada em relação aos princípios de simplicidade implícitos na arquitetura em camadas
 descrita no Princípio I.
 
-**Version**: 1.2.0 | **Ratified**: 2026-07-24 | **Last Amended**: 2026-07-26
+**Version**: 1.3.0 | **Ratified**: 2026-07-24 | **Last Amended**: 2026-07-26
 </content>

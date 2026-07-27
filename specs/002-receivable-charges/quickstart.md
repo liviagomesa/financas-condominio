@@ -54,12 +54,14 @@ ordem para validar o fluxo completo. Pressupõe a unidade "Bloco A - 101" já ca
 
 1. **Lançar conta a receber individual** (US1): na unidade "Bloco A - 101", lance uma conta
    a receber com valor "R$ 350,00", vencimento "10/08/2026", descrição "Taxa condominial -
-   Agosto/2026", conta destino "Piscina" e tipo "Recorrente". Confirme que aparece na
-   listagem de lançamentos da unidade (`GET /api/receivables?unitId={id}` — ver
-   [contracts/api.md](./contracts/api.md)).
+   Agosto/2026", conta destino "Piscina" e marque a caixa "Recorrente". Confirme que aparece
+   na listagem de lançamentos da unidade (`GET /api/receivables?unitId={id}` — ver
+   [contracts/api.md](./contracts/api.md)) e que a API retorna `dueDate` no formato
+   `2026-08-10` (ISO), mesmo a UI exibindo `10/08/2026`.
 2. **Bloquear lançamento inválido** (US1): tente lançar com valor zero ou negativo, ou sem
-   preencher algum campo obrigatório (vencimento, descrição, conta destino, tipo). Confirme
-   que o sistema rejeita e indica o motivo.
+   preencher algum campo obrigatório (vencimento, descrição, conta destino). Confirme que o
+   sistema rejeita e indica o motivo; confirme que a caixa "Recorrente" nunca aparece como
+   pendência (sempre tem um valor, desmarcada por padrão).
 3. **Bloquear lançamento sem unidade cadastrada**: em uma base sem nenhuma unidade, tente
    lançar uma conta a receber e confirme que o sistema orienta a cadastrar uma unidade
    primeiro.
@@ -83,6 +85,16 @@ ordem para validar o fluxo completo. Pressupõe a unidade "Bloco A - 101" já ca
    001 — só validar após a aprovação e implementação da extensão de `UnitService.delete()`
    descrita em research.md/plan.md desta feature): tente remover uma unidade que ainda possui
    lançamentos e confirme que o sistema rejeita, informando o vínculo.
+10. **Registrar pagamento** (US5): registre o pagamento de um lançamento pendente informando
+    a data "15/08/2026" e confirme que ele passa a aparecer como pago na listagem, com a data
+    exibida; registre novamente com outra data e confirme que ela é atualizada; tente registrar
+    sem informar a data e confirme rejeição; edite e depois remova um lançamento já pago e
+    confirme que ambas as operações funcionam normalmente, sem bloqueio.
+11. **Remover lançamentos em lote** (FR-019): na listagem, selecione dois ou mais lançamentos
+    usando os checkboxes da tabela e use a ação "Remover selecionados"; confirme que todos
+    somem da listagem. Se possível, repita selecionando um lançamento de uma unidade que será
+    removida no mesmo teste (ver cenário 9) para confirmar o comportamento de melhor esforço
+    (o que puder ser removido é removido; o que falhar é reportado).
 
 ## Referências
 
