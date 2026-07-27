@@ -1,6 +1,44 @@
 <!--
 Sync Impact Report
 ==================
+Versão: 1.3.0 → 1.4.0
+
+Princípios modificados:
+- I. Arquitetura em Camadas — expandido: `BadRequestException` também MUST cobrir validação
+  de query params sem DTO correspondente (ex.: filtros de listagem em formato livre), já que
+  Bean Validation não se aplica a eles; no frontend, `shared/components/` passa a ser o local
+  padrão para componentes de UI reutilizáveis por mais de uma tela (distinto de
+  models/services/validators soltos em `shared/`), e toda listagem com seleção múltipla +
+  remoção em lote MUST reaproveitar o trio `shared/list-selection.ts` +
+  `shared/bulk-delete.ts` + `shared/components/bulk-actions-bar/`.
+- IV. Convenções de Código e Formatação — expandido: um estado binário inteiramente derivável
+  da presença/ausência de outro campo (ex.: "pago" quando `paymentDate` não é nula) MUST ser
+  derivado desse campo, nunca duplicado como um segundo campo booleano persistido.
+- VI. Convenções de API REST — expandido: a sub-rota `POST /{recurso}/bulk` (criação em
+  massa) se generaliza para qualquer ação de negócio dedicada sobre um recurso existente que
+  não seja edição completa nem criação (`POST /{recurso}/{id}/{ação}`, ex.: `.../pay`);
+  filtros de leitura numa listagem MUST ser query params adicionais no mesmo `GET` de
+  coleção (nunca rota nova), combinados por E lógico quando mais de um for informado.
+
+Motivação: decisões que emergiram durante a rodada de correções pós-implementação da feature
+002-receivable-charges (registro de pagamento, filtros de listagem, seleção múltipla +
+remoção em lote) e que se aplicam a qualquer entidade futura com necessidades semelhantes —
+uma ação de estado dedicada, um campo derivável, filtros combináveis, ou uma listagem que
+precise de remoção em lote — não só a `Receivable`/`Unit`/`Resident`. Diferente da emenda
+anterior (1.2.0 → 1.3.0), esta já estava commitada no momento desta revisão, por isso o bump
+de versão (em vez de incorporar as mudanças na mesma emenda).
+
+Templates a verificar:
+- ✅ .specify/templates/plan-template.md — genérico, sem alterações necessárias
+- ✅ .specify/templates/spec-template.md — genérico, sem alterações necessárias
+- ✅ .specify/templates/tasks-template.md — genérico, sem alterações necessárias
+
+Itens pendentes (TODO): nenhum.
+-->
+
+<!--
+Sync Impact Report (histórico — emenda anterior)
+==================
 Versão: 1.2.0 → 1.3.0
 
 Princípios modificados:
@@ -166,13 +204,24 @@ para um único ponto de entrada (campo obrigatório, formato), Bean Validation n
 (`@NotBlank`, `@Positive`, etc.) já basta, sem duplicar a checagem no `Service`. Uma exception
 que representa uma regra de negócio específica de uma entidade NUNCA deve viver em
 `shared/` — deve viver no `domain/` da própria entidade, mesmo que estenda uma das três bases
-acima (ex.: `UnitHasResidentsException extends ConflictException`).
+acima (ex.: `UnitHasResidentsException extends ConflictException`). `BadRequestException`
+também MUST ser usada para validar query params que não correspondem a nenhum campo de DTO
+(ex.: um filtro de listagem em formato livre, como um mês/ano) — Bean Validation não se
+aplica a esses parâmetros, então a validação/parsing ocorre diretamente no `Service`.
 
 No frontend, cada entidade de domínio possui sua pasta de componentes, com `core/` para
 tratamento de erros e `shared/` para models, services, validators e configuração de URL
-base da API. Estado local de componente MUST ser gerenciado via `signal()` do Angular —
-não por campo simples nem `BehaviorSubject` — consequência do app rodar em modo zoneless
-(sem Zone.js). Rotas MUST seguir o padrão `/{recurso-plural}` (listagem),
+base da API; `shared/components/` reúne componentes de UI reutilizáveis por mais de uma tela
+(ex.: `bulk-actions-bar/`), distintos dos models/services/validators soltos em `shared/`.
+Toda listagem que precisar de seleção múltipla + remoção em lote MUST reaproveitar o trio já
+estabelecido `shared/list-selection.ts` (estado de seleção, signal-based) +
+`shared/bulk-delete.ts` (remoção item a item, melhor esforço, sem endpoint transacional) +
+`shared/components/bulk-actions-bar/` (UI da barra de ação) — introduzido na feature
+002-receivable-charges e já aplicado a `unit-list`/`resident-list`/`receivable-list` — em vez
+de reimplementar seleção/remoção em lote do zero numa tela nova. Estado local de componente
+MUST ser gerenciado via `signal()` do Angular — não por campo simples nem `BehaviorSubject` —
+consequência do app rodar em modo zoneless (sem Zone.js). Rotas MUST seguir o padrão
+`/{recurso-plural}` (listagem),
 `/{recurso-plural}/new` (criação) e `/{recurso-plural}/:id/edit` (edição), espelhando a
 convenção de rotas de API do Princípio VI.
 
@@ -230,7 +279,11 @@ para exibição e `<input type="date">` para entrada, cujo valor já trafega em 
 — sem introduzir um utilitário de conversão customizado quando esses recursos nativos já
 resolvem. Enums de
 domínio persistidos via JPA MUST usar `@Enumerated(EnumType.STRING)`, nunca `ORDINAL` (evita
-corromper dados existentes se a ordem de declaração dos valores do enum mudar no futuro).
+corromper dados existentes se a ordem de declaração dos valores do enum mudar no futuro). Um
+estado binário inteiramente derivável da presença/ausência de outro campo (ex.: um
+lançamento "pago" quando sua `paymentDate` não é nula) MUST ser derivado desse campo, nunca
+duplicado como um segundo campo booleano persistido — evita os dois ficarem inconsistentes
+entre si.
 Nomes de variáveis, classes, métodos, propriedades e tabelas de banco de dados MUST estar em
 inglês. Mensagens de erro internas (exceptions, logs) MUST estar em inglês. Mensagens de erro
 exibidas ao usuário final (respostas de API, frontend) MUST estar em português.
@@ -259,7 +312,14 @@ precisar de uma ação de criação em massa (aplicar os mesmos dados a todas as
 outro recurso relacionado), essa ação MUST ser exposta como sub-rota `POST
 /{recurso}/bulk`, com corpo igual ao do `POST` individual menos o identificador do recurso
 relacionado (que passa a ser implícito — "todas as instâncias existentes no momento da
-chamada"), nunca sobrecarregando o `POST` individual com um identificador opcional.
+chamada"), nunca sobrecarregando o `POST` individual com um identificador opcional. O mesmo
+padrão de sub-rota se generaliza para qualquer ação de negócio dedicada sobre um recurso
+existente que não seja nem edição completa (`PUT`) nem criação (`POST` no recurso plano) —
+`POST /{recurso}/{id}/{ação}` (ex.: `POST /api/receivables/{id}/pay`, para registrar
+pagamento) — reaproveitando esse padrão de rota em vez de inventar um novo a cada ação.
+Filtros de leitura numa listagem (`GET /{recurso}`) MUST ser expostos como query params
+adicionais no mesmo endpoint de coleção, nunca como rotas novas; quando mais de um filtro for
+informado simultaneamente, MUST ser combinados por E lógico.
 
 Toda resposta de erro (4xx) MUST seguir o formato padronizado `{ "message": string, "status":
 number }`, com `message` em português (ver Princípios IV e V) — isso inclui JSON malformado
@@ -367,5 +427,5 @@ definidos aqui. Complexidade adicional (novas camadas, dependências, padrões) 
 justificada em relação aos princípios de simplicidade implícitos na arquitetura em camadas
 descrita no Princípio I.
 
-**Version**: 1.3.0 | **Ratified**: 2026-07-24 | **Last Amended**: 2026-07-26
+**Version**: 1.4.0 | **Ratified**: 2026-07-24 | **Last Amended**: 2026-07-27
 </content>
