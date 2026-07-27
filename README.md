@@ -47,7 +47,7 @@ cd backend
 mvn spring-boot:run
 ```
 
-A API sobe em `http://localhost:8080/api`.
+A API sobe em `http://localhost:8082/api`.
 
 ### 3. Testes automatizados do backend
 
@@ -64,7 +64,7 @@ npm install
 npm start
 ```
 
-Acesse `http://localhost:4200`.
+Acesse `http://localhost:4202`.
 
 ## Decisões técnicas e premissas
 
@@ -139,6 +139,12 @@ Acesse `http://localhost:4200`.
   reaproveitados por `receivable-list`, `unit-list` e `resident-list` —
   cada tela mantém sua própria tabela/colunas, só a seleção e a ação em
   lote são compartilhadas.
+- **Portas de desenvolvimento fora do padrão (backend `8082`, frontend
+  `4202`)**: originalmente `8080`/`4200` (padrões do Spring Boot/Angular
+  CLI). Trocadas por decisão explícita da usuária, que roda vários projetos
+  Angular/Java na mesma máquina e queria evitar colisão recorrente com as
+  portas-padrão de outros projetos.
+- **Handler de `MethodArgumentTypeMismatchException` no
 
 ## Uso de IA
 

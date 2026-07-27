@@ -20,7 +20,7 @@ cd backend
 mvn spring-boot:run
 ```
 
-API disponível em `http://localhost:8080/api`.
+API disponível em `http://localhost:8082/api`.
 
 ## 3. Rodar os testes automatizados do backend
 
@@ -37,7 +37,7 @@ npm install
 npm start
 ```
 
-Acesse `http://localhost:4200`.
+Acesse `http://localhost:4202`.
 
 ## 5. Rodar os testes automatizados do frontend
 
@@ -95,6 +95,16 @@ ordem para validar o fluxo completo. Pressupõe a unidade "Bloco A - 101" já ca
     somem da listagem. Se possível, repita selecionando um lançamento de uma unidade que será
     removida no mesmo teste (ver cenário 9) para confirmar o comportamento de melhor esforço
     (o que puder ser removido é removido; o que falhar é reportado).
+12. **Filtrar por status e por vencidos** (FR-020/FR-021): com lançamentos pagos, pendentes e
+    vencidos cadastrados, filtre a listagem por "Pagos" e confirme que só eles aparecem;
+    filtre por "Pendentes" e confirme o oposto; marque "Somente vencidos" e confirme que só
+    lançamentos pendentes com vencimento no passado aparecem (um lançamento pago, mesmo com
+    vencimento passado, não deve aparecer nesse filtro).
+13. **Filtrar por mês de vencimento e de pagamento** (FR-022/FR-023): com lançamentos em
+    meses diferentes, use o filtro de mês de vencimento e confirme que só os lançamentos
+    daquele mês aparecem; registre pagamentos em meses diferentes e use o filtro de mês de
+    pagamento, confirmando que só os pagos naquele mês aparecem (lançamentos pendentes nunca
+    aparecem nesse filtro).
 
 ## Referências
 

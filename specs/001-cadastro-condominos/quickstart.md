@@ -26,7 +26,7 @@ cd backend
 mvn spring-boot:run
 ```
 
-API disponível em `http://localhost:8080/api`.
+API disponível em `http://localhost:8082/api`.
 
 ## 3. Rodar os testes automatizados do backend
 
@@ -43,7 +43,7 @@ npm install
 npm start
 ```
 
-Acesse `http://localhost:4200`.
+Acesse `http://localhost:4202`.
 
 ## 5. Rodar os testes automatizados do frontend
 
@@ -89,6 +89,14 @@ Os cenários abaixo espelham os Acceptance Scenarios do
     sistema rejeita com mensagem informando o vínculo.
 11. **Remover unidade sem vínculo** (US6): remova a unidade "Bloco A - 102"
     (sem condôminos) e confirme que ela some da listagem.
+12. **Remoção em lote "melhor esforço"** (FR-018, feature 002): cadastre uma unidade extra
+    sem condômino associado (ex.: "Bloco B - 201"). Na listagem de unidades, selecione essa
+    unidade junto de outra que ainda tenha condômino vinculado (ex.: "Bloco A - 101") e
+    acione "Remover selecionados". Confirme que a unidade sem vínculo é removida
+    normalmente, que a unidade com vínculo permanece na listagem, e que uma mensagem informa
+    que 1 unidade não pôde ser removida. Repita o mesmo roteiro na listagem de condôminos
+    (sem regra de bloqueio equivalente lá, então a remoção em lote deve funcionar para
+    todos os selecionados).
 
 ## Referências
 

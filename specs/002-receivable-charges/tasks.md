@@ -284,65 +284,65 @@ ver Clarifications ("Sessão de correção 2026-07-26") e User Story 5 em spec.m
 "pago" é só `paymentDate != null`, ver Clarifications/research.md) e passou a permitir
 informar `paymentDate` já na criação/edição, não só via ação dedicada.
 
-- [ ] T035 [P] [US5] Create migration Flyway
+- [X] T035 [P] [US5] Create migration Flyway
   `backend/src/main/resources/db/migration/V4__add_payment_date_to_receivable.sql`
   (`ALTER TABLE receivable ADD COLUMN payment_date DATE NULL`)
-- [ ] T036 [US5] Add campo `paymentDate` (getter/setter) à entidade `Receivable` (sem campo
+- [X] T036 [US5] Add campo `paymentDate` (getter/setter) à entidade `Receivable` (sem campo
   `paid`) em `backend/src/main/java/com/financas/receivable/domain/Receivable.java` (depends
   on T035)
-- [ ] T037 [US5] Update `create(...)` e `createForAllUnits(...)` do `ReceivableService` para
+- [X] T037 [US5] Update `create(...)` e `createForAllUnits(...)` do `ReceivableService` para
   aceitar um `LocalDate paymentDate` opcional (FR-015: lançamento já criado como pago quando
   informado), em
   `backend/src/main/java/com/financas/receivable/domain/ReceivableService.java` (depends on T036)
-- [ ] T038 [US5] Add método `registerPayment(Long id, LocalDate paymentDate)` ao
+- [X] T038 [US5] Add método `registerPayment(Long id, LocalDate paymentDate)` ao
   `ReceivableService` (FR-016: grava/atualiza `paymentDate`; reaplicar sobre um lançamento já
   pago só atualiza a data, sem estorno) em
   `backend/src/main/java/com/financas/receivable/domain/ReceivableService.java` (depends on T036)
-- [ ] T039 [P] [US5] Create DTO `ReceivablePaymentRequest` (`paymentDate` `@NotNull`) em
+- [X] T039 [P] [US5] Create DTO `ReceivablePaymentRequest` (`paymentDate` `@NotNull`) em
   `backend/src/main/java/com/financas/receivable/api/`
-- [ ] T040 [P] [US5] Add campo opcional `paymentDate` (sem `@NotNull`) a `ReceivableRequest` e
+- [X] T040 [P] [US5] Add campo opcional `paymentDate` (sem `@NotNull`) a `ReceivableRequest` e
   `ReceivableBulkRequest`, em `backend/src/main/java/com/financas/receivable/api/` (depends on T037)
-- [ ] T041 [US5] Add `POST /api/receivables/{id}/pay` ao `ReceivableController`, retornando o
+- [X] T041 [US5] Add `POST /api/receivables/{id}/pay` ao `ReceivableController`, retornando o
   `ReceivableResponse` atualizado (depends on T038, T039)
-- [ ] T042 [P] [US5] Update `ReceivableResponse`/`ReceivableResponse.from(...)` para incluir
+- [X] T042 [P] [US5] Update `ReceivableResponse`/`ReceivableResponse.from(...)` para incluir
   `paymentDate` (sem campo `paid`) em
   `backend/src/main/java/com/financas/receivable/api/ReceivableResponse.java` (depends on T036)
-- [ ] T045 [P] [US5] Create testes unitários no `ReceivableServiceTest` (Mockito: criação
+- [X] T045 [P] [US5] Create testes unitários no `ReceivableServiceTest` (Mockito: criação
   individual/em lote com `paymentDate` informado já persiste como pago — FR-015; registra
   pagamento em lançamento pendente; atualiza a data ao reaplicar em lançamento já pago —
   FR-016; 404 se o lançamento não existir; edição/remoção de lançamento pago continuam
   permitidas sem bloqueio — FR-017) em
   `backend/src/test/java/com/financas/receivable/domain/ReceivableServiceTest.java` (depends
   on T037, T038)
-- [ ] T047 [P] [US5] Add `registerPayment(id, paymentDate)` ao `ReceivableService` (frontend,
+- [X] T047 [P] [US5] Add `registerPayment(id, paymentDate)` ao `ReceivableService` (frontend,
   HttpClient) em `frontend/src/app/shared/services/receivable.service.ts` (depends on T041)
-- [ ] T049 [US5] Add campo opcional de data de pagamento (nativo `<input type="date">`) ao
+- [X] T049 [US5] Add campo opcional de data de pagamento (nativo `<input type="date">`) ao
   `receivable-form`, tanto na criação (individual e em lote) quanto na edição — quando
   preenchido, o lançamento é enviado/atualizado já como pago (FR-015) — em
   `frontend/src/app/receivable/receivable-form/` (depends on T040)
-- [ ] T050 [US5] Add ação "Registrar pagamento" em `receivable-list` (campo de data nativo —
+- [X] T050 [US5] Add ação "Registrar pagamento" em `receivable-list` (campo de data nativo —
   padrão a data atual, editável — e confirmação), exibindo coluna de status (Pago/Pendente,
   derivado de `paymentDate`) e a data de pagamento quando pago, em
   `frontend/src/app/receivable/receivable-list/` (depends on T047)
 
 ### Filtros de listagem (FR-020 a FR-023)
 
-- [ ] T043 [US3] Add filtros `paid`/`overdue`/`dueYearMonth`/`paymentYearMonth` ao
+- [X] T043 [US3] Add filtros `paid`/`overdue`/`dueYearMonth`/`paymentYearMonth` ao
   `ReceivableService.findAll(...)`, aplicados em memória sobre o resultado de
   `findAll()`/`findByUnitId(...)` (E lógico entre si e com `unitId`; `overdue` usa
   `LocalDate.now()` diretamente, sem abstração de `Clock` — ver research.md), em
   `backend/src/main/java/com/financas/receivable/domain/ReceivableService.java` (depends on T036)
-- [ ] T044 [US3] Add os novos `@RequestParam` (`paid`, `overdue`, `dueYearMonth`,
+- [X] T044 [US3] Add os novos `@RequestParam` (`paid`, `overdue`, `dueYearMonth`,
   `paymentYearMonth`) ao `GET /api/receivables` em
   `backend/src/main/java/com/financas/receivable/api/ReceivableController.java` (depends on T043)
-- [ ] T046 [P] [US3] Create testes unitários dos filtros no `ReceivableServiceTest` (Mockito:
+- [X] T046 [P] [US3] Create testes unitários dos filtros no `ReceivableServiceTest` (Mockito:
   cada filtro isoladamente e combinados entre si — incluindo o caso `overdue` excluir
   lançamentos pagos mesmo com `dueDate` passado, FR-021) em
   `backend/src/test/java/com/financas/receivable/domain/ReceivableServiceTest.java` (depends on T043)
-- [ ] T048 [US3] Extend `ReceivableService` (frontend) `findAll(...)` para aceitar os novos
+- [X] T048 [US3] Extend `ReceivableService` (frontend) `findAll(...)` para aceitar os novos
   filtros como parâmetros opcionais, em
   `frontend/src/app/shared/services/receivable.service.ts` (depends on T044)
-- [ ] T051 [US3] Add controles de filtro em `receivable-list` (select de status
+- [X] T051 [US3] Add controles de filtro em `receivable-list` (select de status
   pago/pendente, checkbox "somente vencidos", seletor de mês/ano de vencimento e de mês/ano de
   pagamento), consumindo T048, em `frontend/src/app/receivable/receivable-list/` (depends on T048)
 
@@ -352,45 +352,45 @@ informar `paymentDate` já na criação/edição, não só via ação dedicada.
 (`date-format.util.ts`) previsto na parte 1, em favor de `<input type="date">` nativo (escrita)
 e do `DatePipe` do Angular (exibição) — ver research.md.
 
-- [ ] T052 [US-datafix] Remove `@JsonFormat(pattern = "dd/MM/yyyy")` de
+- [X] T052 [US-datafix] Remove `@JsonFormat(pattern = "dd/MM/yyyy")` de
   `ReceivableRequest.dueDate` e `ReceivableResponse.dueDate` (e não adicionar em
   `ReceivablePaymentRequest.paymentDate`/`ReceivableResponse.paymentDate`/
   `ReceivableRequest.paymentDate`), passando a serializar no formato ISO-8601 padrão do
   Jackson, em `backend/src/main/java/com/financas/receivable/api/ReceivableRequest.java` e
   `ReceivableResponse.java` — **REABRE T007** desta rodada (motivo: correção do Princípio IV
   da constituição, ver research.md)
-- [ ] T053 Update `receivable-form`: trocar o `<input type="text">` de `dueDate` (com regex
+- [X] T053 Update `receivable-form`: trocar o `<input type="text">` de `dueDate` (com regex
   `DUE_DATE_PATTERN`) por `<input type="date">` nativo, ligado diretamente ao valor ISO do
   `FormControl` (sem parsing manual); mesmo tratamento para o novo campo de data de pagamento
   (T049), em `frontend/src/app/receivable/receivable-form/` — **REABRE parte de T013** desta
   rodada
-- [ ] T054 [P] Update `receivable-list` para exibir `dueDate`/`paymentDate` com o `DatePipe`
+- [X] T054 [P] Update `receivable-list` para exibir `dueDate`/`paymentDate` com o `DatePipe`
   nativo do Angular (`| date:'dd/MM/yyyy'`), sem nenhuma conversão manual, em
   `frontend/src/app/receivable/receivable-list/` — **REABRE parte de T014** desta rodada
 
 ### Tipo como caixa de seleção "Recorrente"
 
-- [ ] T055 Update `receivable-form` (template + `FormControl` `recurring`): trocar o `<select>`
+- [X] T055 Update `receivable-form` (template + `FormControl` `recurring`): trocar o `<select>`
   por um único checkbox "Recorrente", com valor padrão `false` (desmarcado) e sem estado de
   "obrigatório vazio", em `frontend/src/app/receivable/receivable-form/` — **REABRE parte de
   T013** desta rodada (mesmo arquivo de T053; pode ser feito na mesma tarefa de implementação)
 
 ### Seleção múltipla e remoção em lote (FR-019)
 
-- [ ] T063 [P] Create `frontend/src/app/shared/list-selection.ts` (helper `createSelection<T>`:
+- [X] T063 [P] Create `frontend/src/app/shared/list-selection.ts` (helper `createSelection<T>`:
   signal com o conjunto de ids selecionados, `toggle(id)`, `toggleAll(items, getId)`,
   `isSelected(id)`, `clear()`, `selectedCount`)
-- [ ] T064 [P] Create `frontend/src/app/shared/bulk-delete.ts` (`bulkDelete(ids, deleteFn):
+- [X] T064 [P] Create `frontend/src/app/shared/bulk-delete.ts` (`bulkDelete(ids, deleteFn):
   Observable<{ succeeded: number[]; failed: { id: number; message: string }[] }>` — remove
   item a item, agregando sucesso/falha, sem endpoint transacional novo — ver research.md)
-- [ ] T065 [P] Create componente compartilhado
+- [X] T065 [P] Create componente compartilhado
   `frontend/src/app/shared/components/bulk-actions-bar/` (barra "N selecionados" + botão
   "Remover selecionados", com `confirm()` antes de disparar, exibindo ao final quais itens
   falharam e por quê) (depends on T063, T064)
-- [ ] T066 Apply seleção múltipla (coluna de checkbox por linha + "selecionar todos") e o
+- [X] T066 Apply seleção múltipla (coluna de checkbox por linha + "selecionar todos") e o
   `bulk-actions-bar` a `receivable-list`, em
   `frontend/src/app/receivable/receivable-list/` (depends on T063, T064, T065)
-- [ ] T067 [P] Create teste Vitest de `bulkDelete` (agrega sucesso/falha por item
+- [X] T067 [P] Create teste Vitest de `bulkDelete` (agrega sucesso/falha por item
   corretamente, inclusive quando todos ou nenhum item falha) em
   `frontend/src/app/shared/bulk-delete.spec.ts` (depends on T064)
 
@@ -402,7 +402,7 @@ tasks.md, que referencia T056-T058 da feature 001).
 
 ### README
 
-- [ ] T068 [P] Update `README.md`: remover o item "Registro de pagamento/quitação de um
+- [X] T068 [P] Update `README.md`: remover o item "Registro de pagamento/quitação de um
   lançamento" de "O que eu faria diferente ou melhoraria com mais tempo" (implementado nesta
   rodada); registrar em "Decisões técnicas e premissas" a correção do formato de data (ISO
   internamente / DD-MM-AAAA só na UI, via recursos nativos do Angular — sem utilitário
@@ -411,13 +411,35 @@ tasks.md, que referencia T056-T058 da feature 001).
   compartilhados; registrar em "Revisões e correções das entregas da IA" tanto o pedido de
   reversão do formato de data quanto a remoção do utilitário de conversão como aprendizados,
   conforme Fluxo de Commits da constituição
-- [ ] T069 [P] Run roteiro de validação manual atualizado de `quickstart.md` (cenários 10-13),
+- [X] T069 [P] Run roteiro de validação manual atualizado de `quickstart.md` (cenários 10-13),
   cobrindo registro de pagamento (na criação e depois), formato ISO na API (curl), os quatro
   filtros de listagem e remoção em lote
 
 **Checkpoint**: User Story 5 completa e testável de forma independente (incluindo criar já
 pago); filtros de listagem funcionando e combináveis; formato de data corrigido sem utilitário
 customizado; tipo representado como checkbox; remoção em lote disponível em `receivable-list`.
+
+---
+
+## Phase 9: Convergence
+
+**Motivo**: gaps encontrados por `/speckit-converge` ao comparar spec.md/plan.md/tasks.md
+com o código já implementado (backend + frontend rodando, validado via curl e Playwright).
+
+- [X] T070 Add `@ExceptionHandler(MethodArgumentTypeMismatchException.class)` ao
+  `GlobalExceptionHandler` (retorna 400 no formato padrão `{ "message", "status" }` com
+  mensagem genérica em português) per Constitution Princípio VI (CRITICAL — hoje
+  `?paid=maybe`, `?overdue=maybe` e `?unitId=abc` retornam o formato de erro padrão do
+  Spring, não o formato exigido pela constituição) em
+  `backend/src/main/java/com/financas/shared/GlobalExceptionHandler.java` (missing)
+- [X] T071 Validate o cenário de remoção em lote "melhor esforço" em `unit-list`
+  (selecionar uma unidade com condômino vinculado junto de outra sem vínculo, confirmar que
+  só a segunda é removida e a primeira é reportada como falha) e atualizar
+  `specs/001-cadastro-condominos/quickstart.md` com esse roteiro per
+  `specs/001-cadastro-condominos/tasks.md` T062 (partial)
+- [X] T072 Add cenários 12 (filtro por status pago/pendente e por vencidos) e 13 (filtro por
+  mês/ano de vencimento e de pagamento) ao roteiro de validação manual de
+  `specs/002-receivable-charges/quickstart.md` per T069 (partial)
 
 ---
 
