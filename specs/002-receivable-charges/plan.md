@@ -4,6 +4,17 @@
 
 **Input**: Feature specification from `/specs/002-receivable-charges/spec.md`
 
+## Status Pós-Feature 003
+
+**Atualização (feature 003 — `specs/003-accounts-payable-suppliers/`)**: a entidade
+`Receivable` (pacote `com.financas.receivable`, tabela `receivable`) planejada e implementada
+por este documento foi **generalizada** pela feature 003 em `Account` (pacote
+`com.financas.account`, tabela `account`, renomeada via `ALTER TABLE ... RENAME TO` —
+preservando os dados desta feature), com um novo atributo `type` e suporte a contas a pagar a
+fornecedores. Este plano **permanece como registro histórico** das decisões técnicas desta
+feature; a abordagem técnica vigente está em
+`specs/003-accounts-payable-suppliers/plan.md`/`research.md`.
+
 ## Summary
 
 Permitir lançar contas a receber vinculadas a uma unidade (valor, vencimento, descrição,

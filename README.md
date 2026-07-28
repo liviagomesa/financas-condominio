@@ -225,4 +225,23 @@ Utilizei o GitHub Spec Kit integrado ao Claude Code para conduzir o desenvolvime
 - **Soft delete de condôminos**: em vez de remover o registro definitivamente, marcar o condômino como inativo. Isso evita quebrar dados históricos de cobrança já existentes (o condômino deixaria de aparecer nas listagens de cadastro, mas continuaria sendo referenciado onde já existir vínculo). Para respeitar a LGPD, ao acessar um condômino inativo pelos registros em que ele é referenciado, apenas nome e unidade seriam exibidos — telefone e e-mail seriam removidos/ocultados junto com a inativação.
 - **`TargetAccount` como cadastro dinâmico em vez de enum fixo**: hoje "conta destino" tem 3 valores fixos no código (Piscina/Jardim Piscina/Jardim Lateral). Se o condomínio criar um novo centro de custo no futuro (ex.: uma nova área comum), isso exigiria alteração de código e nova migration em vez de um cadastro simples pela própria usuária — um trade-off consciente pela simplicidade agora, que valeria revisitar se a lista mudar com alguma frequência na prática.
 - **Geração automática/recorrente de lançamentos mensais**: hoje tanto o lançamento individual quanto o em lote (`POST /api/receivables/bulk`) são ações manuais disparadas pela usuária todo mês. Uma automação (ex.: job agendado gerando a taxa condominial do mês automaticamente para lançamentos marcados como `recurring`) reduziria ainda mais o trabalho manual, mas dependeria de definir regras de idempotência (não duplicar o lançamento do mês se a ação manual também for usada).
+- **Ações rápidas em lote além de remoção** (ideia registrada durante a revisão do plano da
+  feature 003): hoje a seleção múltipla nas listagens só permite remover em lote
+  (`bulk-delete.ts`). Uma extensão natural seria permitir editar um campo (ex.: valor) de
+  várias contas selecionadas de uma vez, útil por exemplo para reajustar o valor de várias
+  contas recorrentes iguais em massa, sem abrir o formulário de cada uma individualmente.
+- **Paginação nas listagens (a começar pela de contas)**: as listagens atuais carregam todos
+  os registros de uma vez, premissa aceitável enquanto o volume é de poucas dezenas (ver
+  Assumptions das features 001/002/003). A listagem de contas tende a crescer indefinidamente
+  (uma leva nova por mês, diferente de unidades/fornecedores, que têm cardinalidade
+  praticamente fixa), então deve ser a primeira a precisar de paginação. Avaliação sobre
+  reaproveitar em todas as listagens: como o projeto já tem o hábito de extrair um utilitário
+  compartilhado assim que mais de uma tela precisa da mesma capacidade
+  (`list-selection.ts`/`bulk-delete.ts`/`bulk-actions-bar`), a recomendação é construir a
+  paginação também como um utilitário reaproveitável (mesmo padrão signal-based), mas aplicar
+  de fato só na listagem de contas por enquanto — unidades e fornecedores não têm o mesmo
+  padrão de crescimento e não devem ganhar paginação só por "manter padrão" sem necessidade
+  real (YAGNI). Construir o utilitário já pensando em reuso custa pouco a mais do que uma
+  solução específica da tela, e evita ter que extrair a abstração correndo depois, quando
+  unidades/fornecedores eventualmente crescerem.
 

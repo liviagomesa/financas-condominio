@@ -73,15 +73,22 @@ Remove uma unidade (FR-005).
 
 **Erros**:
 - `404` — unidade `{id}` não encontrada (FR-016).
-- `409` — unidade possui ao menos um condômino associado (FR-006), ou ao menos um lançamento
-  de conta a receber associado (FR-006, estendido pela feature 002 — ver
-  `specs/002-receivable-charges/contracts/api.md`).
+- `409` — unidade possui ao menos uma conta (a pagar ou a receber) associada, ou ao menos um
+  fornecedor associado (FR-006). **Redação vigente, atualizada pela feature 003**
+  (`specs/003-accounts-payable-suppliers/contracts/api.md`) — a redação original considerava
+  condômino associado (feature 001) e lançamento de conta a receber associado (feature 002);
+  condômino foi removido do produto e "lançamento de conta a receber" foi generalizado para
+  "conta".
 
 > Confirmação explícita da usuária antes da chamada é responsabilidade do
 > frontend (diálogo de confirmação); o endpoint executa a remoção diretamente
 > quando chamado.
 
-## Condôminos — `/api/residents`
+## Condôminos — `/api/residents` — REMOVIDO (feature 003)
+
+> **Rota removida por completo pela feature 003** (`specs/003-accounts-payable-suppliers/`,
+> FR-016) — `/api/residents*` não existe mais; qualquer chamada retorna `404` (rota
+> inexistente). Contrato original preservado abaixo como registro histórico.
 
 ### `GET /api/residents`
 

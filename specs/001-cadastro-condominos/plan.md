@@ -151,6 +151,41 @@ a `unit-list` e `resident-list` (FR-018 do spec). Confirmação princípio a pri
 Nenhuma violação introduzida por esta extensão — Complexity Tracking continua não se
 aplicando.
 
+### Atualização (feature 003 — remoção de condômino, generalização de contas)
+
+A feature `003-accounts-payable-suppliers` (1) remove por completo o cadastro de condôminos
+desta feature, e (2) generaliza `Receivable` (feature 002) em `Account`, estendendo a regra
+de bloqueio de remoção de unidade para considerar `Account` e a nova entidade `Supplier`, sem
+mais considerar `Resident`. Confirmação princípio a princípio:
+
+- **I. Arquitetura em Camadas**: ALTERAÇÃO NECESSÁRIA E JÁ APLICADA — pacote
+  `com.financas.resident` (domain/api/infra) removido por completo, assim como
+  `frontend/src/app/resident/` e `frontend/src/app/shared/models/resident.model.ts`/
+  `resident.service.ts`. `UnitHasResidentsException` removida; `UnitHasReceivablesException`
+  renomeada para `UnitHasAccountsException` (mesmo pacote `com.financas.unit.domain`); nova
+  `UnitHasSuppliersException` no mesmo pacote — mesmo padrão já usado para regras de negócio
+  da própria entidade `Unit`.
+- **II. Separação Controller → Service → Repository**: SEM ALTERAÇÃO NECESSÁRIA.
+  `UnitService.delete()` continua sendo o único ponto que decide o bloqueio, agora consultando
+  `AccountRepository.existsByUnitId` (renomeado) e `SupplierRepository.existsByUnitId` (nova
+  interface, injetada do mesmo jeito que `ResidentRepository` era antes), e deixa de consultar
+  `ResidentRepository` (removida).
+- **III. Stack Técnica Definida**: SEM ALTERAÇÃO NECESSÁRIA. Nenhuma dependência ou versão
+  nova. Cobertura de teste de regra de negócio (remoção bloqueada por conta/fornecedor,
+  permitida sem vínculo) entregue junto da implementação desta extensão.
+- **IV. Convenções de Código e Formatação**: SEM ALTERAÇÃO NECESSÁRIA. Nomes de classe em
+  inglês, mensagens de erro ao usuário em português, mesmo padrão já usado.
+- **V. Idioma por Tipo de Conteúdo**: SEM ALTERAÇÃO NECESSÁRIA.
+- **VI. Convenções de API REST**: ALTERAÇÃO NECESSÁRIA — rota `/api/residents*` removida por
+  completo; `DELETE /api/units/{id}` continua retornando `409` no mesmo formato, agora com
+  mensagem referente a conta ou fornecedor vinculado (nunca mais condômino) — ver
+  `contracts/api.md` atualizado.
+
+Nenhuma violação da constituição identificada nesta extensão — Complexity Tracking não se
+aplica. Ver resumo completo da decisão técnica em
+`specs/003-accounts-payable-suppliers/research.md` ("Impacto cruzado: regra de bloqueio de
+remoção de unidade").
+
 ## Project Structure
 
 ### Documentation (this feature)
@@ -174,20 +209,19 @@ backend/
 │   ├── unit/
 │   │   ├── api/               # UnitController, DTOs (request/response)
 │   │   ├── domain/             # Unit entity, UnitRepository (port), UnitService,
-│   │   │                       # DuplicateUnitException, UnitHasResidentsException
+│   │   │                       # DuplicateUnitException; UnitHasResidentsException removida
+│   │   │                       # (feature 003); UnitHasAccountsException (renomeada de
+│   │   │                       # UnitHasReceivablesException) + UnitHasSuppliersException
+│   │   │                       # (novas, feature 003)
 │   │   └── infra/              # UnitJpaRepository (Spring Data), UnitRepositoryImpl
-│   ├── resident/
-│   │   ├── api/                # ResidentController, DTOs
-│   │   ├── domain/              # Resident entity, ResidentRepository (port), ResidentService
-│   │   └── infra/               # ResidentJpaRepository (Spring Data), ResidentRepositoryImpl
+│   ├── resident/                # REMOVIDO por completo (feature 003)
 │   └── shared/
 │       ├── GlobalExceptionHandler.java
 │       └── exceptions/          # NotFoundException, ConflictException (bases genéricas)
 ├── src/main/resources/
 │   └── application.yml
 ├── src/test/java/com/financas/
-│   ├── unit/
-│   └── resident/
+│   └── unit/
 └── pom.xml
 
 frontend/
@@ -195,9 +229,7 @@ frontend/
 │   ├── unit/
 │   │   ├── unit-list/            # + seleção múltipla/remoção em lote (feature 002, FR-018)
 │   │   └── unit-form/
-│   ├── resident/
-│   │   ├── resident-list/        # + seleção múltipla/remoção em lote (feature 002, FR-018)
-│   │   └── resident-form/
+│   ├── resident/                 # REMOVIDO por completo (feature 003)
 │   ├── core/                    # error interceptor/handling
 │   └── shared/                  # models, services, validators, API base URL config,
 │       │                        # list-selection.ts/bulk-delete.ts/bulk-actions-bar (feature 002)

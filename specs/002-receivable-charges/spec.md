@@ -8,6 +8,17 @@
 
 **Input**: User description: "Lançamentos de contas a receber (por unidade, com opção de adicionar para todas simultaneamente)"
 
+## Status Pós-Feature 003
+
+**Atualização (feature 003 — `specs/003-accounts-payable-suppliers/`)**: a entidade
+`Receivable` descrita nesta feature foi **generalizada** pela feature 003 em uma entidade
+única `Account`, que passa a suportar tanto contas a receber (o que esta feature já fazia)
+quanto contas a pagar a fornecedores (novo). Este documento **permanece como registro
+histórico** das decisões desta feature (ex.: por que `paymentDate` sem campo `paid` separado,
+por que os filtros são aplicados em memória) — nada abaixo foi alterado. O comportamento e o
+modelo de dados vigentes estão em `specs/003-accounts-payable-suppliers/spec.md` e
+`data-model.md`.
+
 ## Clarifications
 
 ### Session 2026-07-26
@@ -253,7 +264,10 @@ na listagem, com a data exibida.
 - **FR-002**: O sistema MUST vincular todo lançamento de conta a receber a uma unidade já
   cadastrada (feature 001); não é possível lançar uma conta a receber sem uma unidade associada.
 - **FR-003**: O sistema MUST validar que o valor informado seja maior que zero, rejeitando
-  valores zero, negativos ou não numéricos antes de salvar o lançamento.
+  valores zero, negativos ou não numéricos antes de salvar o lançamento. **Regra substituída
+  pela feature 003** (`specs/003-accounts-payable-suppliers/spec.md`, FR-008) — zero passou a
+  ser um valor aceito (uso como lembrete antes de saber o valor exato); só valores negativos
+  continuam rejeitados.
 - **FR-004**: O sistema MUST permitir lançar a mesma conta a receber (mesmo valor, vencimento,
   descrição, conta destino e tipo) para todas as unidades cadastradas em uma única ação, criando
   um lançamento independente por unidade.

@@ -1,5 +1,10 @@
 # API Contracts: Lançamentos de Contas a Receber
 
+> **Substituído pela feature 003** (`specs/003-accounts-payable-suppliers/contracts/api.md`)
+> — `/api/receivables*` (documentado abaixo) deixou de existir, substituído por
+> `/api/accounts*`, que também passa a suportar contas a pagar a fornecedores. Contrato
+> preservado abaixo como registro histórico.
+
 Base path: `/api`
 
 Formato de erro padrão (todas as respostas 4xx), mensagens em português (Convenções de API

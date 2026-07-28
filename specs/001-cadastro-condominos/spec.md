@@ -8,6 +8,16 @@
 
 **Input**: User description: "Cadastro de condôminos: permitir criar, editar, listar e remover condôminos, com nome, unidade, e-mail e telefone de contato. Cada condômino pertence a uma unidade única do condomínio. E-mail e telefone são nullable." + revisão: "Vai ser necessário um cadastro de unidades também. Podem haver vários condôminos em uma unidade."
 
+## Status Pós-Feature 003
+
+**Atualização (feature 003 — `specs/003-accounts-payable-suppliers/`)**: o cadastro de
+condôminos (Cadastro de Condôminos) foi **removido por completo** do produto (ver FR-016 de
+003). As seções abaixo que descrevem essa funcionalidade (User Stories 2 e 5, a parte de
+condômino da User Story 4, os Edge Cases específicos de condômino, e as partes de FR-007 a
+FR-017 relativas a condômino) permanecem no arquivo como **registro histórico**, marcadas
+como removidas — não foram apagadas, para preservar o racional original desta feature. O
+comportamento atual do produto está em `specs/003-accounts-payable-suppliers/spec.md`.
+
 ## Clarifications
 
 ### Session 2026-07-24
@@ -43,7 +53,11 @@ ela passa a aparecer na listagem de unidades, sem depender de nenhum condômino 
 
 ---
 
-### User Story 2 - Cadastrar novo condômino em uma unidade (Priority: P1)
+### User Story 2 - Cadastrar novo condômino em uma unidade (Priority: P1) — REMOVIDA (feature 003)
+
+> **Removida por completo pela feature 003** (`specs/003-accounts-payable-suppliers/`,
+> FR-016) — o cadastro de condôminos não existe mais no produto. Texto original preservado
+> como registro histórico.
 
 Como responsável pela gestão do condomínio, quero cadastrar um novo condômino informando nome
 e associando-o a uma unidade já cadastrada (e opcionalmente e-mail e telefone), para manter um
@@ -106,6 +120,10 @@ unidade visível.
 
 ### User Story 4 - Editar dados de unidade e de condômino (Priority: P2)
 
+> **Parcialmente removida pela feature 003**: a parte de editar condômino (Acceptance
+> Scenarios 1, 2 e 4 abaixo) não se aplica mais — condômino não existe no produto (ver FR-016
+> de 003). A parte de editar identificador de unidade (Acceptance Scenario 3) continua válida.
+
 Como responsável pela gestão do condomínio, quero editar os dados de uma unidade (identificador)
 ou de um condômino já cadastrado (nome, unidade associada, e-mail, telefone), para manter as
 informações atualizadas quando houver mudança de contato, correção de cadastro ou realocação de
@@ -134,7 +152,11 @@ existente, alterando um campo e confirmando que a listagem reflete o novo valor.
 
 ---
 
-### User Story 5 - Remover condômino (Priority: P3)
+### User Story 5 - Remover condômino (Priority: P3) — REMOVIDA (feature 003)
+
+> **Removida por completo pela feature 003** (`specs/003-accounts-payable-suppliers/`,
+> FR-016) — o cadastro de condôminos não existe mais no produto. Texto original preservado
+> como registro histórico.
 
 Como responsável pela gestão do condomínio, quero remover um condômino que não mora mais no
 condomínio, para manter o cadastro limpo e sem registros obsoletos.
@@ -160,45 +182,48 @@ confirmando que ele deixa de aparecer na listagem, sem afetar a unidade à qual 
 
 ### User Story 6 - Remover unidade (Priority: P3)
 
+> **Atualizada pela feature 003**: os Acceptance Scenarios 2 e 3 abaixo foram reescritos —
+> "condômino vinculado" foi substituído por "conta ou fornecedor vinculado", já que o
+> conceito de condômino não existe mais no produto (ver FR-017 de 003). Texto original
+> preservado no histórico do Git; esta é a versão vigente.
+
 Como responsável pela gestão do condomínio, quero remover uma unidade que não existe mais ou
 que foi cadastrada por engano, para manter o cadastro de unidades correto.
 
-**Why this priority**: Assim como a remoção de condômino, é uma operação de manutenção pouco
-frequente; além disso, depende da regra de proteção contra remoção de unidades com condôminos
-vinculados, o que a torna a operação de maior risco entre as descritas nesta feature.
+**Why this priority**: É uma operação de manutenção pouco frequente; além disso, depende da
+regra de proteção contra remoção de unidades com contas ou fornecedores vinculados, o que a
+torna a operação de maior risco entre as descritas nesta feature.
 
-**Independent Test**: Pode ser testada isoladamente cadastrando uma unidade sem condôminos
-vinculados, removendo-a e confirmando que ela deixa de aparecer na listagem; e, separadamente,
-tentando remover uma unidade com condôminos vinculados e confirmando o bloqueio.
+**Independent Test**: Pode ser testada isoladamente cadastrando uma unidade sem contas ou
+fornecedores vinculados, removendo-a e confirmando que ela deixa de aparecer na listagem; e,
+separadamente, tentando remover uma unidade com conta ou fornecedor vinculado e confirmando o
+bloqueio.
 
 **Acceptance Scenarios**:
 
-1. **Given** uma unidade cadastrada sem nenhum condômino associado, **When** a usuária confirma
-   a remoção dessa unidade, **Then** ela deixa de aparecer na listagem de unidades.
-2. **Given** uma unidade cadastrada com pelo menos um condômino associado, **When** a usuária
-   tenta remover essa unidade, **Then** o sistema rejeita a remoção e exibe mensagem informando
-   que a unidade possui condôminos vinculados.
-3. **Given** várias unidades cadastradas, algumas com condôminos vinculados e outras sem,
-   **When** a usuária seleciona todas na listagem e aciona "Remover selecionados", **Then** o
-   sistema remove as unidades sem vínculo e mantém as demais, informando quais falharam e o
-   motivo (ver FR-018, introduzido pela feature 002).
+1. **Given** uma unidade cadastrada sem nenhuma conta ou fornecedor associado, **When** a
+   usuária confirma a remoção dessa unidade, **Then** ela deixa de aparecer na listagem de
+   unidades.
+2. **Given** uma unidade cadastrada com pelo menos uma conta ou um fornecedor associado,
+   **When** a usuária tenta remover essa unidade, **Then** o sistema rejeita a remoção e exibe
+   mensagem informando que a unidade possui contas ou fornecedores vinculados.
+3. **Given** várias unidades cadastradas, algumas com contas ou fornecedores vinculados e
+   outras sem, **When** a usuária seleciona todas na listagem e aciona "Remover
+   selecionados", **Then** o sistema remove as unidades sem vínculo e mantém as demais,
+   informando quais falharam e o motivo (ver FR-018, introduzido pela feature 002).
 
 ---
 
 ### Edge Cases
 
-- O que acontece se a usuária tentar cadastrar ou editar um condômino informando um e-mail em
-  formato inválido (ex.: sem "@")? O sistema deve rejeitar e indicar o formato esperado.
-- O que acontece se a usuária tentar cadastrar dois condôminos com o mesmo nome, na mesma
-  unidade ou em unidades diferentes? Deve ser permitido, já que não há restrição de unicidade
-  sobre o nome do condômino.
-- O que acontece se a usuária tentar remover um condômino ou uma unidade que já não existe mais
-  (ex.: removido em outra sessão)? O sistema deve informar que o registro não foi encontrado.
-- O que acontece se a usuária tentar cadastrar um condômino sem selecionar nenhuma unidade
-  existente porque nenhuma foi cadastrada ainda? O sistema deve orientar a cadastrar uma
-  unidade primeiro (ver User Story 1).
+> **Atualizado pela feature 003**: os edge cases específicos de condômino (e-mail inválido,
+> nome duplicado, cadastro sem unidade, formato de telefone) foram removidos — condômino não
+> existe mais no produto. O de identificador de unidade duplicado, e o de remoção de registro
+> inexistente (reescrito para falar só de unidade), continuam válidos.
+
+- O que acontece se a usuária tentar remover uma unidade que já não existe mais (ex.: removida
+  em outra sessão)? O sistema deve informar que o registro não foi encontrado.
 - O que acontece se a usuária tentar cadastrar uma unidade com identificador igual a outro já cadastrado, mas com diferença de maiúsculas/minúsculas ou espaços nas pontas (ex.: "bloco a - 101 " vs "Bloco A - 101")? O sistema deve tratar como duplicado e rejeitar o cadastro.
-- O que acontece se a usuária informar um telefone fora do formato brasileiro esperado (ex.: faltando DDD, com letras, ou com quantidade de dígitos incorreta)? O sistema deve rejeitar e indicar o formato esperado.
 
 ## Requirements *(mandatory)*
 
@@ -212,50 +237,42 @@ tentando remover uma unidade com condôminos vinculados e confirmando o bloqueio
   respeitando a regra de unicidade (FR-002).
 - **FR-005**: O sistema MUST permitir remover uma unidade cadastrada, mediante confirmação
   explícita da usuária antes da exclusão definitiva.
-- **FR-006**: O sistema MUST impedir a remoção de uma unidade que possua ao menos um condômino
-  associado, exibindo mensagem de erro explicando o motivo. Esta regra foi estendida pela
-  feature 002 (`specs/002-receivable-charges/spec.md`, FR-012): a remoção também MUST ser
-  impedida quando a unidade possuir ao menos um lançamento de conta a receber vinculado.
-- **FR-007**: O sistema MUST permitir cadastrar um novo condômino informando nome (obrigatório)
-  e associando-o a uma unidade já cadastrada (obrigatório).
-- **FR-008**: O sistema MUST permitir informar e-mail e telefone de contato como campos
-  opcionais no cadastro de um condômino.
-- **FR-009**: O sistema MUST permitir que uma mesma unidade tenha vários condôminos associados
-  simultaneamente.
-- **FR-010**: O sistema MUST permitir editar nome, unidade associada, e-mail e telefone de um
-  condômino já cadastrado.
-- **FR-011**: O sistema MUST validar que nome e unidade associada nunca fiquem vazios após
-  criação ou edição de um condômino.
-- **FR-012**: O sistema MUST validar o formato do e-mail informado, quando preenchido, antes de
-  salvar o cadastro do condômino.
-- **FR-013**: O sistema MUST exibir a listagem de todos os condôminos cadastrados, mostrando
-  nome, unidade associada, e-mail e telefone de cada um.
-- **FR-014**: O sistema MUST indicar de forma clara quando não houver nenhuma unidade ou nenhum
-  condômino cadastrado em sua respectiva listagem.
-- **FR-015**: O sistema MUST permitir remover um condômino cadastrado, mediante confirmação
-  explícita da usuária antes da exclusão definitiva.
+- **FR-006**: O sistema MUST impedir a remoção de uma unidade que possua ao menos uma conta
+  (a pagar ou a receber) ou ao menos um fornecedor vinculado, exibindo mensagem de erro
+  explicando o motivo. **Redação vigente, atualizada pela feature 003** (`specs/003-accounts-
+  payable-suppliers/spec.md`, FR-017) — a redação original desta feature considerava
+  condôminos vinculados; essa parte foi removida junto com o cadastro de condôminos. A
+  extensão feita pela feature 002 (bloqueio também por lançamento de conta a receber
+  vinculado) permanece incorporada, agora generalizada para "conta" (feature 003).
+- **FR-007 a FR-013, FR-015, FR-017** (cadastro, edição, listagem, validação de e-mail/telefone
+  e remoção de condômino) — **REMOVIDOS pela feature 003**: o cadastro de condôminos não
+  existe mais no produto (ver FR-016 de 003). Texto original preservado no histórico do Git.
+- **FR-014**: O sistema MUST indicar de forma clara quando não houver nenhuma unidade
+  cadastrada em sua listagem. **Redação vigente, atualizada pela feature 003** — a redação
+  original também cobria a listagem de condôminos, removida junto com o cadastro.
 - **FR-016**: O sistema MUST informar a usuária quando uma operação de edição ou remoção for
-  tentada sobre uma unidade ou condômino que não existe (ou não existe mais).
-- **FR-017**: O sistema MUST validar que o telefone informado, quando preenchido, siga o formato brasileiro (DDD com 2 dígitos seguido do número com 8 ou 9 dígitos), rejeitando valores fora desse padrão antes de salvar o cadastro do condômino.
-- **FR-018**: O sistema MUST permitir selecionar múltiplas unidades ou múltiplos condôminos na
-  respectiva listagem e removê-los em uma única ação, aplicando a mesma regra de remoção
-  individual (FR-005/FR-006/FR-015) a cada item selecionado — em caso de falha em algum item
-  (ex.: unidade com condôminos ou lançamentos vinculados), o sistema remove os demais (melhor
-  esforço) e informa quais falharam e por quê. Regra introduzida pela feature 002
-  (`specs/002-receivable-charges/spec.md`, FR-019), estendida também às listagens desta
-  feature por reaproveitar o mesmo componente compartilhado de seleção/remoção em lote.
+  tentada sobre uma unidade que não existe (ou não existe mais). **Redação vigente, atualizada
+  pela feature 003** — a redação original também cobria condômino, removido.
+- **FR-018**: O sistema MUST permitir selecionar múltiplas unidades na listagem e removê-las em
+  uma única ação, aplicando a mesma regra de remoção individual (FR-005/FR-006) a cada item
+  selecionado — em caso de falha em algum item (ex.: unidade com conta ou fornecedor
+  vinculado), o sistema remove os demais (melhor esforço) e informa quais falharam e por quê.
+  Regra introduzida pela feature 002 (`specs/002-receivable-charges/spec.md`, FR-019).
+  **Redação vigente, atualizada pela feature 003** — a redação original também cobria a
+  listagem de condôminos, removida junto com o cadastro.
 
 ### Key Entities
 
-- **Unidade**: Representa uma unidade do condomínio (ex.: apartamento). Atributos: identificador (obrigatório, único entre as unidades cadastradas, comparado de forma normalizada — sem diferenciar maiúsculas/minúsculas e sem espaços extras nas pontas). Pode ter zero ou mais condôminos associados.
-- **Condômino**: Representa uma pessoa associada a uma unidade do condomínio. Atributos: nome (obrigatório), unidade associada (obrigatória, referência a uma unidade cadastrada), e-mail (opcional), telefone de contato (opcional, formato brasileiro DDD + número quando preenchido). Várias pessoas podem estar associadas à mesma unidade.
+- **Unidade**: Representa uma unidade do condomínio (ex.: apartamento). Atributos: identificador (obrigatório, único entre as unidades cadastradas, comparado de forma normalizada — sem diferenciar maiúsculas/minúsculas e sem espaços extras nas pontas). **Redação vigente, atualizada pela feature 003**: pode ter zero ou mais contas (a pagar ou a receber, feature 003) e zero ou mais fornecedores (feature 003) associados; não tem mais condôminos associados (cadastro removido).
+- ~~**Condômino**~~: **Removida pela feature 003** (`specs/003-accounts-payable-suppliers/spec.md`, FR-016). Descrição original preservada como histórico: representava uma pessoa associada a uma unidade do condomínio, com nome (obrigatório), unidade associada (obrigatória), e-mail (opcional) e telefone de contato (opcional, formato brasileiro).
 
 ## Success Criteria *(mandatory)*
 
 ### Measurable Outcomes
 
-- **SC-001**: A usuária consegue cadastrar uma nova unidade e um novo condômino, em conjunto,
-  em menos de 2 minutos.
+- **SC-001**: A usuária consegue cadastrar uma nova unidade em menos de 1 minuto. **Redação
+  vigente, atualizada pela feature 003** — a redação original também envolvia cadastrar um
+  condômino em conjunto, removido do produto.
 - **SC-002**: 100% das tentativas de cadastro ou edição de unidade com identificador duplicado (considerando variações de maiúsculas/minúsculas e espaços nas pontas) são bloqueadas pelo sistema, sem exceção.
 - **SC-003**: 100% das tentativas de remoção de unidade com condôminos vinculados são
   bloqueadas pelo sistema, sem exceção.
@@ -269,18 +286,29 @@ tentando remover uma unidade com condôminos vinculados e confirmando o bloqueio
 - A "unidade" é representada como um identificador textual livre (ex.: "Bloco A - 101" ou
   "Apto 202"), sem estrutura fixa de bloco/número exigida por este cadastro.
 - A unicidade é validada sobre o identificador da unidade (não pode haver duas unidades com o
-  mesmo identificador); o mesmo não se aplica ao condômino, que pode compartilhar unidade com
-  outros condôminos.
-- Uma unidade só pode ser removida quando não possuir nenhum condômino associado; para remover
-  uma unidade com condôminos, é necessário primeiro remover ou realocar esses condôminos.
+  mesmo identificador). **Removido pela feature 003**: a ressalva original sobre o condômino
+  (compartilhamento de unidade sem restrição de unicidade) não se aplica mais — condômino não
+  existe no produto.
+- **Removido pela feature 003**: a regra original de que "uma unidade só pode ser removida
+  quando não possuir nenhum condômino associado" não se aplica mais — ver FR-006 atualizado
+  (bloqueio agora por conta ou fornecedor vinculado).
 - Como este é o primeiro cadastro do sistema, ainda não existem outras entidades (contas a
   receber, cobranças) dependentes de unidade ou condômino; o comportamento de remoção quando
   houver vínculos com outras funcionalidades será tratado quando essas features forem
   especificadas. **Atualização (feature 002)**: a feature de lançamentos de contas a receber
-  já especificou esse vínculo — ver FR-006 atualizado acima.
+  já especificou esse vínculo — ver FR-006 atualizado acima. **Atualização (feature 003)**:
+  generalizado para "conta" (a pagar ou a receber) e estendido a fornecedor — ver FR-006/
+  FR-017 atualizados acima.
 - O sistema é de uso pessoal, com poucas dezenas de unidades, portanto as listagens não
   precisam de paginação ou busca avançada nesta primeira versão.
 - **Atualização (feature 002)**: a feature de lançamentos de contas a receber introduziu
   seleção múltipla + remoção em lote (best-effort) nas listagens; a mesma capacidade foi
   estendida às listagens desta feature (unidades e condôminos) reaproveitando o mesmo
-  componente compartilhado — ver FR-018 atualizado acima.
+  componente compartilhado — ver FR-018 atualizado acima. **Removido pela feature 003**: a
+  parte referente a condôminos não se aplica mais (cadastro removido); a capacidade continua
+  válida para a listagem de unidades.
+- **Atualização (feature 003)**: o cadastro de condôminos (User Stories 2 e 5, e as partes
+  correspondentes de FR-007 a FR-017) foi removido por completo do produto — ver
+  `specs/003-accounts-payable-suppliers/spec.md`, FR-016. Em seu lugar, a feature 003
+  introduziu o cadastro de fornecedores (`specs/003-accounts-payable-suppliers/`), sem
+  relação estrutural com o antigo condômino além do padrão de pacote já convencionado.

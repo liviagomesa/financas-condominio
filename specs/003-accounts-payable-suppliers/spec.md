@@ -35,6 +35,15 @@ um campo). Adicionar campo de 'observações' nullable na conta."
 - Q: O fornecedor deve ter algum campo adicional para facilitar o pagamento a ele? → A: Sim —
   adicionar campo "chave PIX", opcional, no cadastro de fornecedor (ver FR-023).
 
+### Sessão de correção 2026-07-27 (parte 2 — revisão do plan)
+
+- Q: O valor de uma conta deve continuar rejeitando zero (regra herdada da feature 002), ou o
+  sistema deve aceitar valor zerado? → A: Aceitar valor zero — a usuária às vezes lança uma
+  conta como lembrete antes de saber o valor exato. A regra passa a rejeitar apenas valores
+  negativos ou não numéricos (ver FR-008 atualizado). Esta mudança substitui, para toda conta
+  (a pagar ou a receber), a regra original da feature 002 (FR-003: "valor deve ser maior que
+  zero").
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Cadastrar fornecedor (Priority: P1)
@@ -93,13 +102,17 @@ na listagem unificada de contas, marcada como "a pagar".
 2. **Given** um formulário de conta a pagar sem valor, sem vencimento, sem descrição, sem fundo
    ou sem fornecedor selecionado, **When** a usuária tenta confirmar, **Then** o sistema rejeita
    e indica quais campos obrigatórios estão faltando.
-3. **Given** um formulário de conta a pagar com valor zero ou negativo, **When** a usuária tenta
-   confirmar, **Then** o sistema rejeita e indica que o valor deve ser positivo.
+3. **Given** um formulário de conta a pagar com valor negativo, **When** a usuária tenta
+   confirmar, **Then** o sistema rejeita e indica que o valor não pode ser negativo.
 4. **Given** nenhum fornecedor cadastrado no sistema, **When** a usuária tenta lançar uma conta a
    pagar, **Then** o sistema orienta a cadastrar um fornecedor primeiro.
 5. **Given** o lançamento de uma conta a pagar, **When** a usuária preenche o campo
    "observações" com o texto "Disse que vai pagar mês que vem", **Then** o texto é salvo junto
    com a conta e exibido posteriormente ao consultá-la.
+6. **Given** um formulário de conta a pagar com valor "R$ 0,00" (e demais campos obrigatórios
+   preenchidos), **When** a usuária confirma o lançamento, **Then** a conta é criada
+   normalmente com valor zero — útil para registrar uma conta como lembrete antes de saber o
+   valor exato (ex.: "sei que vou pagar/receber algo, mas ainda não sei quanto").
 
 ---
 
@@ -195,6 +208,9 @@ e confirmando que deixam de aparecer nas respectivas listagens.
    tipo (de "a pagar" para "a receber", ou vice-versa), **Then** o sistema não permite essa
    alteração — o tipo é definido na criação e é imutável; para mudar o tipo, a conta precisa ser
    removida e recriada.
+7. **Given** um fornecedor cadastrado com nome "Empresa de Limpeza XYZ" sem chave PIX, **When**
+   a usuária edita o fornecedor alterando o nome e informando uma chave PIX, **Then** o
+   fornecedor passa a exibir os novos valores na listagem.
 
 ---
 
@@ -248,7 +264,10 @@ e confirmando que deixam de aparecer nas respectivas listagens.
   cadastrada quando a conta for do tipo "a receber" (mesma regra da feature 002, FR-002), ou um
   fornecedor já cadastrado quando for do tipo "a pagar".
 - **FR-008**: O sistema MUST validar que o valor informado em qualquer conta (a pagar ou a
-  receber) seja maior que zero, rejeitando valores zero, negativos ou não numéricos.
+  receber) não seja negativo, rejeitando valores negativos ou não numéricos, mas aceitando
+  valor zero — útil para lançar uma conta como lembrete antes de saber o valor exato. **Regra
+  atualizada em relação à feature 002** (FR-003 original: "valor deve ser maior que zero",
+  rejeitando também zero) — ver Clarifications, sessão de correção 2026-07-27 (parte 2).
 - **FR-009**: O sistema MUST manter a ação de lançamento em lote "para todas as unidades" (feature
   002, FR-004) exclusiva para contas do tipo "a receber"; contas a pagar MUST ser sempre
   lançadas individualmente, uma por fornecedor.
@@ -303,7 +322,7 @@ e confirmando que deixam de aparecer nas respectivas listagens.
 - **Conta**: Generalização do antigo "Lançamento de Conta a Receber" (feature 002), agora
   representando tanto valores a receber de unidades quanto valores a pagar a fornecedores.
   Atributos: tipo (obrigatório, "a receber" ou "a pagar", definido na criação e imutável), valor
-  (obrigatório, positivo), data de vencimento (obrigatória), descrição (obrigatória),
+  (obrigatório, não negativo — zero permitido, ver FR-008), data de vencimento (obrigatória), descrição (obrigatória),
   contraparte (obrigatória — referência a uma unidade quando "a receber", ou a um fornecedor
   quando "a pagar"), fundo (obrigatório, uma entre "Piscina", "Jardim Piscina" ou "Jardim
   Lateral" — renomeado nesta feature a partir do antigo "conta destino" da feature 002,
