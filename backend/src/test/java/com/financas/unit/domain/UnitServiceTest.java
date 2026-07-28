@@ -7,9 +7,9 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.financas.receivable.domain.ReceivableRepository;
-import com.financas.resident.domain.ResidentRepository;
+import com.financas.account.domain.AccountRepository;
 import com.financas.shared.exceptions.NotFoundException;
+import com.financas.supplier.domain.SupplierRepository;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -25,16 +25,16 @@ class UnitServiceTest {
     private UnitRepository repository;
 
     @Mock
-    private ResidentRepository residentRepository;
+    private AccountRepository accountRepository;
 
     @Mock
-    private ReceivableRepository receivableRepository;
+    private SupplierRepository supplierRepository;
 
     private UnitService service;
 
     @BeforeEach
     void setUp() {
-        service = new UnitService(repository, residentRepository, receivableRepository);
+        service = new UnitService(repository, accountRepository, supplierRepository);
     }
 
     @Test
@@ -87,10 +87,11 @@ class UnitServiceTest {
     }
 
     @Test
-    void deleteRemovesUnitWithoutResidents() {
+    void deleteRemovesUnitWithoutAccountsOrSuppliers() {
         Unit existing = withId(new Unit("Bloco A - 101"), 1L);
         when(repository.findById(1L)).thenReturn(Optional.of(existing));
-        when(residentRepository.existsByUnitId(1L)).thenReturn(false);
+        when(accountRepository.existsByUnitId(1L)).thenReturn(false);
+        when(supplierRepository.existsByUnitId(1L)).thenReturn(false);
 
         service.delete(1L);
 
@@ -98,36 +99,24 @@ class UnitServiceTest {
     }
 
     @Test
-    void deleteRejectsUnitWithResidentsLinked() {
+    void deleteRejectsUnitWithAccountsLinked() {
         Unit existing = withId(new Unit("Bloco A - 101"), 1L);
         when(repository.findById(1L)).thenReturn(Optional.of(existing));
-        when(residentRepository.existsByUnitId(1L)).thenReturn(true);
+        when(accountRepository.existsByUnitId(1L)).thenReturn(true);
 
-        assertThatThrownBy(() -> service.delete(1L)).isInstanceOf(UnitHasResidentsException.class);
+        assertThatThrownBy(() -> service.delete(1L)).isInstanceOf(UnitHasAccountsException.class);
 
         verify(repository, never()).deleteById(any());
     }
 
     @Test
-    void deleteRemovesUnitWithoutReceivables() {
+    void deleteRejectsUnitWithSuppliersLinked() {
         Unit existing = withId(new Unit("Bloco A - 101"), 1L);
         when(repository.findById(1L)).thenReturn(Optional.of(existing));
-        when(residentRepository.existsByUnitId(1L)).thenReturn(false);
-        when(receivableRepository.existsByUnitId(1L)).thenReturn(false);
+        when(accountRepository.existsByUnitId(1L)).thenReturn(false);
+        when(supplierRepository.existsByUnitId(1L)).thenReturn(true);
 
-        service.delete(1L);
-
-        verify(repository).deleteById(1L);
-    }
-
-    @Test
-    void deleteRejectsUnitWithReceivablesLinked() {
-        Unit existing = withId(new Unit("Bloco A - 101"), 1L);
-        when(repository.findById(1L)).thenReturn(Optional.of(existing));
-        when(residentRepository.existsByUnitId(1L)).thenReturn(false);
-        when(receivableRepository.existsByUnitId(1L)).thenReturn(true);
-
-        assertThatThrownBy(() -> service.delete(1L)).isInstanceOf(UnitHasReceivablesException.class);
+        assertThatThrownBy(() -> service.delete(1L)).isInstanceOf(UnitHasSuppliersException.class);
 
         verify(repository, never()).deleteById(any());
     }

@@ -75,10 +75,11 @@ unidade "Bloco A - 101" já cadastrada (feature 001).
    primeiro.
 7. **Ver contas a pagar e a receber na mesma listagem** (US3): com ao menos uma conta a
    receber (herdada da feature 002 ou lançada agora) e uma conta a pagar (passo 4) já
-   lançadas, acesse `/accounts` e confirme que ambas aparecem, com cores diferentes (verde
-   para a receber, vermelho para a pagar) e um rótulo textual do tipo em cada linha.
-8. **Filtrar por tipo** (US3): aplique o filtro "somente a pagar" e confirme que só a conta a
-   pagar aparece; troque para "somente a receber" e confirme o oposto.
+   lançadas, acesse `/accounts` e confirme que ambas aparecem, cada uma com um rótulo textual
+   do tipo em cor própria (verde "Entrada" para a conta a receber, vermelho "Saída" para a
+   conta a pagar).
+8. **Filtrar por tipo** (US3): aplique o filtro "Saída" e confirme que só a conta a pagar
+   aparece; troque para "Entrada" e confirme o oposto.
 9. **Combinar filtro de tipo com outro filtro** (US3): combine o filtro de tipo com "vencidos"
    ou com mês de vencimento/pagamento e confirme que os filtros se combinam (E lógico).
 10. **Registrar pagamento de conta a pagar** (US4): registre o pagamento da conta a pagar do

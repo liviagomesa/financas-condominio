@@ -279,21 +279,21 @@ que remove por completo o cadastro de condôminos desta feature (ver spec.md/pla
 originais de condômino (T024-T036, T041, T043, T045-T046, T054) permanecem marcadas `[X]`
 como registro histórico — o código que elas produziram está sendo retirado, não refeito.
 
-- [ ] T063 [P] Remove por completo o pacote `com.financas.resident` (domain/api/infra) —
+- [X] T063 [P] Remove por completo o pacote `com.financas.resident` (domain/api/infra) —
   `Resident.java`, `BrazilianPhone.java`, `BrazilianPhoneValidator.java`,
   `ResidentRequest.java`, `ResidentResponse.java`, `ResidentService.java`,
   `ResidentController.java`, `ResidentRepository.java`, `ResidentJpaRepository.java`,
   `ResidentRepositoryImpl.java` — e os testes correspondentes em
   `backend/src/test/java/com/financas/resident/`
-- [ ] T064 Create migration Flyway
+- [X] T064 Create migration Flyway
   `backend/src/main/resources/db/migration/V7__drop_resident_table.sql` (`DROP TABLE
   resident`) (depends on T063)
-- [ ] T065 [P] Remove por completo `frontend/src/app/resident/` (`resident-list/`,
+- [X] T065 [P] Remove por completo `frontend/src/app/resident/` (`resident-list/`,
   `resident-form/`)
-- [ ] T066 [P] Remove `frontend/src/app/shared/models/resident.model.ts` e
+- [X] T066 [P] Remove `frontend/src/app/shared/models/resident.model.ts` e
   `frontend/src/app/shared/services/resident.service.ts`
-- [ ] T067 Remove as rotas `/residents*` de `frontend/src/app/app.routes.ts` (depends on T065)
-- [ ] T068 Remove o link de navegação "Condôminos" de `frontend/src/app/app.html` (depends on
+- [X] T067 Remove as rotas `/residents*` de `frontend/src/app/app.routes.ts` (depends on T065)
+- [X] T068 Remove o link de navegação "Condôminos" de `frontend/src/app/app.html` (depends on
   T067)
 
 **Checkpoint**: nenhum código, rota ou tabela relacionado a condômino permanece no sistema
@@ -307,18 +307,18 @@ como registro histórico — o código que elas produziram está sendo retirado,
 (ver spec.md/plan.md, seção "Atualização (feature 003...)"). Depende das entidades `Account`
 (renomeada de `Receivable`) e `Supplier` da feature 003 já existirem.
 
-- [ ] T069 Rename `UnitHasReceivablesException` → `UnitHasAccountsException` em
+- [X] T069 Rename `UnitHasReceivablesException` → `UnitHasAccountsException` em
   `backend/src/main/java/com/financas/unit/domain/` (mensagem atualizada para "contas
   vinculadas") (depends on a entidade `Account` da feature 003 já existir)
-- [ ] T070 [P] Create `UnitHasSuppliersException` em
+- [X] T070 [P] Create `UnitHasSuppliersException` em
   `backend/src/main/java/com/financas/unit/domain/` (mesmo padrão de
   `UnitHasAccountsException`) (depends on a entidade `Supplier` da feature 003 já existir)
-- [ ] T071 Update `UnitService.delete()` para remover a checagem de `ResidentRepository` e
+- [X] T071 Update `UnitService.delete()` para remover a checagem de `ResidentRepository` e
   passar a checar `AccountRepository.existsByUnitId` (renomeado de `ReceivableRepository`) e
   `SupplierRepository.existsByUnitId` (nova), em
   `backend/src/main/java/com/financas/unit/domain/UnitService.java` (depends on T063, T069,
   T070)
-- [ ] T072 [P] Update `UnitServiceTest` removendo os casos de condômino vinculado e
+- [X] T072 [P] Update `UnitServiceTest` removendo os casos de condômino vinculado e
   adicionando casos de fornecedor vinculado (remoção bloqueada com fornecedor associado,
   permitida sem vínculo), em
   `backend/src/test/java/com/financas/unit/domain/UnitServiceTest.java` (depends on T071)

@@ -204,20 +204,24 @@ sobretudo a generalização de `Receivable` em `Account` e a introdução de `Su
 
 ## Frontend: listagem unificada e formulário com tipo condicional
 
-- **Decision**: `account-list` (renomeada de `receivable-list`) ganha uma coluna/rótulo de
-  tipo, classe CSS por linha (`account-row--receivable` / `account-row--payable`, tons
-  verde/vermelho suaves) e um `<select>` de filtro por tipo (Todas/A pagar/A receber),
-  combinável com os filtros já existentes. `account-form` (renomeada de `receivable-form`)
-  ganha um seletor de tipo no topo do formulário: ao trocar entre "A pagar"/"A receber", o
-  campo de contraparte alterna entre um `<select>` de unidades (com a opção de "lançar para
-  todas as unidades" — `bulkMode`, já existente) e um `<select>` de fornecedores (sem opção
-  de lote, FR-009); em modo de edição, o seletor de tipo fica desabilitado (somente leitura),
-  refletindo a imutabilidade do campo.
-- **Rationale**: Implementa FR-010/FR-011 (listagem única com diferenciação visual por cor +
-  rótulo textual, não só cor, por acessibilidade) e o design de formulário único descrito nas
-  Assumptions do spec ("a interface exibe um único seletor, cujas opções mudam conforme o
-  tipo"). Reaproveita `list-selection.ts`/`bulk-delete.ts`/`bulk-actions-bar` já existentes
-  sem alteração de contrato.
+- **Decision**: `account-list` (renomeada de `receivable-list`) ganha uma coluna com rótulo de
+  tipo em badge colorido (verde "Entrada" para conta a receber, vermelho "Saída" para conta a
+  pagar — texto renomeado de "A receber"/"A pagar" em 2026-07-28 a pedido da usuária; o valor
+  interno do tipo continua `RECEIVABLE`/`PAYABLE`) e um `<select>` de filtro por tipo
+  (Todas/Entrada/Saída), combinável com os filtros já existentes. `account-form` (renomeada de
+  `receivable-form`) ganha um seletor de tipo no topo do formulário: ao trocar entre
+  "Entrada"/"Saída", o campo de contraparte alterna entre um `<select>` de unidades (com a
+  opção de "lançar para todas as unidades" — `bulkMode`, já existente) e um `<select>` de
+  fornecedores (sem opção de lote, FR-009); em modo de edição, o seletor de tipo fica
+  desabilitado (somente leitura), refletindo a imutabilidade do campo.
+- **Rationale**: Implementa FR-010/FR-011 (listagem única com diferenciação visual por rótulo
+  textual colorido) e o design de formulário único descrito nas Assumptions do spec ("a
+  interface exibe um único seletor, cujas opções mudam conforme o tipo"). Reaproveita
+  `list-selection.ts`/`bulk-delete.ts`/`bulk-actions-bar` já existentes sem alteração de
+  contrato.
 - **Alternatives considered**: duas telas de listagem separadas (contas a pagar / contas a
   receber) com uma terceira tela de "visão combinada" — rejeitado pelo spec (US3: "na mesma
-  tela"), e por duplicar filtros/lógica sem necessidade.
+  tela"), e por duplicar filtros/lógica sem necessidade; cor de fundo na linha inteira além do
+  rótulo colorido (`account-row--receivable`/`--payable`) — implementada inicialmente,
+  removida em 2026-07-28 após avaliação visual da usuária ("ficou ruim"); o rótulo colorido
+  isolado já atende FR-011/SC-001 sem a cor de fundo.

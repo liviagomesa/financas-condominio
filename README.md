@@ -144,7 +144,36 @@ Acesse `http://localhost:4202`.
   CLI). Trocadas por decisão explícita da usuária, que roda vários projetos
   Angular/Java na mesma máquina e queria evitar colisão recorrente com as
   portas-padrão de outros projetos.
-- **Handler de `MethodArgumentTypeMismatchException` no
+- **Handler de `MethodArgumentTypeMismatchException` no `GlobalExceptionHandler`**: query
+  params que não correspondem ao tipo esperado pelo Spring (ex.: um `type`/`enum` fora do
+  conjunto aceito) agora retornam `400` com o formato padronizado `{ "message", "status" }`
+  em vez do erro genérico do Spring, mantendo consistência com as demais respostas de erro
+  da API.
+- **Generalização `Receivable` → `Account` via `ALTER TABLE ... RENAME`**: a feature
+  003 unificou contas a receber e a pagar numa única entidade `Account`
+  (`com.financas.account`, renomeado de `com.financas.receivable`), com um campo `type`
+  (`RECEIVABLE`/`PAYABLE`) imutável após a criação. A migration `V6` usa `RENAME
+  TABLE`/`RENAME COLUMN` em vez de criar a tabela do zero, preservando os dados e `id`s de
+  contas a receber já lançadas nas features 001/002 — validado rodando a aplicação de
+  verdade contra o banco com dados reais, não só migrations em banco vazio.
+- **Contraparte de `Account` modelada como duas FKs nullable + `CHECK` constraint**: em vez
+  de uma associação polimórfica entre `Unit` e `Supplier` (que não compartilham supertipo
+  nem justificam criar um só para isso), `Account` mantém `unit_id`/`supplier_id` nullable e
+  uma `CHECK CONSTRAINT` (`account_type_counterparty_check`) garantindo no banco que
+  exatamente uma das duas está preenchida, coerente com `type` — a mesma regra também é
+  validada em `AccountService` (camada de negócio), como dupla proteção.
+- **Nova entidade `Supplier` (fornecedor)**: nome obrigatório, unidade opcional e chave PIX
+  como texto livre (sem validação de formato — CPF/CNPJ/e-mail/telefone/chave aleatória têm
+  formatos diferentes e detectar/validar cada um não foi solicitado).
+- **Valor de conta aceita zero, rejeita só negativo**: regra alterada em relação à feature
+  002 (que exigia valor `> 0`) para permitir lançar uma conta como lembrete antes de saber o
+  valor exato (ex.: "sei que vou pagar algo desse fornecedor, mas ainda não sei quanto').
+  `@PositiveOrZero` no DTO, `compareTo(BigDecimal.ZERO) < 0` no `AccountService`.
+- **Remoção completa do cadastro de condôminos**: entidade, tabela (`DROP TABLE` na
+  migration `V7`), rotas e telas removidas por completo — sem soft delete ou tabela
+  "desativada" (ambiente local de uso pessoal, sem dado de produção a preservar por
+  obrigação). `UnitService.delete()` passou a checar `Account`/`Supplier` vinculados em vez
+  de `Resident`.
 
 ## Uso de IA
 
@@ -222,9 +251,28 @@ Utilizei o GitHub Spec Kit integrado ao Claude Code para conduzir o desenvolvime
 
 ## O que eu faria diferente ou melhoraria com mais tempo
 
-- **Soft delete de condôminos**: em vez de remover o registro definitivamente, marcar o condômino como inativo. Isso evita quebrar dados históricos de cobrança já existentes (o condômino deixaria de aparecer nas listagens de cadastro, mas continuaria sendo referenciado onde já existir vínculo). Para respeitar a LGPD, ao acessar um condômino inativo pelos registros em que ele é referenciado, apenas nome e unidade seriam exibidos — telefone e e-mail seriam removidos/ocultados junto com a inativação.
-- **`TargetAccount` como cadastro dinâmico em vez de enum fixo**: hoje "conta destino" tem 3 valores fixos no código (Piscina/Jardim Piscina/Jardim Lateral). Se o condomínio criar um novo centro de custo no futuro (ex.: uma nova área comum), isso exigiria alteração de código e nova migration em vez de um cadastro simples pela própria usuária — um trade-off consciente pela simplicidade agora, que valeria revisitar se a lista mudar com alguma frequência na prática.
-- **Geração automática/recorrente de lançamentos mensais**: hoje tanto o lançamento individual quanto o em lote (`POST /api/receivables/bulk`) são ações manuais disparadas pela usuária todo mês. Uma automação (ex.: job agendado gerando a taxa condominial do mês automaticamente para lançamentos marcados como `recurring`) reduziria ainda mais o trabalho manual, mas dependeria de definir regras de idempotência (não duplicar o lançamento do mês se a ação manual também for usada).
+- **Cálculo automático de saldo líquido por unidade**: hoje cada conta é lançada e consultada
+  isoladamente, sem nenhum agregado. Uma melhoria natural seria calcular, por unidade, o saldo
+  líquido entre o que ela tem a receber (contas do tipo "a receber" da própria unidade) e o
+  que fornecedores vinculados a ela têm a pagar (contas do tipo "a pagar" de `Supplier`s
+  associados à mesma unidade) — útil, por exemplo, quando um fornecedor é também morador e o
+  condomínio quer saber o saldo líquido consolidado dessa unidade. Ficou fora do escopo da
+  feature 003 (registrado como Assumption no `spec.md`) para não misturar uma funcionalidade
+  de agregação/relatório com a generalização de `Receivable` em `Account` e a criação de
+  `Supplier` — mas é um passo natural depois que as duas entidades já convivem no mesmo
+  sistema.
+- **`Fund` como cadastro dinâmico em vez de enum fixo**: hoje "fundo" (renomeado de "conta
+  destino"/`TargetAccount` na feature 003) tem 3 valores fixos no código (Piscina/Jardim
+  Piscina/Jardim Lateral), usados tanto por contas a pagar quanto a receber. Se o condomínio
+  criar um novo centro de custo no futuro (ex.: uma nova área comum), isso exigiria alteração
+  de código e nova migration em vez de um cadastro simples pela própria usuária — um
+  trade-off consciente pela simplicidade agora, que valeria revisitar se a lista mudar com
+  alguma frequência na prática.
+- **Geração automática/recorrente de lançamentos mensais**: hoje tanto o lançamento individual quanto o em lote (`POST /api/accounts/bulk`) são ações manuais disparadas pela usuária todo mês. Uma automação (ex.: job agendado gerando a taxa condominial do mês automaticamente para lançamentos marcados como `recurring`) reduziria ainda mais o trabalho manual, mas dependeria de definir regras de idempotência (não duplicar o lançamento do mês se a ação manual também for usada).
+- **Validação de formato da chave PIX**: hoje `pixKey` em `Supplier` é texto livre, sem
+  validar se é um CPF/CNPJ/e-mail/telefone/chave aleatória válido — decisão consciente pela
+  simplicidade (detectar e validar cada um dos formatos possíveis não foi solicitado), mas
+  seria uma melhoria natural para reduzir erro de digitação ao cadastrar um fornecedor.
 - **Ações rápidas em lote além de remoção** (ideia registrada durante a revisão do plano da
   feature 003): hoje a seleção múltipla nas listagens só permite remover em lote
   (`bulk-delete.ts`). Uma extensão natural seria permitir editar um campo (ex.: valor) de

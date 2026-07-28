@@ -60,11 +60,11 @@ abaixo já existirem. As migrations desta feature são só V5 (T001) e V6 (T002)
 
 **⚠️ CRITICAL**: Nenhuma user story pode começar antes desta fase estar completa
 
-- [ ] T001 [P] Create migration Flyway
+- [X] T001 [P] Create migration Flyway
   `backend/src/main/resources/db/migration/V5__create_supplier_table.sql` (tabela `supplier`:
   `id`, `name VARCHAR(255) NOT NULL`, `unit_id BIGINT NULL REFERENCES unit (id)`, `pix_key
   VARCHAR(255) NULL`, + índice em `unit_id`)
-- [ ] T002 Create migration Flyway
+- [X] T002 Create migration Flyway
   `backend/src/main/resources/db/migration/V6__transform_receivable_to_account.sql`
   (`ALTER TABLE receivable RENAME TO account`; `ALTER INDEX receivable_unit_id_idx RENAME TO
   account_unit_id_idx`; `ALTER TABLE account RENAME COLUMN target_account TO fund`; `ALTER
@@ -72,39 +72,39 @@ abaixo já existirem. As migrations desta feature são só V5 (T001) e V6 (T002)
   DEFAULT 'RECEIVABLE'` e remove o `DEFAULT` em seguida; adiciona `supplier_id BIGINT NULL
   REFERENCES supplier (id)`; adiciona `observations TEXT NULL`; `CHECK CONSTRAINT
   account_type_counterparty_check` — ver data-model.md) (depends on T001)
-- [ ] T003 [P] Create enum `AccountType` (`RECEIVABLE`, `PAYABLE`) em
+- [X] T003 [P] Create enum `AccountType` (`RECEIVABLE`, `PAYABLE`) em
   `backend/src/main/java/com/financas/account/domain/AccountType.java`
-- [ ] T004 [P] Create enum `Fund` (`POOL`, `POOL_GARDEN`, `SIDE_GARDEN` — renomeado de
+- [X] T004 [P] Create enum `Fund` (`POOL`, `POOL_GARDEN`, `SIDE_GARDEN` — renomeado de
   `TargetAccount`) em `backend/src/main/java/com/financas/account/domain/Fund.java`
-- [ ] T005 [P] Create entidade JPA `Supplier` (`id`, `name` obrigatório, `unit` `ManyToOne`
+- [X] T005 [P] Create entidade JPA `Supplier` (`id`, `name` obrigatório, `unit` `ManyToOne`
   opcional, `pixKey` opcional) em
   `backend/src/main/java/com/financas/supplier/domain/Supplier.java`
-- [ ] T006 [P] Create interface de porta `SupplierRepository` (`findAll`, `findById`, `save`,
+- [X] T006 [P] Create interface de porta `SupplierRepository` (`findAll`, `findById`, `save`,
   `deleteById`, `existsById`, `existsByUnitId`) em
   `backend/src/main/java/com/financas/supplier/domain/SupplierRepository.java` (depends on T005)
-- [ ] T007 Create `SupplierJpaRepository` (Spring Data) e `SupplierRepositoryImpl` em
+- [X] T007 Create `SupplierJpaRepository` (Spring Data) e `SupplierRepositoryImpl` em
   `backend/src/main/java/com/financas/supplier/infra/` (depends on T006)
-- [ ] T008 Create entidade JPA `Account` (`id`, `type` `AccountType` via
+- [X] T008 Create entidade JPA `Account` (`id`, `type` `AccountType` via
   `@Enumerated(EnumType.STRING)`, `amount` `BigDecimal`, `dueDate` `LocalDate`, `description`,
   `fund` `Fund` via `@Enumerated(EnumType.STRING)`, `recurring` `boolean`, `unit` `ManyToOne`
   **opcional**, `supplier` `ManyToOne` opcional, `paymentDate` `LocalDate` opcional,
   `observations` `String` opcional) em
   `backend/src/main/java/com/financas/account/domain/Account.java` (depends on T003, T004, T005)
-- [ ] T009 [P] Create interface de porta `AccountRepository` (`findAll`, `findByUnitId`,
+- [X] T009 [P] Create interface de porta `AccountRepository` (`findAll`, `findByUnitId`,
   `findBySupplierId`, `findById`, `save`, `deleteById`, `existsByUnitId`,
   `existsBySupplierId`) em `backend/src/main/java/com/financas/account/domain/AccountRepository.java`
   (depends on T008)
-- [ ] T010 Create `AccountJpaRepository` (Spring Data) e `AccountRepositoryImpl` em
+- [X] T010 Create `AccountJpaRepository` (Spring Data) e `AccountRepositoryImpl` em
   `backend/src/main/java/com/financas/account/infra/` (depends on T009)
-- [ ] T011 [P] Create `InvalidAccountAmountException` (renomeada de
+- [X] T011 [P] Create `InvalidAccountAmountException` (renomeada de
   `InvalidReceivableAmountException`; lançada apenas para valor **negativo** — zero é válido,
   FR-008) em `backend/src/main/java/com/financas/account/domain/`
-- [ ] T012 [P] Create `AccountTypeChangeNotAllowedException` (nova; lançada quando `PUT`
+- [X] T012 [P] Create `AccountTypeChangeNotAllowedException` (nova; lançada quando `PUT`
   tenta alterar o `type` de uma conta já criada — FR-006/FR-015) em
   `backend/src/main/java/com/financas/account/domain/`
-- [ ] T013 [P] Create `NoUnitsRegisteredException` (portada sem alteração de comportamento de
+- [X] T013 [P] Create `NoUnitsRegisteredException` (portada sem alteração de comportamento de
   `com.financas.receivable.domain`) em `backend/src/main/java/com/financas/account/domain/`
-- [ ] T014 Implement `AccountService` — `create(type, amount, dueDate, description, fund,
+- [X] T014 Implement `AccountService` — `create(type, amount, dueDate, description, fund,
   recurring, unitId, supplierId, paymentDate, observations)` validando valor não negativo
   (FR-008) e contraparte obrigatória e compatível com `type` (FR-007: `RECEIVABLE` exige
   `unitId` e rejeita `supplierId`; `PAYABLE` exige `supplierId` e rejeita `unitId`);
@@ -123,45 +123,45 @@ abaixo já existirem. As migrations desta feature são só V5 (T001) e V6 (T002)
   comportamento; `delete(id)` portado sem alteração — em
   `backend/src/main/java/com/financas/account/domain/AccountService.java` (depends on T010,
   T011, T012, T013)
-- [ ] T015 Implement `SupplierService` — `create(name, unitId, pixKey)` com `name` obrigatório
+- [X] T015 Implement `SupplierService` — `create(name, unitId, pixKey)` com `name` obrigatório
   e `unitId` opcional (busca a unidade quando informado, 404 se não existir); `findAll`;
   `findById`; `update(...)`; `delete(id)` bloqueando via
   `accountRepository.existsBySupplierId(id)` (FR-005) — em
   `backend/src/main/java/com/financas/supplier/domain/SupplierService.java` (depends on T007, T010)
-- [ ] T016 [P] Create DTOs `AccountRequest` (`type` `@NotNull`, `amount` `@NotNull
+- [X] T016 [P] Create DTOs `AccountRequest` (`type` `@NotNull`, `amount` `@NotNull
   @PositiveOrZero`, `dueDate`/`description`/`fund` `@NotNull`/`@NotBlank`, `recurring`
   `@NotNull`, `unitId`/`supplierId` nullable Long, `paymentDate`/`observations` opcionais),
   `AccountBulkRequest` (igual, sem `type`/`unitId`/`supplierId`), `AccountPaymentRequest`
   (`paymentDate` `@NotNull`) e `AccountResponse` (com `UnitResponse`/`SupplierResponse`
   aninhados quando aplicável, factory estático `from(Account)`) em
   `backend/src/main/java/com/financas/account/api/` (depends on T008)
-- [ ] T017 [P] Create DTOs `SupplierRequest` (`name` `@NotBlank`, `unitId`/`pixKey`
+- [X] T017 [P] Create DTOs `SupplierRequest` (`name` `@NotBlank`, `unitId`/`pixKey`
   opcionais) e `SupplierResponse` (com `UnitResponse` aninhado quando houver, factory
   `from(Supplier)`) em `backend/src/main/java/com/financas/supplier/api/` (depends on T005)
-- [ ] T018 Implement `AccountController` — `GET /api/accounts` (filtros `unitId`,
+- [X] T018 Implement `AccountController` — `GET /api/accounts` (filtros `unitId`,
   `supplierId`, `type`, `paid`, `overdue`, `dueYearMonth`, `paymentYearMonth`), `GET
   /api/accounts/{id}`, `POST /api/accounts`, `POST /api/accounts/bulk`, `PUT
   /api/accounts/{id}`, `POST /api/accounts/{id}/pay`, `DELETE /api/accounts/{id}` — em
   `backend/src/main/java/com/financas/account/api/AccountController.java` (depends on T014, T016)
-- [ ] T019 Implement `SupplierController` — `GET /api/suppliers`, `GET /api/suppliers/{id}`,
+- [X] T019 Implement `SupplierController` — `GET /api/suppliers`, `GET /api/suppliers/{id}`,
   `POST /api/suppliers`, `PUT /api/suppliers/{id}`, `DELETE /api/suppliers/{id}` — em
   `backend/src/main/java/com/financas/supplier/api/SupplierController.java` (depends on T015, T017)
-- [ ] T020 [P] Remove por completo o pacote `com.financas.receivable` (domain/api/infra) —
+- [X] T020 [P] Remove por completo o pacote `com.financas.receivable` (domain/api/infra) —
   substituído por `com.financas.account` (depends on T018)
-- [ ] T021 [P] Create model `Account`/`AccountRequest`/`AccountBulkRequest`/
+- [X] T021 [P] Create model `Account`/`AccountRequest`/`AccountBulkRequest`/
   `AccountPaymentRequest`, union types `AccountType`/`Fund` (+ labels em português, ex.:
   `FUND_LABELS`) em `frontend/src/app/shared/models/account.model.ts` (portado e estendido de
   `receivable.model.ts`)
-- [ ] T022 Create `AccountService` (HttpClient: `findAll` com todos os filtros, `findById`,
+- [X] T022 Create `AccountService` (HttpClient: `findAll` com todos os filtros, `findById`,
   `create`, `createBulk`, `update`, `registerPayment`, `delete`) em
   `frontend/src/app/shared/services/account.service.ts` (depends on T021, T018)
-- [ ] T023 [P] Create model `Supplier`/`SupplierRequest` em
+- [X] T023 [P] Create model `Supplier`/`SupplierRequest` em
   `frontend/src/app/shared/models/supplier.model.ts`
-- [ ] T024 Create `SupplierService` (HttpClient CRUD) em
+- [X] T024 Create `SupplierService` (HttpClient CRUD) em
   `frontend/src/app/shared/services/supplier.service.ts` (depends on T023, T019)
-- [ ] T025 [P] Remove `frontend/src/app/shared/models/receivable.model.ts` e
+- [X] T025 [P] Remove `frontend/src/app/shared/models/receivable.model.ts` e
   `frontend/src/app/shared/services/receivable.service.ts` (substituídos por T021/T022)
-- [ ] T026 [P] Create testes unitários `AccountServiceTest` (Mockito): `create` rejeita valor
+- [X] T026 [P] Create testes unitários `AccountServiceTest` (Mockito): `create` rejeita valor
   negativo e aceita zero (FR-008); `create` rejeita contraparte ausente ou incompatível com
   `type` (`RECEIVABLE` com `supplierId`, `PAYABLE` com `unitId`, ou nenhuma informada — FR-007);
   `update` rejeita `type` diferente do persistido (`AccountTypeChangeNotAllowedException` —
@@ -170,7 +170,7 @@ abaixo já existirem. As migrations desta feature são só V5 (T001) e V6 (T002)
   isolado e combinado com `supplierId`/`unitId`/`paid`/`overdue`/mês (FR-012); `findById`/
   `update`/`delete` de conta inexistente lançam `NotFoundException` — em
   `backend/src/test/java/com/financas/account/domain/AccountServiceTest.java` (depends on T014)
-- [ ] T027 [P] Create testes unitários `SupplierServiceTest` (Mockito): criação com e sem
+- [X] T027 [P] Create testes unitários `SupplierServiceTest` (Mockito): criação com e sem
   `unitId`/`pixKey`; criação com `unitId` inexistente lança `NotFoundException`; `findById`/
   `update`/`delete` de fornecedor inexistente lançam `NotFoundException`; `delete` bloqueado
   (`ConflictException`) quando `AccountRepository.existsBySupplierId` retorna `true`, permitido
@@ -193,17 +193,17 @@ PIX, e confirmar que aparece na listagem; tentar cadastrar sem nome e confirmar 
 
 ### Implementation for User Story 1
 
-- [ ] T028 [US1] Create componente `supplier-form` (campos nome, seletor de unidade opcional
+- [X] T028 [US1] Create componente `supplier-form` (campos nome, seletor de unidade opcional
   via `UnitService` já existente, chave PIX opcional; validação de nome obrigatório; suporte a
   modo de edição — pré-preenchimento via `GET /api/suppliers/{id}` e submissão via `PUT`
   quando acessado com um id de rota, mesmo padrão de `account-form`/`receivable-form`) em
   `frontend/src/app/supplier/supplier-form/` (depends on T024)
-- [ ] T029 [US1] Create componente `supplier-list` (tabela: nome, unidade vinculada, chave
+- [X] T029 [US1] Create componente `supplier-list` (tabela: nome, unidade vinculada, chave
   PIX; mensagem de "nenhum fornecedor cadastrado" quando vazia) em
   `frontend/src/app/supplier/supplier-list/` (depends on T024)
-- [ ] T030 [US1] Wire rotas `/suppliers` e `/suppliers/new` em
+- [X] T030 [US1] Wire rotas `/suppliers` e `/suppliers/new` em
   `frontend/src/app/app.routes.ts` (depends on T028, T029)
-- [ ] T031 [US1] Add link de navegação "Fornecedores" em `frontend/src/app/app.html`
+- [X] T031 [US1] Add link de navegação "Fornecedores" em `frontend/src/app/app.html`
   (depends on T030)
 
 **Checkpoint**: User Story 1 completa e testável de forma independente (Acceptance Scenarios
@@ -224,17 +224,18 @@ orientação para cadastrar um fornecedor primeiro.
 
 ### Implementation for User Story 2
 
-- [ ] T032 [US2] Create componente `account-form` (portado e estendido de
-  `receivable-form`): seletor de tipo "A pagar"/"A receber" no topo, alternando o seletor de
-  contraparte — unidade (com opção de lote "para todas as unidades", herdada da feature 002,
-  visível só para "A receber") ou fornecedor (via `SupplierService`, com orientação para
-  cadastrar um fornecedor primeiro quando não houver nenhum — FR-021, visível só para "A
-  pagar"); campos comuns valor (`Validators.min(0)` — aceita zero), vencimento, descrição,
+- [X] T032 [US2] Create componente `account-form` (portado e estendido de
+  `receivable-form`): seletor de tipo "Entrada"/"Saída" no topo (rótulo renomeado de "A
+  pagar"/"A receber" em 2026-07-28, valor interno do tipo continua `RECEIVABLE`/`PAYABLE`),
+  alternando o seletor de contraparte — unidade (com opção de lote "para todas as unidades",
+  herdada da feature 002, visível só para "Entrada") ou fornecedor (via `SupplierService`, com
+  orientação para cadastrar um fornecedor primeiro quando não houver nenhum — FR-021, visível
+  só para "Saída"); campos comuns valor (`Validators.min(0)` — aceita zero), vencimento, descrição,
   fundo, "Recorrente", data de pagamento opcional, observações (novo, `<textarea>`); suporte a
   modo de edição (pré-preenchimento) portado do `receivable-form` original — em
   `frontend/src/app/account/account-form/` (depends on T022, T024)
-- [ ] T033 [US2] Wire rota `/accounts/new` em `frontend/src/app/app.routes.ts` (depends on T032)
-- [ ] T034 [P] [US2] Remove `frontend/src/app/receivable/receivable-form/` (substituído por
+- [X] T033 [US2] Wire rota `/accounts/new` em `frontend/src/app/app.routes.ts` (depends on T032)
+- [X] T034 [P] [US2] Remove `frontend/src/app/receivable/receivable-form/` (substituído por
   `account-form`)
 
 **Checkpoint**: User Story 2 completa e testável de forma independente (Acceptance Scenarios
@@ -254,9 +255,11 @@ e confirmar a combinação; com nenhuma conta cadastrada, confirmar a indicaçã
 
 ### Implementation for User Story 3
 
-- [ ] T035 [US3] Create componente `account-list` (portado e estendido de
-  `receivable-list`): coluna/rótulo textual de tipo, classe CSS por linha
-  (`account-row--receivable`/`account-row--payable`, tons verde/vermelho), coluna de
+- [X] T035 [US3] Create componente `account-list` (portado e estendido de
+  `receivable-list`): coluna/rótulo textual de tipo em badge colorido (verde "Entrada" para
+  conta a receber, vermelho "Saída" para conta a pagar — rótulo renomeado de "A receber"/"A
+  pagar" em 2026-07-28; sem cor de fundo na linha, removida em 2026-07-28 por avaliação visual
+  da usuária, ver T049), coluna de
   contraparte (identificador da unidade quando "a receber", nome do fornecedor quando "a
   pagar"), indicador de observações (ex.: ícone ou texto truncado quando `observations`
   estiver preenchido, com o conteúdo completo visível ao editar — satisfaz FR-018/SC-007 sem
@@ -264,13 +267,13 @@ e confirmar a combinação; com nenhuma conta cadastrada, confirmar a indicaçã
   combinável com os filtros já existentes (status de pagamento, vencidos, mês de
   vencimento/pagamento), mensagem de "nenhuma conta cadastrada" quando vazia — em
   `frontend/src/app/account/account-list/` (depends on T022)
-- [ ] T036 [US3] Apply seleção múltipla (`list-selection.ts`) e `bulk-actions-bar` +
+- [X] T036 [US3] Apply seleção múltipla (`list-selection.ts`) e `bulk-actions-bar` +
   `bulk-delete.ts` (já existentes, sem alteração de contrato) a `account-list`,
   independentemente do tipo de cada conta selecionada (FR-020) em
   `frontend/src/app/account/account-list/` (depends on T035)
-- [ ] T037 [US3] Wire rota `/accounts` em `frontend/src/app/app.routes.ts`; update link de
+- [X] T037 [US3] Wire rota `/accounts` em `frontend/src/app/app.routes.ts`; update link de
   navegação de "Lançamentos" para "Contas" em `frontend/src/app/app.html` (depends on T035)
-- [ ] T038 [P] [US3] Remove `frontend/src/app/receivable/receivable-list/` (substituído por
+- [X] T038 [P] [US3] Remove `frontend/src/app/receivable/receivable-list/` (substituído por
   `account-list`)
 
 **Checkpoint**: User Story 3 completa e testável de forma independente (Acceptance Scenarios
@@ -291,12 +294,12 @@ filtro "vencidos".
 
 ### Implementation for User Story 4
 
-- [ ] T039 [P] [US4] Add ao `AccountServiceTest` casos cobrindo explicitamente o tipo
+- [X] T039 [P] [US4] Add ao `AccountServiceTest` casos cobrindo explicitamente o tipo
   `PAYABLE`: `registerPayment` marca/atualiza `paymentDate` de uma conta a pagar; `findAll`
   com `overdue = true` inclui uma conta a pagar pendente com `dueDate` no passado e exclui uma
   já paga (mesma lógica de `RECEIVABLE`, reforço de cobertura "para os dois tipos" — FR-014)
   em `backend/src/test/java/com/financas/account/domain/AccountServiceTest.java` (depends on T026)
-- [ ] T040 [US4] Validar manualmente que a ação "Registrar pagamento" já portada em
+- [X] T040 [US4] Validar manualmente que a ação "Registrar pagamento" já portada em
   `account-list` (T035, herdada de `receivable-list`) funciona sem alteração de código também
   para contas do tipo "a pagar" — sem tarefa de implementação nova esperada; se algum ajuste
   for necessário, corrigir em `frontend/src/app/account/account-list/` (depends on T035, T032)
@@ -320,20 +323,20 @@ conta a pagar vinculada e confirmar o bloqueio.
 
 ### Implementation for User Story 5
 
-- [ ] T041 [US5] Add ação "editar" (navega ao `account-form` em modo edição) e "remover" (com
+- [X] T041 [US5] Add ação "editar" (navega ao `account-form` em modo edição) e "remover" (com
   diálogo de confirmação) nas linhas de `account-list` em
   `frontend/src/app/account/account-list/` (depends on T035, T032)
-- [ ] T042 [P] [US5] Wire rota `/accounts/:id/edit` em `frontend/src/app/app.routes.ts`
+- [X] T042 [P] [US5] Wire rota `/accounts/:id/edit` em `frontend/src/app/app.routes.ts`
   (depends on T037, T041)
-- [ ] T043 [US5] Desabilitar o seletor de tipo em `account-form` quando em modo de edição
+- [X] T043 [US5] Desabilitar o seletor de tipo em `account-form` quando em modo de edição
   (reflete a imutabilidade de `type`, FR-006/FR-015); exibir a mensagem de erro do backend
   caso uma tentativa indevida ainda ocorra (400) em `frontend/src/app/account/account-form/`
   (depends on T032, T042)
-- [ ] T044 [US5] Add ação "editar" (navega ao `supplier-form` em modo edição) e "remover" (com
+- [X] T044 [US5] Add ação "editar" (navega ao `supplier-form` em modo edição) e "remover" (com
   diálogo de confirmação, exibindo a mensagem de erro 409 do backend quando houver conta a
   pagar vinculada) nas linhas de `supplier-list` em `frontend/src/app/supplier/supplier-list/`
   (depends on T029, T028)
-- [ ] T045 [P] [US5] Wire rota `/suppliers/:id/edit` em `frontend/src/app/app.routes.ts`
+- [X] T045 [P] [US5] Wire rota `/suppliers/:id/edit` em `frontend/src/app/app.routes.ts`
   (depends on T030, T044)
 
 **Checkpoint**: Todas as 5 user stories funcionam de forma independente.
@@ -344,18 +347,18 @@ conta a pagar vinculada e confirmar o bloqueio.
 
 **Purpose**: Validações finais e documentação
 
-- [ ] T046 [P] Run roteiro de validação manual de `quickstart.md` de ponta a ponta (API real
+- [X] T046 [P] Run roteiro de validação manual de `quickstart.md` de ponta a ponta (API real
   + navegador), incluindo os cenários 16-17 (bloqueio de remoção de unidade com fornecedor
   vinculado; remoção completa de condômino), que dependem de
   `specs/001-cadastro-condominos/tasks.md` Phase 13-14 já terem sido implementadas
-- [ ] T047 [P] Update `README.md` com as decisões técnicas desta feature (generalização
+- [X] T047 [P] Update `README.md` com as decisões técnicas desta feature (generalização
   `Receivable`→`Account`, modelagem de contraparte com duas FKs nullable + `CHECK`
   constraint, entidade `Supplier`, remoção completa de condômino, valor não negativo — zero
   aceito), e remover/atualizar itens já obsoletos de "O que eu faria diferente ou melhoraria
   com mais tempo" (ex.: "soft delete de condôminos" deixa de fazer sentido; "`TargetAccount`
   como cadastro dinâmico" passa a se referir a `Fund`), conforme Fluxo de Commits da
   constituição
-- [ ] T048 [P] Review mensagens de erro do `GlobalExceptionHandler` para os novos casos desta
+- [X] T048 [P] Review mensagens de erro do `GlobalExceptionHandler` para os novos casos desta
   feature (400/404/409 de `accounts`/`suppliers`), garantindo consistência em português
   (Convenções de API REST)
 
@@ -451,3 +454,30 @@ Task: "Create AccountTypeChangeNotAllowedException em backend/src/main/java/com/
   dados descritas acima
 - Commit ao final de cada tarefa ou grupo lógico de tarefas
 - Pare em qualquer checkpoint para validar a story isoladamente antes de seguir
+
+---
+
+## Phase 9: Convergence
+
+**Purpose**: Itens identificados por `/speckit-converge` como não totalmente satisfeitos pela
+implementação já entregue desta feature.
+
+- [X] T049 **Redirecionada em 2026-07-28** (ver spec.md, Clarifications — sessão de correção 2026-07-28): a tarefa original era corrigir um conflito de especificidade CSS que fazia a cor de fundo da linha (`account-row--receivable`/`--payable`) não renderizar corretamente em linhas de posição ímpar (achado do `/speckit-converge`, FR-011 parcial). A usuária avaliou visualmente o efeito de cor de fundo por linha e considerou o resultado ruim — decisão atualizada: remover por completo a cor de fundo da linha (bindings `[class.account-row--...]` no template e as regras `.account-row--receivable`/`.account-row--payable` no `account-list.scss`), mantendo apenas o rótulo textual colorido (badge) já existente, que sozinho já satisfaz FR-011/SC-001 atualizados — em `frontend/src/app/account/account-list/account-list.html` e `account-list.scss`
+- [X] T050 Add a bullet to the "O que eu faria diferente ou melhoraria com mais tempo" section of `README.md` documenting the deferred "cálculo automático de saldo líquido por unidade" feature (contas a pagar de fornecedores vinculados a uma unidade menos contas a receber dessa mesma unidade), per the explicit disposition required in spec.md's Assumptions section (missing)
+
+---
+
+## Phase 10: Renomeação de rótulos (pedido direto da usuária, 2026-07-28)
+
+**Purpose**: renomear os rótulos textuais de tipo de conta exibidos à usuária ("A receber"/"A
+pagar") para "Entrada"/"Saída", sem alterar o tipo interno (`RECEIVABLE`/`PAYABLE`), rotas,
+nomes de campo ou regras de negócio — ver spec.md, Clarifications, sessão de correção
+2026-07-28 (parte 2).
+
+- [X] T051 Rename `ACCOUNT_TYPE_LABELS` em `frontend/src/app/shared/models/account.model.ts`
+  (`RECEIVABLE: 'A receber'` → `'Entrada'`; `PAYABLE: 'A pagar'` → `'Saída'`) — usado
+  automaticamente pelo badge de `account-list` e pelo seletor de tipo de `account-form`, sem
+  mudança de código adicional nesses dois componentes
+- [X] T052 [P] Rename os `<option>` do `<select>` de filtro por tipo em
+  `frontend/src/app/account/account-list/account-list.html` ("A receber"/"A pagar" →
+  "Entrada"/"Saída", hardcoded no template, não derivado de `ACCOUNT_TYPE_LABELS`)

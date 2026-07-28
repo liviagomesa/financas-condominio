@@ -1,0 +1,160 @@
+<h1 class="h3 mb-3">{{ isEditMode ? 'Editar conta' : 'Nova conta' }}</h1>
+
+<form [formGroup]="form" (ngSubmit)="submit()" class="col-md-6">
+  <div class="mb-3">
+    <label class="form-label d-block">Tipo</label>
+    @for (option of accountTypeOptions; track option.value) {
+      <div class="form-check form-check-inline">
+        <input
+          class="form-check-input"
+          type="radio"
+          [id]="'type-' + option.value"
+          name="type"
+          [checked]="form.controls.type.value === option.value"
+          [disabled]="isEditMode"
+          (change)="setType(option.value)"
+        />
+        <label class="form-check-label" [for]="'type-' + option.value">{{ option.label }}</label>
+      </div>
+    }
+  </div>
+
+  @if (form.controls.type.value === 'RECEIVABLE') {
+    @if (!units().length) {
+      <div class="alert alert-warning">
+        Nenhuma unidade cadastrada. <a routerLink="/units/new">Cadastre uma unidade</a> antes de
+        lançar uma conta a receber.
+      </div>
+    } @else {
+      @if (!isEditMode) {
+        <div class="mb-3">
+          <label class="form-label d-block">Aplicar a</label>
+          <div class="form-check form-check-inline">
+            <input
+              class="form-check-input"
+              type="radio"
+              id="modeIndividual"
+              name="mode"
+              [checked]="!bulkMode()"
+              (change)="setBulkMode(false)"
+            />
+            <label class="form-check-label" for="modeIndividual">Uma unidade específica</label>
+          </div>
+          <div class="form-check form-check-inline">
+            <input
+              class="form-check-input"
+              type="radio"
+              id="modeBulk"
+              name="mode"
+              [checked]="bulkMode()"
+              (change)="setBulkMode(true)"
+            />
+            <label class="form-check-label" for="modeBulk">Todas as unidades</label>
+          </div>
+        </div>
+      }
+
+      @if (!bulkMode()) {
+        <div class="mb-3">
+          <label for="unitId" class="form-label">Unidade</label>
+          <select id="unitId" class="form-select" formControlName="unitId">
+            <option [ngValue]="null">Selecione...</option>
+            @for (unit of units(); track unit.id) {
+              <option [ngValue]="unit.id">{{ unit.identifier }}</option>
+            }
+          </select>
+          @if (form.controls.unitId.invalid && form.controls.unitId.touched) {
+            <div class="text-danger small mt-1">A unidade é obrigatória.</div>
+          }
+        </div>
+      }
+    }
+  } @else {
+    @if (!suppliers().length) {
+      <div class="alert alert-warning">
+        Nenhum fornecedor cadastrado. <a routerLink="/suppliers/new">Cadastre um fornecedor</a>
+        antes de lançar uma conta a pagar.
+      </div>
+    } @else {
+      <div class="mb-3">
+        <label for="supplierId" class="form-label">Fornecedor</label>
+        <select id="supplierId" class="form-select" formControlName="supplierId">
+          <option [ngValue]="null">Selecione...</option>
+          @for (supplier of suppliers(); track supplier.id) {
+            <option [ngValue]="supplier.id">{{ supplier.name }}</option>
+          }
+        </select>
+        @if (form.controls.supplierId.invalid && form.controls.supplierId.touched) {
+          <div class="text-danger small mt-1">O fornecedor é obrigatório.</div>
+        }
+      </div>
+    }
+  }
+
+  @if ((form.controls.type.value === 'RECEIVABLE' && units().length) || (form.controls.type.value === 'PAYABLE' && suppliers().length)) {
+    <div class="mb-3">
+      <label for="amount" class="form-label">Valor</label>
+      <input id="amount" type="number" step="0.01" min="0" class="form-control" formControlName="amount" />
+      @if (form.controls.amount.invalid && form.controls.amount.touched) {
+        <div class="text-danger small mt-1">O valor é obrigatório e não pode ser negativo.</div>
+      }
+    </div>
+
+    <div class="mb-3">
+      <label for="dueDate" class="form-label">Vencimento</label>
+      <input id="dueDate" type="date" class="form-control" formControlName="dueDate" />
+      @if (form.controls.dueDate.invalid && form.controls.dueDate.touched) {
+        <div class="text-danger small mt-1">A data de vencimento é obrigatória.</div>
+      }
+    </div>
+
+    <div class="mb-3">
+      <label for="description" class="form-label">Descrição</label>
+      <input
+        id="description"
+        type="text"
+        class="form-control"
+        formControlName="description"
+        placeholder="Ex.: Taxa condominial - Agosto/2026"
+      />
+      @if (form.controls.description.invalid && form.controls.description.touched) {
+        <div class="text-danger small mt-1">A descrição é obrigatória.</div>
+      }
+    </div>
+
+    <div class="mb-3">
+      <label for="fund" class="form-label">Fundo</label>
+      <select id="fund" class="form-select" formControlName="fund">
+        <option [ngValue]="null">Selecione...</option>
+        @for (option of fundOptions; track option.value) {
+          <option [ngValue]="option.value">{{ option.label }}</option>
+        }
+      </select>
+      @if (form.controls.fund.invalid && form.controls.fund.touched) {
+        <div class="text-danger small mt-1">O fundo é obrigatório.</div>
+      }
+    </div>
+
+    <div class="mb-3 form-check">
+      <input id="recurring" type="checkbox" class="form-check-input" formControlName="recurring" />
+      <label for="recurring" class="form-check-label">Recorrente</label>
+    </div>
+
+    <div class="mb-3">
+      <label for="paymentDate" class="form-label">Data de pagamento (opcional)</label>
+      <input id="paymentDate" type="date" class="form-control" formControlName="paymentDate" />
+      <div class="form-text">Preencha somente se a conta já estiver paga.</div>
+    </div>
+
+    <div class="mb-3">
+      <label for="observations" class="form-label">Observações (opcional)</label>
+      <textarea id="observations" class="form-control" rows="3" formControlName="observations"></textarea>
+    </div>
+
+    @if (errorMessage()) {
+      <div class="alert alert-danger">{{ errorMessage() }}</div>
+    }
+
+    <button type="submit" class="btn btn-primary">Salvar</button>
+  }
+</form>

@@ -1,20 +1,20 @@
 import { Routes } from '@angular/router';
 import { UnitList } from './unit/unit-list/unit-list';
 import { UnitForm } from './unit/unit-form/unit-form';
-import { ResidentList } from './resident/resident-list/resident-list';
-import { ResidentForm } from './resident/resident-form/resident-form';
-import { ReceivableList } from './receivable/receivable-list/receivable-list';
-import { ReceivableForm } from './receivable/receivable-form/receivable-form';
+import { SupplierList } from './supplier/supplier-list/supplier-list';
+import { SupplierForm } from './supplier/supplier-form/supplier-form';
+import { AccountList } from './account/account-list/account-list';
+import { AccountForm } from './account/account-form/account-form';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'units', pathMatch: 'full' },
   { path: 'units', component: UnitList },
   { path: 'units/new', component: UnitForm },
   { path: 'units/:id/edit', component: UnitForm },
-  { path: 'residents', component: ResidentList },
-  { path: 'residents/new', component: ResidentForm },
-  { path: 'residents/:id/edit', component: ResidentForm },
-  { path: 'receivables', component: ReceivableList },
-  { path: 'receivables/new', component: ReceivableForm },
-  { path: 'receivables/:id/edit', component: ReceivableForm },
+  { path: 'suppliers', component: SupplierList },
+  { path: 'suppliers/new', component: SupplierForm },
+  { path: 'suppliers/:id/edit', component: SupplierForm },
+  { path: 'accounts', component: AccountList },
+  { path: 'accounts/new', component: AccountForm },
+  { path: 'accounts/:id/edit', component: AccountForm },
 ];

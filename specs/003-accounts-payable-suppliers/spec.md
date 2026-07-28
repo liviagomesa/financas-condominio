@@ -44,6 +44,25 @@ um campo). Adicionar campo de 'observações' nullable na conta."
   (a pagar ou a receber), a regra original da feature 002 (FR-003: "valor deve ser maior que
   zero").
 
+### Sessão de correção 2026-07-28 (revisão pós-implementação)
+
+- Q: A cor de fundo aplicada à linha inteira na listagem unificada (tom esverdeado para "a
+  receber", avermelhado para "a pagar") deve ser mantida? → A: Não — a usuária avaliou o
+  resultado visual implementado e considerou ruim. A diferenciação visual passa a depender
+  apenas do rótulo textual do tipo, exibido com cor (badge colorido — esverdeado para "A
+  receber", avermelhado para "A pagar"), sem cor de fundo na linha inteira (ver FR-011
+  atualizado).
+
+### Sessão de correção 2026-07-28 (parte 2 — renomeação de rótulos)
+
+- Q: Os rótulos textuais do tipo de conta, exibidos como "A receber"/"A pagar" (badge da
+  listagem, seletor do formulário, filtro), devem continuar com esse texto? → A: Não — renomear
+  para "Entrada" (tipo `RECEIVABLE`) e "Saída" (tipo `PAYABLE`). A mudança é só de rótulo
+  exibido à usuária; os valores internos do enum (`RECEIVABLE`/`PAYABLE`), as rotas, os nomes
+  de campo e toda a prova/regra de negócio que descreve o conceito de "conta a receber"/"conta
+  a pagar" permanecem sem alteração — apenas o texto mostrado na UI (badge, `<select>` de
+  filtro, seletor de tipo do formulário) muda para "Entrada"/"Saída".
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Cadastrar fornecedor (Priority: P1)
@@ -134,9 +153,9 @@ uma com a marcação visual (cor) e o rótulo de tipo correspondentes.
 **Acceptance Scenarios**:
 
 1. **Given** uma conta a receber e uma conta a pagar já lançadas, **When** a usuária acessa a
-   listagem de contas, **Then** ambas aparecem na mesma lista, a conta a receber com uma cor
-   (ex.: tom esverdeado) e a conta a pagar com outra (ex.: tom avermelhado), cada uma também
-   exibindo um rótulo textual do tipo (não dependendo só da cor para diferenciar).
+   listagem de contas, **Then** ambas aparecem na mesma lista, cada uma exibindo um rótulo
+   textual do tipo com cor própria (ex.: badge esverdeado "Entrada" para conta a receber,
+   avermelhado "Saída" para conta a pagar), sem cor de fundo aplicada à linha inteira.
 2. **Given** contas de ambos os tipos cadastradas, **When** a usuária aplica o filtro "somente a
    pagar" (ou "somente a receber"), **Then** apenas as contas do tipo selecionado aparecem na
    listagem.
@@ -274,9 +293,13 @@ e confirmando que deixam de aparecer nas respectivas listagens.
 - **FR-010**: O sistema MUST exibir uma listagem única contendo todas as contas, tanto a pagar
   quanto a receber, sem telas separadas por tipo.
 - **FR-011**: O sistema MUST diferenciar visualmente, na listagem unificada, contas a pagar de
-  contas a receber por meio de cor de linha (ex.: tom esverdeado para a receber, tom avermelhado
-  para a pagar) e MUST também exibir um rótulo textual do tipo em cada linha, para que a
-  diferenciação não dependa exclusivamente da cor.
+  contas a receber por meio de um rótulo textual do tipo em cada linha, exibido com cor própria
+  (badge esverdeado "Entrada" para conta a receber, avermelhado "Saída" para conta a pagar).
+  **Redação atualizada em 2026-07-28**: a versão original também exigia cor de fundo na linha
+  inteira; removida a pedido da usuária após avaliação visual do resultado implementado (ver
+  Clarifications). **Redação atualizada em 2026-07-28 (parte 2)**: o texto do rótulo era "A
+  receber"/"A pagar"; renomeado para "Entrada"/"Saída" a pedido da usuária (ver
+  Clarifications) — o tipo de conta em si (`RECEIVABLE`/`PAYABLE`) não muda, só o texto exibido.
 - **FR-012**: O sistema MUST permitir filtrar a listagem unificada por tipo de conta (somente a
   pagar, somente a receber, ou ambos), combinável (E lógico) com os filtros já existentes da
   feature 002 (status de pagamento, vencidos, mês de vencimento, mês de pagamento).
@@ -346,7 +369,7 @@ e confirmando que deixam de aparecer nas respectivas listagens.
 ### Measurable Outcomes
 
 - **SC-001**: A usuária consegue visualizar contas a pagar e a receber na mesma tela e identificar
-  o tipo de cada uma (por cor e rótulo) em até 5 segundos, sem precisar abrir cada conta
+  o tipo de cada uma pelo rótulo colorido em até 5 segundos, sem precisar abrir cada conta
   individualmente.
 - **SC-002**: A usuária consegue filtrar a listagem para ver somente contas a pagar (ou somente a
   receber) em menos de 10 segundos.
@@ -395,9 +418,13 @@ e confirmando que deixam de aparecer nas respectivas listagens.
 - As contas a receber já lançadas antes desta feature (feature 002) são preservadas, passando a
   ser tratadas como contas do tipo "a receber" dentro do conceito unificado, sem perda de dados;
   os detalhes técnicos dessa migração ficam a cargo do `plan.md`.
-- Cores sugeridas para a listagem unificada: tom esverdeado para contas a receber, tom
-  avermelhado para contas a pagar — sempre acompanhadas de um rótulo textual do tipo, para que a
-  distinção não dependa exclusivamente de cor (acessibilidade).
+- Cores sugeridas para a listagem unificada ficam restritas ao rótulo textual do tipo (badge):
+  tom esverdeado para "Entrada" (conta a receber), tom avermelhado para "Saída" (conta a
+  pagar) — texto renomeado de "A receber"/"A pagar" a pedido da usuária (ver Clarifications,
+  sessão 2026-07-28, parte 2). Cor de fundo na linha inteira foi cogitada inicialmente,
+  implementada, avaliada visualmente pela usuária e removida (ver Clarifications, sessão
+  2026-07-28) — o rótulo colorido já é suficiente para a distinção, inclusive por
+  acessibilidade (não depende de percepção de cor de fundo).
 - O sistema é de uso pessoal, com poucas dezenas de registros, portanto a listagem unificada e o
   cadastro de fornecedores não precisam de paginação nesta primeira versão (mesma premissa das
   features 001 e 002).

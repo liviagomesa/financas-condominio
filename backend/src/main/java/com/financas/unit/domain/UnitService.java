@@ -1,8 +1,8 @@
 package com.financas.unit.domain;
 
-import com.financas.receivable.domain.ReceivableRepository;
-import com.financas.resident.domain.ResidentRepository;
+import com.financas.account.domain.AccountRepository;
 import com.financas.shared.exceptions.NotFoundException;
+import com.financas.supplier.domain.SupplierRepository;
 import java.util.List;
 import java.util.Objects;
 import org.springframework.stereotype.Service;
@@ -11,16 +11,14 @@ import org.springframework.stereotype.Service;
 public class UnitService {
 
     private final UnitRepository repository;
-    private final ResidentRepository residentRepository;
-    private final ReceivableRepository receivableRepository;
+    private final AccountRepository accountRepository;
+    private final SupplierRepository supplierRepository;
 
     public UnitService(
-            UnitRepository repository,
-            ResidentRepository residentRepository,
-            ReceivableRepository receivableRepository) {
+            UnitRepository repository, AccountRepository accountRepository, SupplierRepository supplierRepository) {
         this.repository = repository;
-        this.residentRepository = residentRepository;
-        this.receivableRepository = receivableRepository;
+        this.accountRepository = accountRepository;
+        this.supplierRepository = supplierRepository;
     }
 
     public Unit create(String identifier) {
@@ -46,11 +44,11 @@ public class UnitService {
 
     public void delete(Long id) {
         findById(id);
-        if (residentRepository.existsByUnitId(id)) {
-            throw new UnitHasResidentsException();
+        if (accountRepository.existsByUnitId(id)) {
+            throw new UnitHasAccountsException();
         }
-        if (receivableRepository.existsByUnitId(id)) {
-            throw new UnitHasReceivablesException();
+        if (supplierRepository.existsByUnitId(id)) {
+            throw new UnitHasSuppliersException();
         }
         repository.deleteById(id);
     }

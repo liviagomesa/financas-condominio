@@ -11,7 +11,9 @@ Generalizar `Receivable` (feature 002) em uma entidade única `Account`, com um 
 `Unit` quando a receber, a nova entidade `Supplier` quando a pagar. Adicionar o cadastro de
 `Supplier` (nome obrigatório, unidade opcional, chave PIX opcional), remover por completo o
 cadastro de `Resident` (condômino) e sua tabela, e unificar a listagem de contas numa única
-tela com filtro por tipo e diferenciação visual (cor + rótulo). Abordagem técnica: pacote
+tela com filtro por tipo e diferenciação visual por rótulo colorido (ver nota "Atualização
+2026-07-28" abaixo — cor de fundo na linha inteira foi cogitada, implementada e removida por
+avaliação visual da usuária). Abordagem técnica: pacote
 `com.financas.receivable` renomeado para `com.financas.account`; novo pacote
 `com.financas.supplier`; `com.financas.resident` removido; migrations Flyway que renomeiam a
 tabela `receivable`→`account` (preservando dados), criam `supplier` e derrubam `resident`;
@@ -92,6 +94,23 @@ user stories, 23 requisitos funcionais
   params combináveis (E lógico); erros 4xx no formato padrão `{ "message", "status" }`. DTOs
   de resposta expõem `from(Entity)` e embutem o(s) DTO(s) completo(s) da(s) entidade(s)
   referenciada(s) (`AccountResponse.unit`/`.supplier`, `SupplierResponse.unit`).
+
+**Atualização (2026-07-28 — remoção da cor de fundo por linha em `account-list`)**: a
+diferenciação visual por cor de fundo na linha inteira (`account-row--receivable`/
+`--payable`) foi implementada, avaliada visualmente pela usuária e removida — a
+diferenciação por tipo passa a depender só do rótulo textual colorido (badge), já existente e
+mantido sem alteração. Confirmação princípio a princípio de que a mudança continua respeitando
+a constituição:
+- **I. Arquitetura em Camadas**: PASS, sem alteração — mudança restrita ao template/estilo de
+  `account-list` (frontend), sem tocar estrutura de pastas ou camadas.
+- **II. Separação Controller → Service → Repository**: PASS, sem alteração — mudança é
+  puramente de apresentação (frontend), não envolve `Service`/`Repository`.
+- **III. Stack Técnica Definida**: PASS, sem alteração — nenhuma dependência nova ou
+  removida.
+- **IV. Convenções de Código e Formatação**: PASS — remove a classe CSS por linha e o binding
+  `[class.account-row--...]` do template, sem introduzir convenção nova.
+- **V. Idioma por Tipo de Conteúdo**: PASS, sem alteração.
+- **VI. Convenções de API REST**: PASS, sem alteração — mudança não toca contrato de API.
 
 **Impacto cruzado com features já implementadas (001 e 002)** — sinalizado, não uma
 violação desta feature:
@@ -176,7 +195,7 @@ frontend/
 │   ├── unit/                     # unit-list/unit-form inalterados na estrutura
 │   ├── resident/                 # REMOVIDO por completo
 │   ├── account/                  # renomeado de receivable/
-│   │   ├── account-list/         # + coluna/rótulo de tipo, cor por linha, filtro por tipo
+│   │   ├── account-list/         # + coluna/rótulo colorido de tipo, filtro por tipo
 │   │   └── account-form/         # + seletor de tipo (desabilitado em edição), alterna
 │   │                              # unidade+lote / fornecedor, + observações
 │   ├── supplier/                 # novo

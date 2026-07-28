@@ -1,0 +1,32 @@
+<h1 class="h3 mb-3">{{ isEditMode ? 'Editar fornecedor' : 'Novo fornecedor' }}</h1>
+
+<form [formGroup]="form" (ngSubmit)="submit()" class="col-md-6">
+  <div class="mb-3">
+    <label for="name" class="form-label">Nome</label>
+    <input id="name" type="text" class="form-control" formControlName="name" />
+    @if (form.controls.name.invalid && form.controls.name.touched) {
+      <div class="text-danger small mt-1">O nome é obrigatório.</div>
+    }
+  </div>
+
+  <div class="mb-3">
+    <label for="unitId" class="form-label">Unidade (opcional)</label>
+    <select id="unitId" class="form-select" formControlName="unitId">
+      <option [ngValue]="null">Nenhuma</option>
+      @for (unit of units(); track unit.id) {
+        <option [ngValue]="unit.id">{{ unit.identifier }}</option>
+      }
+    </select>
+  </div>
+
+  <div class="mb-3">
+    <label for="pixKey" class="form-label">Chave PIX (opcional)</label>
+    <input id="pixKey" type="text" class="form-control" formControlName="pixKey" />
+  </div>
+
+  @if (errorMessage()) {
+    <div class="alert alert-danger">{{ errorMessage() }}</div>
+  }
+
+  <button type="submit" class="btn btn-primary">Salvar</button>
+</form>
