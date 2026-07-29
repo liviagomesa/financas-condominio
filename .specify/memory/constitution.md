@@ -1,6 +1,52 @@
 <!--
 Sync Impact Report
 ==================
+Versão: 1.4.0 → 1.5.0
+
+Princípios modificados:
+- I. Arquitetura em Camadas — expandido: quando uma migration Flyway generaliza/renomeia uma
+  entidade já existente, MUST preferir `ALTER TABLE ... RENAME TO`/`RENAME COLUMN` a recriar a
+  tabela e copiar dados, preservando ids e histórico de auto-incremento; nova diretriz de
+  modelagem de contraparte obrigatória mutuamente exclusiva entre duas (ou mais) entidades não
+  relacionadas — uma FK nullable por contraparte possível + `CHECK CONSTRAINT` no banco,
+  reforçada no `Service`, em vez de tabela de contraparte genérica ou herança JPA. Exemplos
+  desatualizados corrigidos (`com.financas.resident` → `com.financas.account`;
+  `UnitHasResidentsException` → `UnitHasAccountsException`; trio de seleção múltipla
+  exemplificado com `unit-list`/`resident-list`/`receivable-list` →
+  `unit-list`/`account-list`/`supplier-list`).
+- IV. Convenções de Código e Formatação — expandido: um campo de tipo/discriminador que
+  define o comportamento de uma entidade (ex.: `Account.type`) MUST ser obrigatório na
+  criação e imutável na edição, incluído no mesmo DTO de `POST`/`PUT`, com o `Service.update()`
+  comparando e rejeitando (400) qualquer tentativa de alteração — em vez de omitir o campo do
+  `PUT` ou ignorá-lo silenciosamente. Exemplo desatualizado corrigido (`ResidentResponse.unit`
+  → `AccountResponse.unit`).
+- VI. Convenções de API REST — exemplos desatualizados corrigidos (`/api/residents` →
+  `/api/accounts`; `POST /api/receivables/{id}/pay` → `POST /api/accounts/{id}/pay`).
+
+Motivação: decisões que emergiram durante a implementação da feature
+003-accounts-payable-suppliers (generalização de `Receivable` em `Account`, contraparte
+obrigatória mutuamente exclusiva entre `Unit` e o novo `Supplier`, campo `type` imutável) e
+que se aplicam a qualquer entidade futura com necessidades semelhantes — uma contraparte
+"ou-ou" entre entidades não relacionadas, ou um discriminador de tipo que não pode mudar
+depois de criado — não só a `Account`. Aproveitada a revisão para corrigir exemplos
+ilustrativos que citavam `Resident`/`Receivable`, removidos/renomeados por essa mesma
+feature, e que ficariam incorretos se deixados como estavam (as menções a `Resident`/
+`Receivable` dentro dos Sync Impact Reports históricos abaixo foram preservadas, por
+descreverem decisões tomadas quando essas entidades ainda existiam). Emenda anterior
+(1.3.0 → 1.4.0) já estava commitada no momento desta revisão (`74d17df`), por isso o bump de
+versão em vez de incorporar as mudanças na mesma emenda.
+
+Templates a verificar:
+- ✅ .specify/templates/plan-template.md — genérico, sem alterações necessárias
+- ✅ .specify/templates/spec-template.md — genérico, sem alterações necessárias
+- ✅ .specify/templates/tasks-template.md — genérico, sem alterações necessárias
+
+Itens pendentes (TODO): nenhum.
+-->
+
+<!--
+Sync Impact Report (histórico — emenda anterior)
+==================
 Versão: 1.3.0 → 1.4.0
 
 Princípios modificados:
@@ -185,12 +231,16 @@ Itens pendentes (TODO):
 O sistema segue arquitetura em camadas, com frontend (Angular) e backend (Spring Boot)
 organizados por domínio. O pacote base do backend Java MUST ser `com.financas`, com cada
 entidade de domínio em seu próprio subpacote (ex.: `com.financas.unit`,
-`com.financas.resident`) contendo `api/` (controllers e contratos/DTOs), `domain/`
+`com.financas.account`) contendo `api/` (controllers e contratos/DTOs), `domain/`
 (entidade, enums, repository, service, e as exceptions que representam regras de negócio
 daquela entidade — ex.: unicidade de um identificador, bloqueio de remoção por vínculo) e
 `infra/` (implementação do repository). A ferramenta de build do backend MUST ser Maven; a
 migração de schema de banco MUST ser feita via Flyway, com migrations versionadas em
-`src/main/resources/db/migration`.
+`src/main/resources/db/migration`. Quando uma migration generaliza ou renomeia uma entidade
+já existente (ex.: `Receivable` → `Account`), MUST preferir `ALTER TABLE ... RENAME TO`/
+`RENAME COLUMN` a criar a tabela do zero e copiar dados via `INSERT ... SELECT` — preserva os
+`id`s e o histórico de auto-incremento já existentes, além de ser mais direto que recriar e
+migrar.
 
 Recursos compartilhados ficam em `shared/`, mas essa pasta MUST conter apenas recursos
 verdadeiramente transversais a mais de uma entidade: `GlobalExceptionHandler`, exceptions
@@ -204,10 +254,21 @@ para um único ponto de entrada (campo obrigatório, formato), Bean Validation n
 (`@NotBlank`, `@Positive`, etc.) já basta, sem duplicar a checagem no `Service`. Uma exception
 que representa uma regra de negócio específica de uma entidade NUNCA deve viver em
 `shared/` — deve viver no `domain/` da própria entidade, mesmo que estenda uma das três bases
-acima (ex.: `UnitHasResidentsException extends ConflictException`). `BadRequestException`
+acima (ex.: `UnitHasAccountsException extends ConflictException`). `BadRequestException`
 também MUST ser usada para validar query params que não correspondem a nenhum campo de DTO
 (ex.: um filtro de listagem em formato livre, como um mês/ano) — Bean Validation não se
 aplica a esses parâmetros, então a validação/parsing ocorre diretamente no `Service`.
+
+Quando uma entidade precisa de uma contraparte obrigatória que só pode ser exatamente uma
+dentre duas (ou mais) outras entidades não relacionadas entre si (ex.: `Account.unit`/
+`Account.supplier`), MUST ser modelada como uma FK nullable por contraparte possível — nunca
+um campo `id` solto sem FK de banco de verdade — validada em duas camadas: uma `CHECK
+CONSTRAINT` no banco garantindo que exatamente uma está preenchida, coerente com o
+discriminador da entidade (ex.: `type`), e a mesma regra reforçada no `Service` (regra
+cruzada entre campos, não puramente sintática — mesmo critério de `BadRequestException`
+acima). Evita introduzir uma tabela de "contraparte" genérica com discriminador manual ou
+herança JPA entre entidades que não compartilham comportamento real além de "poder ser
+contraparte" — complexidade desproporcional ao tamanho deste projeto.
 
 No frontend, cada entidade de domínio possui sua pasta de componentes, com `core/` para
 tratamento de erros e `shared/` para models, services, validators e configuração de URL
@@ -217,7 +278,7 @@ Toda listagem que precisar de seleção múltipla + remoção em lote MUST reapr
 estabelecido `shared/list-selection.ts` (estado de seleção, signal-based) +
 `shared/bulk-delete.ts` (remoção item a item, melhor esforço, sem endpoint transacional) +
 `shared/components/bulk-actions-bar/` (UI da barra de ação) — introduzido na feature
-002-receivable-charges e já aplicado a `unit-list`/`resident-list`/`receivable-list` — em vez
+002-receivable-charges e já aplicado a `unit-list`/`account-list`/`supplier-list` — em vez
 de reimplementar seleção/remoção em lote do zero numa tela nova. Estado local de componente
 MUST ser gerenciado via `signal()` do Angular — não por campo simples nem `BehaviorSubject` —
 consequência do app rodar em modo zoneless (sem Zone.js). Rotas MUST seguir o padrão
@@ -283,7 +344,12 @@ corromper dados existentes se a ordem de declaração dos valores do enum mudar 
 estado binário inteiramente derivável da presença/ausência de outro campo (ex.: um
 lançamento "pago" quando sua `paymentDate` não é nula) MUST ser derivado desse campo, nunca
 duplicado como um segundo campo booleano persistido — evita os dois ficarem inconsistentes
-entre si.
+entre si. Um campo de tipo/discriminador que define o comportamento ou as regras de uma
+entidade (ex.: `Account.type`) MUST ser obrigatório na criação e imutável na edição: o mesmo
+DTO de request usado em `POST`/`PUT` inclui o campo, e o `Service.update()` compara o valor
+recebido com o já persistido, rejeitando (400, via exception dedicada) qualquer tentativa de
+alterá-lo — em vez de omitir o campo do `PUT` ou ignorá-lo silenciosamente, o que esconderia
+uma tentativa inválida (seja da usuária ou de um bug no frontend) em vez de avisar sobre ela.
 Nomes de variáveis, classes, métodos, propriedades e tabelas de banco de dados MUST estar em
 inglês. Mensagens de erro internas (exceptions, logs) MUST estar em inglês. Mensagens de erro
 exibidas ao usuário final (respostas de API, frontend) MUST estar em português.
@@ -306,7 +372,7 @@ antes de assumir um idioma.
 
 ### VI. Convenções de API REST
 Rotas MUST seguir o padrão `/api/{recurso-no-plural-em-inglês}` (ex.: `/api/units`,
-`/api/residents`), usando os verbos HTTP padrão: `GET` para listagem/consulta, `POST` para
+`/api/accounts`), usando os verbos HTTP padrão: `GET` para listagem/consulta, `POST` para
 criação, `PUT /{id}` para edição completa e `DELETE /{id}` para remoção. Quando um recurso
 precisar de uma ação de criação em massa (aplicar os mesmos dados a todas as instâncias de
 outro recurso relacionado), essa ação MUST ser exposta como sub-rota `POST
@@ -315,7 +381,7 @@ relacionado (que passa a ser implícito — "todas as instâncias existentes no 
 chamada"), nunca sobrecarregando o `POST` individual com um identificador opcional. O mesmo
 padrão de sub-rota se generaliza para qualquer ação de negócio dedicada sobre um recurso
 existente que não seja nem edição completa (`PUT`) nem criação (`POST` no recurso plano) —
-`POST /{recurso}/{id}/{ação}` (ex.: `POST /api/receivables/{id}/pay`, para registrar
+`POST /{recurso}/{id}/{ação}` (ex.: `POST /api/accounts/{id}/pay`, para registrar
 pagamento) — reaproveitando esse padrão de rota em vez de inventar um novo a cada ação.
 Filtros de leitura numa listagem (`GET /{recurso}`) MUST ser expostos como query params
 adicionais no mesmo endpoint de coleção, nunca como rotas novas; quando mais de um filtro for
@@ -334,7 +400,7 @@ executar a remoção diretamente quando chamado, sem etapa de confirmação pró
 DTOs de resposta MUST expor um factory estático `from(Entity)` que constrói o DTO a
 partir da entidade de domínio. Quando um DTO de resposta representa uma entidade que
 referencia outra, MUST embutir o DTO de resposta completo da entidade referenciada (ex.:
-`ResidentResponse.unit: UnitResponse`), nunca apenas o identificador. No frontend, o
+`AccountResponse.unit: UnitResponse`), nunca apenas o identificador. No frontend, o
 interceptor HTTP MUST normalizar toda resposta de erro no formato acima em um objeto
 `ApiError` consumido pelos componentes — componentes NUNCA devem ler `HttpErrorResponse`
 bruto diretamente.
@@ -427,5 +493,5 @@ definidos aqui. Complexidade adicional (novas camadas, dependências, padrões) 
 justificada em relação aos princípios de simplicidade implícitos na arquitetura em camadas
 descrita no Princípio I.
 
-**Version**: 1.4.0 | **Ratified**: 2026-07-24 | **Last Amended**: 2026-07-27
+**Version**: 1.5.0 | **Ratified**: 2026-07-24 | **Last Amended**: 2026-07-28
 </content>
