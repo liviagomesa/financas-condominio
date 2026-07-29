@@ -1,6 +1,55 @@
 <!--
 Sync Impact Report
 ==================
+Versão: 1.6.0 → 1.7.0
+
+Princípios modificados:
+- I. Arquitetura em Camadas — expandido em três pontos: (1) nota de que o padrão de FK
+  nullable dupla + `CHECK CONSTRAINT` para contraparte obrigatória "ou-ou" (exemplo original:
+  `Account.unit`/`Account.supplier`) foi superado nesse caso específico pela feature 005, que
+  unificou `Unit` e `Supplier` em `Party` — o padrão em si permanece válido para uma situação
+  futura real e análoga; (2) quando o nome de domínio natural de uma entidade colide com uma
+  palavra reservada do SQL (ex.: `GROUP`), a classe/pacote Java MUST manter o nome de domínio,
+  mas a tabela física MUST usar um nome alternativo (ex.: `Group` → tabela `party_group`); (3)
+  nova diretriz para entidades que representam um agrupamento nomeado de outras (relação
+  muitos-para-muitos, ex.: `Group` de `Party`) — a composição MUST ser editada exclusivamente
+  pela tela do próprio agrupamento, nunca pela tela de cada entidade membro.
+- IV. Convenções de Código e Formatação — expandido: uma coleção `@ManyToMany` sem ordem de
+  negócio própria MUST ser modelada como `Set` (não `List`), com qualquer ordenação
+  determinística da resposta de API aplicada na camada de DTO, nunca persistida via
+  `@OrderColumn`.
+- VI. Convenções de API REST — expandido: critério explícito para decidir entre calcular um
+  valor agregado no backend (exposto via API, quando depende de dados além da lista já
+  carregada pela tela — ex.: saldo real de um Fundo) ou inteiramente no frontend (quando é uma
+  função pura da lista já carregada/filtrada pela tela — ex.: um total ao final de uma tabela),
+  sem endpoint dedicado nesse segundo caso.
+
+Motivação: decisões que emergiram do planejamento da feature 005-counterparty-groups (unificação
+de `Unit`/`Supplier` em `Party`, introdução do conceito de `Group` — a primeira relação
+muitos-para-muitos do projeto — e um total dinâmico calculado no frontend, diferente do padrão
+de saldo real de Fundo calculado no backend) e que se aplicam a qualquer entidade futura com
+necessidades semelhantes — uma FK "ou-ou" que deixa de ser necessária após unificação de
+entidades, um nome de domínio que colide com palavra reservada do banco, um agrupamento
+muitos-para-muitos, ou um agregado sobre uma listagem filtrada — não só a `Party`/`Group`/
+`Account` desta feature. A pedido explícito da usuária, esta revisão foi rodada antes da
+implementação (entre `/speckit-tasks` e `/speckit-implement`), como já ocorreu na feature 004; a
+revisão pós-implementação de 005 ainda deve ocorrer normalmente, focada em decisões que só
+emergirem durante a escrita do código. Emenda anterior (1.5.0 → 1.6.0) já estava commitada no
+momento desta revisão (`b35b0cf`), por isso o bump de versão em vez de incorporar as mudanças na
+mesma emenda.
+
+Templates a verificar:
+- ✅ .specify/templates/plan-template.md — genérico, sem alterações necessárias
+- ✅ .specify/templates/spec-template.md — genérico, sem alterações necessárias
+- ✅ .specify/templates/tasks-template.md — genérico, sem alterações necessárias
+
+Itens pendentes (TODO): revisão pós-implementação de 005-counterparty-groups ainda pendente, a
+rodar depois de `/speckit-implement`.
+-->
+
+<!--
+Sync Impact Report (histórico — emenda anterior)
+==================
 Versão: 1.5.0 → 1.6.0
 
 Princípios modificados:
@@ -273,7 +322,11 @@ entidade de domínio em seu próprio subpacote (ex.: `com.financas.unit`,
 daquela entidade — ex.: unicidade de um identificador, bloqueio de remoção por vínculo) e
 `infra/` (implementação do repository). A ferramenta de build do backend MUST ser Maven; a
 migração de schema de banco MUST ser feita via Flyway, com migrations versionadas em
-`src/main/resources/db/migration`. Quando uma migration generaliza ou renomeia uma entidade
+`src/main/resources/db/migration`. Quando o nome de domínio natural de uma entidade colide com
+uma palavra reservada do SQL (ex.: `GROUP`), a classe e o pacote Java MUST manter o nome de
+domínio (ex.: `Group`, `com.financas.group`), mas a tabela física MUST usar um nome alternativo
+que evite a colisão (ex.: `party_group`) — evita ter que escapar o identificador em toda
+consulta manual ou ferramenta de inspeção do banco. Quando uma migration generaliza ou renomeia uma entidade
 já existente (ex.: `Receivable` → `Account`), MUST preferir `ALTER TABLE ... RENAME TO`/
 `RENAME COLUMN` a criar a tabela do zero e copiar dados via `INSERT ... SELECT` — preserva os
 `id`s e o histórico de auto-incremento já existentes, além de ser mais direto que recriar e
@@ -309,7 +362,18 @@ discriminador da entidade (ex.: `type`), e a mesma regra reforçada no `Service`
 cruzada entre campos, não puramente sintática — mesmo critério de `BadRequestException`
 acima). Evita introduzir uma tabela de "contraparte" genérica com discriminador manual ou
 herança JPA entre entidades que não compartilham comportamento real além de "poder ser
-contraparte" — complexidade desproporcional ao tamanho deste projeto.
+contraparte" — complexidade desproporcional ao tamanho deste projeto. Esse padrão foi aplicado a
+`Account.unit`/`Account.supplier` até a feature 005, que unificou `Unit` e `Supplier` numa única
+entidade (`Party`), eliminando a necessidade de duas FKs mutuamente exclusivas nesse caso
+específico — o padrão em si permanece válido e MUST ser reaplicado sempre que uma situação
+futura real exigir exatamente uma dentre duas (ou mais) entidades não relacionadas como
+contraparte obrigatória.
+
+Quando uma entidade representa um agrupamento nomeado de outras entidades da mesma natureza
+(relação muitos-para-muitos, ex.: `Group` agrupando `Party`), a composição do agrupamento (quais
+entidades pertencem a ele) MUST ser editada exclusivamente pela tela/formulário do próprio
+agrupamento — nunca pela tela de cada entidade membro — evitando duplicar a mesma interface de
+associação em dois lugares sem uma fonte de verdade única.
 
 No frontend, cada entidade de domínio possui sua pasta de componentes, com `core/` para
 tratamento de erros e `shared/` para models, services, validators e configuração de URL
@@ -391,6 +455,11 @@ DTO de request usado em `POST`/`PUT` inclui o campo, e o `Service.update()` comp
 recebido com o já persistido, rejeitando (400, via exception dedicada) qualquer tentativa de
 alterá-lo — em vez de omitir o campo do `PUT` ou ignorá-lo silenciosamente, o que esconderia
 uma tentativa inválida (seja da usuária ou de um bug no frontend) em vez de avisar sobre ela.
+Uma coleção de entidades numa relação `@ManyToMany` sem ordem de negócio própria MUST ser
+modelada como `Set`, não `List` — evita a complexidade de uma coluna de ordenação
+(`@OrderColumn`) sem necessidade real; quando a resposta de API precisar de uma ordem
+determinística (ex.: alfabética), essa ordenação MUST ser aplicada na camada de DTO/resposta,
+nunca persistida.
 Nomes de variáveis, classes, métodos, propriedades e tabelas de banco de dados MUST estar em
 inglês. Mensagens de erro internas (exceptions, logs) MUST estar em inglês. Mensagens de erro
 exibidas ao usuário final (respostas de API, frontend) MUST estar em português.
@@ -446,7 +515,14 @@ resposta é derivado por agregação sobre outra entidade (não um dado persisti
 entidade — ex.: um saldo calculado a partir de lançamentos vinculados), o factory MAY aceitar
 esse valor já calculado como parâmetro adicional (`from(Entity, valorComputado)`) — a regra de
 cálculo permanece no `Service` (Princípio II), e o `Controller` é responsável por chamar o
-`Service` e repassar o resultado ao factory, nunca a própria DTO calculando-o sozinha. No
+`Service` e repassar o resultado ao factory, nunca a própria DTO calculando-o sozinha. Esse
+padrão de campo computado no backend se aplica quando o agregado depende de dados além da lista
+já carregada pela tela (ex.: o saldo real de um Fundo, que soma lançamentos que podem não estar
+na página/filtro atual) — o cálculo MUST ficar no `Service`, exposto via API. Quando, ao
+contrário, o agregado é uma função pura da própria lista que a tela já carregou e filtrou (ex.:
+um total exibido ao final de uma tabela, refletindo só as linhas atualmente visíveis), o cálculo
+MAY ser feito inteiramente no frontend (ex.: `computed()` do Angular sobre o signal já
+populado), sem endpoint dedicado nem campo novo na resposta. No
 frontend, o interceptor HTTP MUST normalizar toda resposta de erro no formato acima em um objeto
 `ApiError` consumido pelos componentes — componentes NUNCA devem ler `HttpErrorResponse`
 bruto diretamente.
@@ -539,5 +615,5 @@ definidos aqui. Complexidade adicional (novas camadas, dependências, padrões) 
 justificada em relação aos princípios de simplicidade implícitos na arquitetura em camadas
 descrita no Princípio I.
 
-**Version**: 1.6.0 | **Ratified**: 2026-07-24 | **Last Amended**: 2026-07-29
+**Version**: 1.7.0 | **Ratified**: 2026-07-24 | **Last Amended**: 2026-07-29
 </content>
