@@ -665,66 +665,24 @@ performance em vigor. É possível que autenticação/autorização sejam implem
 futuramente; quando isso ocorrer, esta seção MUST ser emendada para registrar as novas
 restrições transversais antes de sua adoção no código.
 
-## Fluxo de Commits
+## Checkpoints da Rodada de Trabalho
 
-- Mensagens de commit MUST ser curtas, de uma linha (`tipo: descrição curta`, ex.: `fix: ...`, `feat: ...`, `docs: ...`), sem corpo com bullets.
-- Preferir um único commit por tarefa/rodada de mudanças. Só dividir em commits separados quando houver unidades claramente distintas e independentes entre si (ex.: uma correção de bug não relacionada descoberta no meio do caminho) — não dividir apenas porque a mudança tocou várias camadas ou arquivos de uma mesma tarefa.
-- Ao final de uma rodada de correções/funcionalidades, o conteúdo do `README.md` MUST ser atualizado. Especificamente:
-  - **"Decisões técnicas e premissas"**: toda decisão técnica nova tomada na rodada (escolha de stack, convenção, trade-off, ajuste de configuração de ambiente) — registrar o porquê, não só o quê.
-  - **"Revisões e correções das entregas da IA"**: listagem (não precisa detalhar muito, é mais um registro) de erros, desvios ou correções que a usuária identificou no trabalho entregue naquela rodada.
-  - **"O que eu faria diferente ou melhoraria com mais tempo"**: melhorias ou ideias mencionadas na conversa que ficaram fora do escopo da rodada atual, registradas para retomar no futuro.
-- A cada comando do Spec Kit executado ou correção solicitada, sugerir uma mensagem de commit seguindo o padrão já definido (tipo: descrição curta), sem executar o commit automaticamente — apenas propor o texto para o usuário decidir quando e se commitar.
+Mensagens de commit MUST ser curtas, de uma linha (`tipo: descrição curta`, sempre em inglês — ex.: `fix: ...`, `feat: ...`, `docs: ...`), sem corpo com bullets; essa regra vale para qualquer commit proposto no projeto, não só nos dois momentos abaixo. Fora desses dois momentos (ex.: uma correção avulsa que não passa pelo fluxo SDD), preferir um único commit por tarefa — só dividir em commits separados quando houver unidades claramente distintas e independentes entre si (ex.: uma correção de bug não relacionada descoberta no meio do caminho), não apenas porque a mudança tocou várias camadas ou arquivos de uma mesma tarefa.
 
-## Revisão da Constituição Pós-Implementação
+Definem-se os seguintes momentos do fluxo de desenvolvimento SDD: (1) **fim do trabalho de documentação** — dentro de uma feature nova, ao concluir o `speckit-analyze`; dentro de uma alteração direta (feature já implementada ou ainda em andamento, ver seção "Edição de Features Já Implementadas"), ao concluir os ajustes nos artefatos de `specs/[NÚMERO-NOME-DA-FEATURE]/`; e (2) **fim do trabalho de implementação** — dentro de uma feature nova, ao concluir o `speckit-converge` (incluindo as revisões pedidas pela usuária sobre o código entregue); dentro de uma alteração direta, ao concluir a implementação de código correspondente.
 
-Depois de implementada uma feature (ou uma correção relevante), antes de considerá-la
-encerrada, MUST ser feita uma varredura de padronização: ler esta constituição, os
-artefatos da feature (`spec.md`, `plan.md`, `tasks.md`, e `research.md`/`data-model.md`/
-`contracts/` quando existirem) e o código implementado, e identificar decisões tomadas que
-NÃO são específicas das entidades ou da funcionalidade daquela feature, mas sim convenções
-técnicas ou estruturais genéricas — coisas que qualquer feature futura teria que decidir de
-novo se não estivessem escritas aqui.
-
-Exemplos do tipo de decisão a procurar (lista não exaustiva): nome de pacote/namespace
-base, ferramenta de build, ferramenta de migração de banco, convenção de nomenclatura de
-pastas/camadas, onde exceptions/erros de negócio devem viver na estrutura de pastas,
-convenção de rotas de API, formato padrão de resposta de erro, stack de testes, política de
-reuso/atualização de versão de dependências, convenções de nomenclatura de DTOs/contratos,
-padrões de estado/arquitetura de frontend.
-
-Para cada decisão candidata, verificar se já está coberta por esta constituição. Depois, 
-checar se a última alteração da constitution já foi commitada (`git status`/`git log`). 
-Se sim, aplicar a emenda com nova versão semântica; se não, incorporar as mudanças na mesma 
-emenda ainda não commitada, sem bump de versão. Verificar ao final se os templates 
-dependentes (`plan-template.md`, `spec-template.md`, `tasks-template.md`) permanecem 
-consistentes.
+Cada um desses dois momentos MUST disparar proativamente (sem que a usuária precise solicitar) a skill `round-checkpoint`, responsável por propor a mensagem do commit daquele momento, sugerir alterações ao `README.md` e à própria `constitution.md`, e conduzir a aprovação da usuária sobre a entrega daquele momento e sobre as duas sugestões, corrigindo o que for solicitado até a aprovação — o procedimento completo está detalhado na definição da skill, não duplicado aqui.
 
 ## Edição de Features Já Implementadas
 
-Para mudanças em uma feature já implementada (comportamento, regra de negócio, ou correção)
-que não justificam rodar `/speckit.specify`/`/speckit.plan`/`/speckit.tasks` do zero: NÃO
-criar uma feature nova nem uma branch nova; editar os arquivos existentes em
-`specs/[NÚMERO-NOME-DA-FEATURE]/` diretamente, nesta ordem:
+Sempre que a usuária pedir uma alteração de funcionalidade do projeto diretamente, sem ser via comando do Spec Kit — inclusive durante o desenvolvimento de uma feature ainda em andamento —, NUNCA altere o código diretamente: SEMPRE encontre a(s) feature(s) impactada(s) em `specs/` (perguntando à usuária se não for óbvio pelo pedido) e edite a documentação correspondente antes de qualquer código, nesta ordem:
 
-1. **spec.md**: atualizar apenas as seções afetadas pela mudança (requisitos funcionais,
-   regras de negócio, edge cases), preservando o resto do arquivo intacto. Se a mudança
-   introduzir ambiguidade nova, sinalizar com `[NEEDS CLARIFICATION]` em vez de assumir uma
-   resposta.
-2. **plan.md**: atualizar apenas as seções tecnicamente impactadas, sem regenerar o arquivo
-   inteiro. Ao final, confirmar explicitamente, princípio por princípio desta constituição,
-   como cada um relevante continua sendo respeitado após a mudança — mesmo que a resposta
-   seja "sem alteração necessária".
-3. **tasks.md**: adicionar apenas as tarefas novas necessárias, sem regenerar a lista
-   inteira e sem alterar o status de tarefas já concluídas (`[X]`). Se uma tarefa já
-   concluída precisar ser refeita por causa da mudança, marcá-la explicitamente como
-   pendente de novo, explicando o motivo, em vez de resetar tudo.
-4. **contracts/api.md** (se existir e for afetado): atualizar apenas os contratos de
-   endpoint impactados.
+1. **spec.md**: atualizar apenas as seções afetadas pela mudança (requisitos funcionais, regras de negócio, edge cases), preservando o resto do arquivo intacto. Se a mudança introduzir ambiguidade nova, sinalizar com `[NEEDS CLARIFICATION]` em vez de assumir uma resposta.
+2. **plan.md**: atualizar apenas as seções tecnicamente impactadas, sem regenerar o arquivo inteiro. Ao final, confirmar explicitamente, princípio por princípio desta constituição, como cada um relevante continua sendo respeitado após a mudança — mesmo que a resposta seja "sem alteração necessária".
+3. **tasks.md**: adicionar apenas as tarefas novas necessárias, sem regenerar a lista inteira e sem alterar o status de tarefas já concluídas (`[X]`). Se uma tarefa já concluída precisar ser refeita por causa da mudança, marcá-la explicitamente como pendente de novo, explicando o motivo, em vez de resetar tudo.
+4. **contracts/api.md** (se existir e for afetado): atualizar apenas os contratos de endpoint impactados.
 
-Antes de implementar: parar e mostrar um resumo do que mudou em cada arquivo (diff
-conceitual) para a usuária revisar e aprovar explicitamente. Não escrever nem alterar
-código de implementação até a confirmação, a menos que a usuária já tenha pedido para
-pular essa espera na própria solicitação.
+Antes de implementar, mostrar um resumo do que mudou em cada artefato de documentação para a usuária revisar. NÃO escrever nem alterar código de implementação até a aprovação explícita, a menos que a usuária já tenha pedido para pular essa espera na própria solicitação.
 
 ## Governance
 
@@ -745,5 +703,5 @@ definidos aqui. Complexidade adicional (novas camadas, dependências, padrões) 
 justificada em relação aos princípios de simplicidade implícitos na arquitetura em camadas
 descrita no Princípio I.
 
-**Version**: 1.8.0 | **Ratified**: 2026-07-24 | **Last Amended**: 2026-07-29
+**Version**: 1.9.0 | **Ratified**: 2026-07-24 | **Last Amended**: 2026-07-29
 </content>
