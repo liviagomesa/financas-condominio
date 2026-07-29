@@ -3,6 +3,8 @@ package com.financas.account.api;
 import com.financas.account.domain.Account;
 import com.financas.account.domain.AccountService;
 import com.financas.account.domain.AccountType;
+import com.financas.fund.api.FundResponse;
+import com.financas.fund.domain.FundService;
 import jakarta.validation.Valid;
 import java.util.List;
 import org.springframework.http.HttpStatus;
@@ -22,9 +24,11 @@ import org.springframework.web.bind.annotation.RestController;
 public class AccountController {
 
     private final AccountService service;
+    private final FundService fundService;
 
-    public AccountController(AccountService service) {
+    public AccountController(AccountService service, FundService fundService) {
         this.service = service;
+        this.fundService = fundService;
     }
 
     @GetMapping
@@ -37,13 +41,13 @@ public class AccountController {
             @RequestParam(required = false) String dueYearMonth,
             @RequestParam(required = false) String paymentYearMonth) {
         return service.findAll(unitId, supplierId, type, paid, overdue, dueYearMonth, paymentYearMonth).stream()
-                .map(AccountResponse::from)
+                .map(this::toResponse)
                 .toList();
     }
 
     @GetMapping("/{id}")
     public AccountResponse findById(@PathVariable Long id) {
-        return AccountResponse.from(service.findById(id));
+        return toResponse(service.findById(id));
     }
 
     @PostMapping
@@ -53,13 +57,13 @@ public class AccountController {
                 request.amount(),
                 request.dueDate(),
                 request.description(),
-                request.fund(),
+                request.fundId(),
                 request.recurring(),
                 request.unitId(),
                 request.supplierId(),
                 request.paymentDate(),
                 request.observations());
-        return ResponseEntity.status(HttpStatus.CREATED).body(AccountResponse.from(account));
+        return ResponseEntity.status(HttpStatus.CREATED).body(toResponse(account));
     }
 
     @PostMapping("/bulk")
@@ -69,12 +73,12 @@ public class AccountController {
                         request.amount(),
                         request.dueDate(),
                         request.description(),
-                        request.fund(),
+                        request.fundId(),
                         request.recurring(),
                         request.paymentDate(),
                         request.observations())
                 .stream()
-                .map(AccountResponse::from)
+                .map(this::toResponse)
                 .toList();
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
@@ -87,24 +91,30 @@ public class AccountController {
                 request.amount(),
                 request.dueDate(),
                 request.description(),
-                request.fund(),
+                request.fundId(),
                 request.recurring(),
                 request.unitId(),
                 request.supplierId(),
                 request.paymentDate(),
                 request.observations());
-        return AccountResponse.from(account);
+        return toResponse(account);
     }
 
     @PostMapping("/{id}/pay")
     public AccountResponse pay(@PathVariable Long id, @Valid @RequestBody AccountPaymentRequest request) {
         Account account = service.registerPayment(id, request.paymentDate());
-        return AccountResponse.from(account);
+        return toResponse(account);
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         service.delete(id);
         return ResponseEntity.noContent().build();
+    }
+
+    private AccountResponse toResponse(Account account) {
+        FundResponse fundResponse =
+                FundResponse.from(account.getFund(), fundService.calculateRealBalance(account.getFund()));
+        return AccountResponse.from(account, fundResponse);
     }
 }

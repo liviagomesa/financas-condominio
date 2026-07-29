@@ -7,6 +7,8 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.financas.fund.domain.Fund;
+import com.financas.fund.domain.FundRepository;
 import com.financas.shared.exceptions.BadRequestException;
 import com.financas.shared.exceptions.NotFoundException;
 import com.financas.supplier.domain.Supplier;
@@ -36,17 +38,21 @@ class AccountServiceTest {
     @Mock
     private SupplierRepository supplierRepository;
 
+    @Mock
+    private FundRepository fundRepository;
+
     private AccountService service;
 
     @BeforeEach
     void setUp() {
-        service = new AccountService(repository, unitRepository, supplierRepository);
+        service = new AccountService(repository, unitRepository, supplierRepository, fundRepository);
     }
 
     @Test
     void createsReceivableWithAllFieldsWhenUnitExists() {
         Unit unit = withId(new Unit("Bloco A - 101"), 1L);
         when(unitRepository.findById(1L)).thenReturn(Optional.of(unit));
+        stubFund(1L);
         when(repository.save(any(Account.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         Account created = service.create(
@@ -54,7 +60,7 @@ class AccountServiceTest {
                 new BigDecimal("350.00"),
                 LocalDate.of(2026, 8, 10),
                 "Taxa condominial - Agosto/2026",
-                Fund.POOL,
+                1L,
                 true,
                 1L,
                 null,
@@ -72,6 +78,7 @@ class AccountServiceTest {
     void createsPayableWithAllFieldsWhenSupplierExists() {
         Supplier supplier = withId(new Supplier("Empresa de Limpeza XYZ", null, null), 1L);
         when(supplierRepository.findById(1L)).thenReturn(Optional.of(supplier));
+        stubFund(1L);
         when(repository.save(any(Account.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         Account created = service.create(
@@ -79,7 +86,7 @@ class AccountServiceTest {
                 new BigDecimal("400.00"),
                 LocalDate.of(2026, 8, 5),
                 "Limpeza - Agosto/2026",
-                Fund.SIDE_GARDEN,
+                1L,
                 false,
                 null,
                 1L,
@@ -96,19 +103,11 @@ class AccountServiceTest {
     void createAcceptsZeroAmount() {
         Unit unit = withId(new Unit("Bloco A - 101"), 1L);
         when(unitRepository.findById(1L)).thenReturn(Optional.of(unit));
+        stubFund(1L);
         when(repository.save(any(Account.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         Account created = service.create(
-                AccountType.RECEIVABLE,
-                BigDecimal.ZERO,
-                LocalDate.now(),
-                "Taxa",
-                Fund.POOL,
-                true,
-                1L,
-                null,
-                null,
-                null);
+                AccountType.RECEIVABLE, BigDecimal.ZERO, LocalDate.now(), "Taxa", 1L, true, 1L, null, null, null);
 
         assertThat(created.getAmount()).isEqualByComparingTo(BigDecimal.ZERO);
     }
@@ -120,7 +119,7 @@ class AccountServiceTest {
                         new BigDecimal("-10.00"),
                         LocalDate.now(),
                         "Taxa",
-                        Fund.POOL,
+                        1L,
                         true,
                         1L,
                         null,
@@ -132,13 +131,35 @@ class AccountServiceTest {
     }
 
     @Test
-    void rejectsReceivableWithoutUnit() {
+    void rejectsCreateWhenFundDoesNotExist() {
+        when(fundRepository.findById(999L)).thenReturn(Optional.empty());
+
         assertThatThrownBy(() -> service.create(
                         AccountType.RECEIVABLE,
                         new BigDecimal("350.00"),
                         LocalDate.now(),
                         "Taxa",
-                        Fund.POOL,
+                        999L,
+                        true,
+                        1L,
+                        null,
+                        null,
+                        null))
+                .isInstanceOf(NotFoundException.class);
+
+        verify(repository, never()).save(any());
+    }
+
+    @Test
+    void rejectsReceivableWithoutUnit() {
+        stubFund(1L);
+
+        assertThatThrownBy(() -> service.create(
+                        AccountType.RECEIVABLE,
+                        new BigDecimal("350.00"),
+                        LocalDate.now(),
+                        "Taxa",
+                        1L,
                         true,
                         null,
                         null,
@@ -149,12 +170,14 @@ class AccountServiceTest {
 
     @Test
     void rejectsReceivableWithSupplier() {
+        stubFund(1L);
+
         assertThatThrownBy(() -> service.create(
                         AccountType.RECEIVABLE,
                         new BigDecimal("350.00"),
                         LocalDate.now(),
                         "Taxa",
-                        Fund.POOL,
+                        1L,
                         true,
                         1L,
                         1L,
@@ -165,12 +188,14 @@ class AccountServiceTest {
 
     @Test
     void rejectsPayableWithoutSupplier() {
+        stubFund(1L);
+
         assertThatThrownBy(() -> service.create(
                         AccountType.PAYABLE,
                         new BigDecimal("400.00"),
                         LocalDate.now(),
                         "Limpeza",
-                        Fund.SIDE_GARDEN,
+                        1L,
                         false,
                         null,
                         null,
@@ -181,12 +206,14 @@ class AccountServiceTest {
 
     @Test
     void rejectsPayableWithUnit() {
+        stubFund(1L);
+
         assertThatThrownBy(() -> service.create(
                         AccountType.PAYABLE,
                         new BigDecimal("400.00"),
                         LocalDate.now(),
                         "Limpeza",
-                        Fund.SIDE_GARDEN,
+                        1L,
                         false,
                         1L,
                         1L,
@@ -207,7 +234,7 @@ class AccountServiceTest {
                         new BigDecimal("350.00"),
                         LocalDate.now(),
                         "Taxa",
-                        Fund.POOL,
+                        1L,
                         true,
                         null,
                         1L,
@@ -220,11 +247,12 @@ class AccountServiceTest {
     void createForAllUnitsAlwaysCreatesReceivableType() {
         Unit unitA = withId(new Unit("Bloco A - 101"), 1L);
         Unit unitB = withId(new Unit("Bloco A - 102"), 2L);
+        stubFund(1L);
         when(unitRepository.findAll()).thenReturn(List.of(unitA, unitB));
         when(repository.save(any(Account.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         List<Account> created = service.createForAllUnits(
-                new BigDecimal("350.00"), LocalDate.of(2026, 8, 10), "Taxa", Fund.POOL, true, null, null);
+                new BigDecimal("350.00"), LocalDate.of(2026, 8, 10), "Taxa", 1L, true, null, null);
 
         assertThat(created).hasSize(2);
         assertThat(created).allSatisfy(account -> assertThat(account.getType()).isEqualTo(AccountType.RECEIVABLE));
@@ -233,10 +261,11 @@ class AccountServiceTest {
 
     @Test
     void rejectsCreateForAllUnitsWhenNoUnitsAreRegistered() {
+        stubFund(1L);
         when(unitRepository.findAll()).thenReturn(List.of());
 
         assertThatThrownBy(() -> service.createForAllUnits(
-                        new BigDecimal("350.00"), LocalDate.now(), "Taxa", Fund.POOL, true, null, null))
+                        new BigDecimal("350.00"), LocalDate.now(), "Taxa", 1L, true, null, null))
                 .isInstanceOf(NoUnitsRegisteredException.class);
 
         verify(repository, never()).save(any());
@@ -310,7 +339,7 @@ class AccountServiceTest {
                         new BigDecimal("350.00"),
                         LocalDate.now(),
                         "Taxa",
-                        Fund.POOL,
+                        1L,
                         true,
                         1L,
                         null,
@@ -346,17 +375,17 @@ class AccountServiceTest {
     }
 
     private Account receivable(Unit unit, BigDecimal amount, LocalDate dueDate) {
-        return new Account(AccountType.RECEIVABLE, amount, dueDate, "Taxa", Fund.POOL, true, unit, null, null, null);
+        return new Account(AccountType.RECEIVABLE, amount, dueDate, "Taxa", testFund(), true, unit, null, null, null);
     }
 
     private Account receivableWithPayment(Unit unit, BigDecimal amount, LocalDate dueDate, LocalDate paymentDate) {
         return new Account(
-                AccountType.RECEIVABLE, amount, dueDate, "Taxa", Fund.POOL, true, unit, null, paymentDate, null);
+                AccountType.RECEIVABLE, amount, dueDate, "Taxa", testFund(), true, unit, null, paymentDate, null);
     }
 
     private Account payable(Supplier supplier, BigDecimal amount, LocalDate dueDate) {
         return new Account(
-                AccountType.PAYABLE, amount, dueDate, "Limpeza", Fund.SIDE_GARDEN, false, null, supplier, null, null);
+                AccountType.PAYABLE, amount, dueDate, "Limpeza", testFund(), false, null, supplier, null, null);
     }
 
     private Account payableWithPayment(
@@ -366,12 +395,22 @@ class AccountServiceTest {
                 amount,
                 dueDate,
                 "Limpeza",
-                Fund.SIDE_GARDEN,
+                testFund(),
                 false,
                 null,
                 supplier,
                 paymentDate,
                 null);
+    }
+
+    private Fund testFund() {
+        return withId(new Fund("Piscina", BigDecimal.ZERO), 1L);
+    }
+
+    private Fund stubFund(Long id) {
+        Fund fund = withId(new Fund("Piscina", BigDecimal.ZERO), id);
+        when(fundRepository.findById(id)).thenReturn(Optional.of(fund));
+        return fund;
     }
 
     private Unit withId(Unit unit, Long id) {
@@ -387,5 +426,10 @@ class AccountServiceTest {
     private Account withId(Account account, Long id) {
         ReflectionTestUtils.setField(account, "id", id);
         return account;
+    }
+
+    private Fund withId(Fund fund, Long id) {
+        ReflectionTestUtils.setField(fund, "id", id);
+        return fund;
     }
 }

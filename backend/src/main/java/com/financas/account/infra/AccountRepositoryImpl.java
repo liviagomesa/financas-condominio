@@ -41,6 +41,11 @@ public class AccountRepositoryImpl implements AccountRepository {
     }
 
     @Override
+    public List<Account> findByFundId(Long fundId) {
+        return jpaRepository.findByFundId(fundId);
+    }
+
+    @Override
     public void deleteById(Long id) {
         jpaRepository.deleteById(id);
     }
@@ -58,5 +63,10 @@ public class AccountRepositoryImpl implements AccountRepository {
     @Override
     public boolean existsBySupplierId(Long supplierId) {
         return jpaRepository.existsBySupplierId(supplierId);
+    }
+
+    @Override
+    public boolean existsByFundId(Long fundId) {
+        return jpaRepository.existsByFundId(fundId);
     }
 }

@@ -1,7 +1,6 @@
 package com.financas.account.api;
 
 import com.financas.account.domain.AccountType;
-import com.financas.account.domain.Fund;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
@@ -15,7 +14,7 @@ public record AccountRequest(
                 BigDecimal amount,
         @NotNull(message = "A data de vencimento é obrigatória.") LocalDate dueDate,
         @NotBlank(message = "A descrição da conta é obrigatória.") String description,
-        @NotNull(message = "O fundo é obrigatório.") Fund fund,
+        @NotNull(message = "O fundo é obrigatório.") Long fundId,
         @NotNull(message = "O tipo do lançamento é obrigatório.") Boolean recurring,
         Long unitId,
         Long supplierId,

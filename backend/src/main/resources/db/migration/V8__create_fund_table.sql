@@ -1,0 +1,7 @@
+CREATE TABLE fund (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    initial_balance NUMERIC(10,2) NOT NULL DEFAULT 0
+);
+
+CREATE UNIQUE INDEX fund_name_normalized_idx ON fund (LOWER(TRIM(name)));

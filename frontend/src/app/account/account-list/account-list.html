@@ -124,7 +124,7 @@
           <td>{{ account.amount | number: '1.2-2' }}</td>
           <td>{{ account.dueDate | date: 'dd/MM/yyyy' }}</td>
           <td>{{ account.description }}</td>
-          <td>{{ fundLabels[account.fund] }}</td>
+          <td>{{ account.fund.name }}</td>
           <td>{{ account.recurring ? 'Recorrente' : 'Extra' }}</td>
           <td>
             @if (payingId() === account.id) {

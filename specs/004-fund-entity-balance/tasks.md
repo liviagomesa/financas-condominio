@@ -53,44 +53,44 @@ infraestrutura que TODAS as user stories desta feature dependem igualmente.
 
 **⚠️ CRITICAL**: Nenhuma user story pode começar antes desta fase estar completa
 
-- [ ] T001 [P] Create migration Flyway
+- [X] T001 [P] Create migration Flyway
   `backend/src/main/resources/db/migration/V8__create_fund_table.sql` (tabela `fund`: `id`,
   `name VARCHAR(255) NOT NULL`, `initial_balance NUMERIC(10,2) NOT NULL DEFAULT 0`; índice
   único sobre `LOWER(TRIM(name))`, mesmo padrão de `unit_identifier_normalized_idx` — ver
   data-model.md)
-- [ ] T002 Create migration Flyway
+- [X] T002 Create migration Flyway
   `backend/src/main/resources/db/migration/V9__convert_account_fund_to_entity.sql`
   (`TRUNCATE TABLE account` — banco apenas de desenvolvimento, sem dado a preservar, ver
   research.md; `ALTER TABLE account DROP COLUMN fund`; `ALTER TABLE account ADD COLUMN fund_id
   BIGINT NOT NULL REFERENCES fund (id)`; `CREATE INDEX account_fund_id_idx ON account
   (fund_id)`) (depends on T001)
-- [ ] T003 [P] Create entidade JPA `Fund` (`id`, `name` obrigatório, `initialBalance`
+- [X] T003 [P] Create entidade JPA `Fund` (`id`, `name` obrigatório, `initialBalance`
   `BigDecimal` obrigatório) em `backend/src/main/java/com/financas/fund/domain/Fund.java`
-- [ ] T004 [P] Create interface de porta `FundRepository` (`save`, `findById`, `findAll`
+- [X] T004 [P] Create interface de porta `FundRepository` (`save`, `findById`, `findAll`
   ordenado por nome, `findByNormalizedName`, `deleteById`, `existsById`) em
   `backend/src/main/java/com/financas/fund/domain/FundRepository.java` (depends on T003)
-- [ ] T005 Create `FundJpaRepository` (Spring Data — query JPQL `findByNormalizedName` igual a
+- [X] T005 Create `FundJpaRepository` (Spring Data — query JPQL `findByNormalizedName` igual a
   `UnitJpaRepository.findByNormalizedIdentifier`, e `findAllByOrderByNameAsc`) e
   `FundRepositoryImpl` em `backend/src/main/java/com/financas/fund/infra/` (depends on T004)
-- [ ] T006 [P] Create `DuplicateFundException extends ConflictException` em
+- [X] T006 [P] Create `DuplicateFundException extends ConflictException` em
   `backend/src/main/java/com/financas/fund/domain/DuplicateFundException.java`
-- [ ] T007 [P] Create `FundHasAccountsException extends ConflictException` em
+- [X] T007 [P] Create `FundHasAccountsException extends ConflictException` em
   `backend/src/main/java/com/financas/fund/domain/FundHasAccountsException.java`
-- [ ] T008 Update entidade `Account`: campo `fund` deixa de ser
+- [X] T008 Update entidade `Account`: campo `fund` deixa de ser
   `@Enumerated(EnumType.STRING) private Fund fund` (`com.financas.account.domain.Fund`) e passa
   a ser `@ManyToOne(optional = false) @JoinColumn(name = "fund_id", nullable = false) private
   com.financas.fund.domain.Fund fund` em
   `backend/src/main/java/com/financas/account/domain/Account.java` (depends on T003)
-- [ ] T009 [P] Remove o enum `com.financas.account.domain.Fund`
+- [X] T009 [P] Remove o enum `com.financas.account.domain.Fund`
   (`backend/src/main/java/com/financas/account/domain/Fund.java`), substituído pela entidade
   criada em T003 (depends on T008)
-- [ ] T010 Update interface `AccountRepository` — add `List<Account> findByFundId(Long
+- [X] T010 Update interface `AccountRepository` — add `List<Account> findByFundId(Long
   fundId)` e `boolean existsByFundId(Long fundId)` em
   `backend/src/main/java/com/financas/account/domain/AccountRepository.java` (depends on T008)
-- [ ] T011 Update `AccountJpaRepository` (deriva `findByFundId`/`existsByFundId` via
+- [X] T011 Update `AccountJpaRepository` (deriva `findByFundId`/`existsByFundId` via
   `account.fund.id`) e `AccountRepositoryImpl` (implementa os dois novos métodos) em
   `backend/src/main/java/com/financas/account/infra/` (depends on T010)
-- [ ] T012 Implement `FundService` — `create(name, initialBalance)` validando nome único
+- [X] T012 Implement `FundService` — `create(name, initialBalance)` validando nome único
   (`findByNormalizedName`, FR-001/FR-002); `findAll()` ordenado por nome; `findById`;
   `update(id, name, initialBalance)` validando nome único (ignorando o próprio id, FR-003);
   `delete(id)` bloqueando via `accountRepository.existsByFundId(id)`
@@ -100,33 +100,33 @@ infraestrutura que TODAS as user stories desta feature dependem igualmente.
   null`, sem nenhuma validação de saldo mínimo (FR-008/FR-010/FR-011/FR-012) — em
   `backend/src/main/java/com/financas/fund/domain/FundService.java` (depends on T005, T006,
   T007, T011)
-- [ ] T013 [P] Create DTOs `FundRequest` (`name` `@NotBlank`, `initialBalance` `@NotNull`, sem
+- [X] T013 [P] Create DTOs `FundRequest` (`name` `@NotBlank`, `initialBalance` `@NotNull`, sem
   restrição de sinal) e `FundResponse` (`id`, `name`, `initialBalance`, `realBalance`; factory
   estático `from(Fund fund, BigDecimal realBalance)`) em
   `backend/src/main/java/com/financas/fund/api/` (depends on T003)
-- [ ] T014 Implement `FundController` — `GET /api/funds`, `GET /api/funds/{id}`, `POST
+- [X] T014 Implement `FundController` — `GET /api/funds`, `GET /api/funds/{id}`, `POST
   /api/funds`, `PUT /api/funds/{id}`, `DELETE /api/funds/{id}`, montando cada `FundResponse`
   via `FundResponse.from(fund, service.calculateRealBalance(fund))` — em
   `backend/src/main/java/com/financas/fund/api/FundController.java` (depends on T012, T013)
-- [ ] T015 [P] Update DTOs `AccountRequest`/`AccountBulkRequest`: campo `fund` (valor de enum)
+- [X] T015 [P] Update DTOs `AccountRequest`/`AccountBulkRequest`: campo `fund` (valor de enum)
   → `fundId` (`Long`, `@NotNull`) em `backend/src/main/java/com/financas/account/api/` (depends
   on T009)
-- [ ] T016 [P] Update `AccountResponse`: campo `fund` (`Fund`) → `fund` (`FundResponse`);
+- [X] T016 [P] Update `AccountResponse`: campo `fund` (`Fund`) → `fund` (`FundResponse`);
   `from(Account account, FundResponse fundResponse)` em vez de `from(Account account)` puro em
   `backend/src/main/java/com/financas/account/api/AccountResponse.java` (depends on T013, T008)
-- [ ] T017 Update `AccountService`: injeta `FundRepository`; `create`/`update`/
+- [X] T017 Update `AccountService`: injeta `FundRepository`; `create`/`update`/
   `createForAllUnits` passam a receber `Long fundId` (em vez de `Fund fund`) e resolvem a
   entidade via novo `findFundOrThrow(fundId)` (mesmo padrão de `findUnitOrThrow`/
   `findSupplierOrThrow`, lança `NotFoundException` se não existir) em
   `backend/src/main/java/com/financas/account/domain/AccountService.java` (depends on T008,
   T004)
-- [ ] T018 Update `AccountController`: injeta `FundService`; monta o `FundResponse` embutido a
+- [X] T018 Update `AccountController`: injeta `FundService`; monta o `FundResponse` embutido a
   cada `AccountResponse.from(account, FundResponse.from(account.getFund(),
   fundService.calculateRealBalance(account.getFund())))`, e passa `request.fundId()` em vez de
   `request.fund()` para `AccountService` em
   `backend/src/main/java/com/financas/account/api/AccountController.java` (depends on T014,
   T015, T016, T017)
-- [ ] T019 [P] Create testes unitários `FundServiceTest` (Mockito): `create`/`update` rejeitam
+- [X] T019 [P] Create testes unitários `FundServiceTest` (Mockito): `create`/`update` rejeitam
   nome duplicado (case-insensitive, espaços nas extremidades) e aceitam nomes distintos
   (FR-001/FR-002/FR-003); `delete` bloqueado (`FundHasAccountsException`) quando
   `AccountRepository.existsByFundId` retorna `true`, permitido quando `false`
@@ -134,24 +134,24 @@ infraestrutura que TODAS as user stories desta feature dependem igualmente.
   pagamentos pagos, ignorando lançamentos sem `paymentDate` (FR-008/FR-011); `calculateRealBalance`
   não lança exceção nem impede resultado negativo (FR-012) — em
   `backend/src/test/java/com/financas/fund/domain/FundServiceTest.java` (depends on T012)
-- [ ] T020 [P] Update testes unitários existentes `AccountServiceTest`: trocar `fund` (enum)
+- [X] T020 [P] Update testes unitários existentes `AccountServiceTest`: trocar `fund` (enum)
   por `fundId` (`Long`) em todos os casos já existentes, mockando
   `FundRepository.findById`/`findByNormalizedName` conforme necessário; adicionar caso cobrindo
   `fundId` inexistente lançando `NotFoundException` (FR-006) em
   `backend/src/test/java/com/financas/account/domain/AccountServiceTest.java` (depends on T017)
-- [ ] T021 [P] Create model `Fund`/`FundRequest` em
+- [X] T021 [P] Create model `Fund`/`FundRequest` em
   `frontend/src/app/shared/models/fund.model.ts`
-- [ ] T022 Create `FundService` (HttpClient: `findAll`, `findById`, `create`, `update`,
+- [X] T022 Create `FundService` (HttpClient: `findAll`, `findById`, `create`, `update`,
   `delete`) em `frontend/src/app/shared/services/fund.service.ts` (depends on T021, T014)
-- [ ] T023 [P] Update `frontend/src/app/shared/models/account.model.ts`: remove o tipo `Fund`
+- [X] T023 [P] Update `frontend/src/app/shared/models/account.model.ts`: remove o tipo `Fund`
   local e `FUND_LABELS` (passam a vir de `fund.model.ts`); `Account.fund` passa a ser o objeto
   `Fund` embutido (importado de `./fund.model`); `AccountRequest`/`AccountBulkRequest.fund` →
   `fundId: number` (depends on T021)
-- [ ] T024 Update componente `account-form`: `fundOptions` estático (derivado de
+- [X] T024 Update componente `account-form`: `fundOptions` estático (derivado de
   `FUND_LABELS`) → lista carregada via `FundService.findAll()` (mesmo padrão de
   `units`/`suppliers` já existente no componente); controle do formulário `fund` → `fundId` em
   `frontend/src/app/account/account-form/` (depends on T022, T023)
-- [ ] T025 [P] Update `account-list.html`: coluna "Fundo" — `fundLabels[account.fund]` →
+- [X] T025 [P] Update `account-list.html`: coluna "Fundo" — `fundLabels[account.fund]` →
   `account.fund.name`; remove `fundLabels`/import de `FUND_LABELS` de `account-list.ts` em
   `frontend/src/app/account/account-list/` (depends on T023)
 
@@ -172,12 +172,12 @@ reflete só os lançamentos já efetivados, junto com o total somado de todos os
 
 ### Implementation for User Story 1
 
-- [ ] T026 [US1] Create componente `fund-list` (tabela: nome, saldo inicial, saldo real de
+- [X] T026 [US1] Create componente `fund-list` (tabela: nome, saldo inicial, saldo real de
   cada fundo + linha de total somado; mensagem de "nenhum fundo cadastrado" quando vazia — sem
   ações de criar/editar/remover ainda, adicionadas nas próximas stories) em
   `frontend/src/app/fund/fund-list/` (depends on T022)
-- [ ] T027 [US1] Wire rota `/funds` em `frontend/src/app/app.routes.ts` (depends on T026)
-- [ ] T028 [US1] Add link de navegação "Fundos" em `frontend/src/app/app.html` (depends on
+- [X] T027 [US1] Wire rota `/funds` em `frontend/src/app/app.routes.ts` (depends on T026)
+- [X] T028 [US1] Add link de navegação "Fundos" em `frontend/src/app/app.html` (depends on
   T027)
 
 **Checkpoint**: User Story 1 completa e testável de forma independente (Acceptance Scenarios
@@ -195,14 +195,14 @@ por outro fundo e confirmar a rejeição.
 
 ### Implementation for User Story 2
 
-- [ ] T029 [US2] Create componente `fund-form` (campos nome e saldo inicial; validação de nome
+- [X] T029 [US2] Create componente `fund-form` (campos nome e saldo inicial; validação de nome
   obrigatório; suporte a modo de edição já embutido — pré-preenchimento via `GET
   /api/funds/{id}` e submissão via `PUT` quando acessado com um id de rota, mesmo padrão de
   `supplier-form`/`unit-form` — mas só acessível via `/funds/new` nesta fase) em
   `frontend/src/app/fund/fund-form/` (depends on T022)
-- [ ] T030 [US2] Add botão "Novo fundo" em `fund-list`, linkando para `/funds/new` em
+- [X] T030 [US2] Add botão "Novo fundo" em `fund-list`, linkando para `/funds/new` em
   `frontend/src/app/fund/fund-list/` (depends on T026, T029)
-- [ ] T031 [US2] Wire rota `/funds/new` em `frontend/src/app/app.routes.ts` (depends on T029)
+- [X] T031 [US2] Wire rota `/funds/new` em `frontend/src/app/app.routes.ts` (depends on T029)
 
 **Checkpoint**: User Story 2 completa e testável de forma independente (Acceptance Scenarios
 1-2 do spec).
@@ -221,15 +221,15 @@ mensagem explicando o vínculo.
 
 ### Implementation for User Story 3
 
-- [ ] T032 [US3] Add ação "editar" (navega ao `fund-form` em modo edição) e "remover" (com
+- [X] T032 [US3] Add ação "editar" (navega ao `fund-form` em modo edição) e "remover" (com
   diálogo de confirmação, exibindo a mensagem de erro 409 do backend quando houver conta
   vinculada) nas linhas de `fund-list` em `frontend/src/app/fund/fund-list/` (depends on T026,
   T029)
-- [ ] T033 [US3] Apply seleção múltipla (`list-selection.ts`) e `bulk-actions-bar` +
+- [X] T033 [US3] Apply seleção múltipla (`list-selection.ts`) e `bulk-actions-bar` +
   `bulk-delete.ts` (já existentes, sem alteração de contrato) a `fund-list`, por consistência
   com `unit-list`/`supplier-list`/`account-list`, em `frontend/src/app/fund/fund-list/`
   (depends on T026)
-- [ ] T034 [US3] Wire rota `/funds/:id/edit` em `frontend/src/app/app.routes.ts` (depends on
+- [X] T034 [US3] Wire rota `/funds/:id/edit` em `frontend/src/app/app.routes.ts` (depends on
   T029, T032)
 
 **Checkpoint**: Todas as 3 user stories funcionam de forma independente.
@@ -240,14 +240,14 @@ mensagem explicando o vínculo.
 
 **Purpose**: Validações finais e documentação
 
-- [ ] T035 [P] Run roteiro de validação manual de `quickstart.md` de ponta a ponta (API real +
+- [X] T035 [P] Run roteiro de validação manual de `quickstart.md` de ponta a ponta (API real +
   navegador), incluindo a confirmação de que `GET /api/funds` retorna lista vazia num ambiente
   novo (FR-009, cenário 11)
-- [ ] T036 [P] Update `README.md` com as decisões técnicas desta feature (`Fund` como entidade
+- [X] T036 [P] Update `README.md` com as decisões técnicas desta feature (`Fund` como entidade
   em vez de enum, saldo inicial editável, fórmula do saldo real, ausência de bloqueio por saldo
   negativo, migration que trunca `account` por não haver dado real a preservar), conforme
   Fluxo de Commits da constituição
-- [ ] T037 [P] Review mensagens de erro do `GlobalExceptionHandler` para os novos casos desta
+- [X] T037 [P] Review mensagens de erro do `GlobalExceptionHandler` para os novos casos desta
   feature (400/404/409 de `funds`), garantindo consistência em português (Convenções de API
   REST)
 

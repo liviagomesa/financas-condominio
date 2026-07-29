@@ -261,13 +261,6 @@ Utilizei o GitHub Spec Kit integrado ao Claude Code para conduzir o desenvolvime
   de agregação/relatório com a generalização de `Receivable` em `Account` e a criação de
   `Supplier` — mas é um passo natural depois que as duas entidades já convivem no mesmo
   sistema.
-- **`Fund` como cadastro dinâmico em vez de enum fixo**: hoje "fundo" (renomeado de "conta
-  destino"/`TargetAccount` na feature 003) tem 3 valores fixos no código (Piscina/Jardim
-  Piscina/Jardim Lateral), usados tanto por contas a pagar quanto a receber. Se o condomínio
-  criar um novo centro de custo no futuro (ex.: uma nova área comum), isso exigiria alteração
-  de código e nova migration em vez de um cadastro simples pela própria usuária — um
-  trade-off consciente pela simplicidade agora, que valeria revisitar se a lista mudar com
-  alguma frequência na prática.
 - **Geração automática/recorrente de lançamentos mensais**: hoje tanto o lançamento individual quanto o em lote (`POST /api/accounts/bulk`) são ações manuais disparadas pela usuária todo mês. Uma automação (ex.: job agendado gerando a taxa condominial do mês automaticamente para lançamentos marcados como `recurring`) reduziria ainda mais o trabalho manual, mas dependeria de definir regras de idempotência (não duplicar o lançamento do mês se a ação manual também for usada).
 - **Validação de formato da chave PIX**: hoje `pixKey` em `Supplier` é texto livre, sem
   validar se é um CPF/CNPJ/e-mail/telefone/chave aleatória válido — decisão consciente pela

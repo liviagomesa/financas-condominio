@@ -1,5 +1,7 @@
 package com.financas.account.domain;
 
+import com.financas.fund.domain.Fund;
+import com.financas.fund.domain.FundRepository;
 import com.financas.shared.exceptions.BadRequestException;
 import com.financas.shared.exceptions.NotFoundException;
 import com.financas.supplier.domain.Supplier;
@@ -19,12 +21,17 @@ public class AccountService {
     private final AccountRepository repository;
     private final UnitRepository unitRepository;
     private final SupplierRepository supplierRepository;
+    private final FundRepository fundRepository;
 
     public AccountService(
-            AccountRepository repository, UnitRepository unitRepository, SupplierRepository supplierRepository) {
+            AccountRepository repository,
+            UnitRepository unitRepository,
+            SupplierRepository supplierRepository,
+            FundRepository fundRepository) {
         this.repository = repository;
         this.unitRepository = unitRepository;
         this.supplierRepository = supplierRepository;
+        this.fundRepository = fundRepository;
     }
 
     public Account create(
@@ -32,13 +39,14 @@ public class AccountService {
             BigDecimal amount,
             LocalDate dueDate,
             String description,
-            Fund fund,
+            Long fundId,
             boolean recurring,
             Long unitId,
             Long supplierId,
             LocalDate paymentDate,
             String observations) {
         validateNonNegativeAmount(amount);
+        Fund fund = findFundOrThrow(fundId);
         Unit unit = resolveUnit(type, unitId, supplierId);
         Supplier supplier = resolveSupplier(type, unitId, supplierId);
         return repository.save(new Account(
@@ -49,11 +57,12 @@ public class AccountService {
             BigDecimal amount,
             LocalDate dueDate,
             String description,
-            Fund fund,
+            Long fundId,
             boolean recurring,
             LocalDate paymentDate,
             String observations) {
         validateNonNegativeAmount(amount);
+        Fund fund = findFundOrThrow(fundId);
         List<Unit> units = unitRepository.findAll();
         if (units.isEmpty()) {
             throw new NoUnitsRegisteredException();
@@ -133,7 +142,7 @@ public class AccountService {
             BigDecimal amount,
             LocalDate dueDate,
             String description,
-            Fund fund,
+            Long fundId,
             boolean recurring,
             Long unitId,
             Long supplierId,
@@ -144,6 +153,7 @@ public class AccountService {
             throw new AccountTypeChangeNotAllowedException();
         }
         validateNonNegativeAmount(amount);
+        Fund fund = findFundOrThrow(fundId);
         Unit unit = resolveUnit(type, unitId, supplierId);
         Supplier supplier = resolveSupplier(type, unitId, supplierId);
         account.setAmount(amount);
@@ -216,6 +226,13 @@ public class AccountService {
                 .findById(supplierId)
                 .orElseThrow(() -> new NotFoundException(
                         "Fornecedor não encontrado. Cadastre um fornecedor antes de lançar uma conta a pagar."));
+    }
+
+    private Fund findFundOrThrow(Long fundId) {
+        return fundRepository
+                .findById(fundId)
+                .orElseThrow(() -> new NotFoundException(
+                        "Fundo não encontrado. Cadastre um fundo antes de lançar uma conta."));
     }
 
     private YearMonth parseYearMonth(String value, String fieldLabel) {

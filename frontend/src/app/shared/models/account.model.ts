@@ -1,3 +1,4 @@
+import { Fund } from './fund.model';
 import { Supplier } from './supplier.model';
 import { Unit } from './unit.model';
 
@@ -6,14 +7,6 @@ export type AccountType = 'RECEIVABLE' | 'PAYABLE';
 export const ACCOUNT_TYPE_LABELS: Record<AccountType, string> = {
   RECEIVABLE: 'Entrada',
   PAYABLE: 'Saída',
-};
-
-export type Fund = 'POOL' | 'POOL_GARDEN' | 'SIDE_GARDEN';
-
-export const FUND_LABELS: Record<Fund, string> = {
-  POOL: 'Piscina',
-  POOL_GARDEN: 'Jardim Piscina',
-  SIDE_GARDEN: 'Jardim Lateral',
 };
 
 export interface Account {
@@ -35,7 +28,7 @@ export interface AccountRequest {
   amount: number;
   dueDate: string;
   description: string;
-  fund: Fund;
+  fundId: number;
   recurring: boolean;
   unitId: number | null;
   supplierId: number | null;
@@ -47,7 +40,7 @@ export interface AccountBulkRequest {
   amount: number;
   dueDate: string;
   description: string;
-  fund: Fund;
+  fundId: number;
   recurring: boolean;
   paymentDate: string | null;
   observations: string | null;

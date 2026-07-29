@@ -15,6 +15,8 @@ public interface AccountRepository {
 
     List<Account> findBySupplierId(Long supplierId);
 
+    List<Account> findByFundId(Long fundId);
+
     void deleteById(Long id);
 
     boolean existsById(Long id);
@@ -22,4 +24,6 @@ public interface AccountRepository {
     boolean existsByUnitId(Long unitId);
 
     boolean existsBySupplierId(Long supplierId);
+
+    boolean existsByFundId(Long fundId);
 }

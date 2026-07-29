@@ -1,5 +1,6 @@
 package com.financas.account.domain;
 
+import com.financas.fund.domain.Fund;
 import com.financas.supplier.domain.Supplier;
 import com.financas.unit.domain.Unit;
 import jakarta.persistence.Column;
@@ -36,8 +37,8 @@ public class Account {
     @Column(nullable = false)
     private String description;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "fund_id", nullable = false)
     private Fund fund;
 
     @Column(nullable = false)

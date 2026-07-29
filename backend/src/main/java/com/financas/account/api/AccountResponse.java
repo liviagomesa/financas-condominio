@@ -2,7 +2,7 @@ package com.financas.account.api;
 
 import com.financas.account.domain.Account;
 import com.financas.account.domain.AccountType;
-import com.financas.account.domain.Fund;
+import com.financas.fund.api.FundResponse;
 import com.financas.supplier.api.SupplierResponse;
 import com.financas.unit.api.UnitResponse;
 import java.math.BigDecimal;
@@ -14,21 +14,21 @@ public record AccountResponse(
         BigDecimal amount,
         LocalDate dueDate,
         String description,
-        Fund fund,
+        FundResponse fund,
         boolean recurring,
         LocalDate paymentDate,
         String observations,
         UnitResponse unit,
         SupplierResponse supplier) {
 
-    public static AccountResponse from(Account account) {
+    public static AccountResponse from(Account account, FundResponse fundResponse) {
         return new AccountResponse(
                 account.getId(),
                 account.getType(),
                 account.getAmount(),
                 account.getDueDate(),
                 account.getDescription(),
-                account.getFund(),
+                fundResponse,
                 account.isRecurring(),
                 account.getPaymentDate(),
                 account.getObservations(),

@@ -123,14 +123,14 @@
     </div>
 
     <div class="mb-3">
-      <label for="fund" class="form-label">Fundo</label>
-      <select id="fund" class="form-select" formControlName="fund">
+      <label for="fundId" class="form-label">Fundo</label>
+      <select id="fundId" class="form-select" formControlName="fundId">
         <option [ngValue]="null">Selecione...</option>
-        @for (option of fundOptions; track option.value) {
-          <option [ngValue]="option.value">{{ option.label }}</option>
+        @for (fund of funds(); track fund.id) {
+          <option [ngValue]="fund.id">{{ fund.name }}</option>
         }
       </select>
-      @if (form.controls.fund.invalid && form.controls.fund.touched) {
+      @if (form.controls.fundId.invalid && form.controls.fundId.touched) {
         <div class="text-danger small mt-1">O fundo é obrigatório.</div>
       }
     </div>

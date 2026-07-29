@@ -2,10 +2,12 @@ import { Component, OnInit, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ApiError } from '../../core/error.interceptor';
-import { AccountType, ACCOUNT_TYPE_LABELS, Fund, FUND_LABELS } from '../../shared/models/account.model';
+import { AccountType, ACCOUNT_TYPE_LABELS } from '../../shared/models/account.model';
+import { Fund } from '../../shared/models/fund.model';
 import { Supplier } from '../../shared/models/supplier.model';
 import { Unit } from '../../shared/models/unit.model';
 import { AccountService } from '../../shared/services/account.service';
+import { FundService } from '../../shared/services/fund.service';
 import { SupplierService } from '../../shared/services/supplier.service';
 import { UnitService } from '../../shared/services/unit.service';
 
@@ -18,13 +20,11 @@ import { UnitService } from '../../shared/services/unit.service';
 export class AccountForm implements OnInit {
   protected readonly units = signal<Unit[]>([]);
   protected readonly suppliers = signal<Supplier[]>([]);
+  protected readonly funds = signal<Fund[]>([]);
   protected readonly errorMessage = signal<string | null>(null);
   protected readonly bulkMode = signal(false);
   protected readonly accountTypeOptions: { value: AccountType; label: string }[] = (
     Object.entries(ACCOUNT_TYPE_LABELS) as [AccountType, string][]
-  ).map(([value, label]) => ({ value, label }));
-  protected readonly fundOptions: { value: Fund; label: string }[] = (
-    Object.entries(FUND_LABELS) as [Fund, string][]
   ).map(([value, label]) => ({ value, label }));
   protected isEditMode = false;
   private accountId: number | null = null;
@@ -42,7 +42,7 @@ export class AccountForm implements OnInit {
       validators: [Validators.required],
     }),
     description: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
-    fund: new FormControl<Fund | null>(null, { validators: [Validators.required] }),
+    fundId: new FormControl<number | null>(null, { validators: [Validators.required] }),
     recurring: new FormControl(false, { nonNullable: true }),
     unitId: new FormControl<number | null>(null, { validators: [Validators.required] }),
     supplierId: new FormControl<number | null>(null),
@@ -53,6 +53,7 @@ export class AccountForm implements OnInit {
   constructor(
     private readonly unitService: UnitService,
     private readonly supplierService: SupplierService,
+    private readonly fundService: FundService,
     private readonly accountService: AccountService,
     private readonly router: Router,
     private readonly route: ActivatedRoute
@@ -61,6 +62,7 @@ export class AccountForm implements OnInit {
   ngOnInit(): void {
     this.unitService.findAll().subscribe((units) => this.units.set(units));
     this.supplierService.findAll().subscribe((suppliers) => this.suppliers.set(suppliers));
+    this.fundService.findAll().subscribe((funds) => this.funds.set(funds));
 
     const idParam = this.route.snapshot.paramMap.get('id');
     if (idParam) {
@@ -73,7 +75,7 @@ export class AccountForm implements OnInit {
           amount: account.amount,
           dueDate: account.dueDate,
           description: account.description,
-          fund: account.fund,
+          fundId: account.fund.id,
           recurring: account.recurring,
           unitId: account.unit?.id ?? null,
           supplierId: account.supplier?.id ?? null,
@@ -117,7 +119,7 @@ export class AccountForm implements OnInit {
       amount: raw.amount as number,
       dueDate: raw.dueDate,
       description: raw.description,
-      fund: raw.fund as Fund,
+      fundId: raw.fundId as number,
       recurring: raw.recurring,
       paymentDate: raw.paymentDate || null,
       observations: raw.observations || null,

@@ -10,7 +10,11 @@ public interface AccountJpaRepository extends JpaRepository<Account, Long> {
 
     List<Account> findBySupplierId(Long supplierId);
 
+    List<Account> findByFundId(Long fundId);
+
     boolean existsByUnitId(Long unitId);
 
     boolean existsBySupplierId(Long supplierId);
+
+    boolean existsByFundId(Long fundId);
 }

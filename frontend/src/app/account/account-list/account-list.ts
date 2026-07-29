@@ -5,7 +5,7 @@ import { RouterLink } from '@angular/router';
 import { ApiError } from '../../core/error.interceptor';
 import { bulkDelete } from '../../shared/bulk-delete';
 import { createSelection } from '../../shared/list-selection';
-import { Account, AccountFilters, AccountType, ACCOUNT_TYPE_LABELS, FUND_LABELS } from '../../shared/models/account.model';
+import { Account, AccountFilters, AccountType, ACCOUNT_TYPE_LABELS } from '../../shared/models/account.model';
 import { Unit } from '../../shared/models/unit.model';
 import { BulkActionsBar } from '../../shared/components/bulk-actions-bar/bulk-actions-bar';
 import { AccountService } from '../../shared/services/account.service';
@@ -22,7 +22,6 @@ export class AccountList implements OnInit {
   protected readonly units = signal<Unit[]>([]);
   protected readonly errorMessage = signal<string | null>(null);
   protected readonly accountTypeLabels = ACCOUNT_TYPE_LABELS;
-  protected readonly fundLabels = FUND_LABELS;
   protected readonly selection = createSelection<Account>((account) => account.id);
   protected readonly payingId = signal<number | null>(null);
   protected typeFilter: '' | AccountType = '';
