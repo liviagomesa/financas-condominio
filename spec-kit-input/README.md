@@ -9,7 +9,7 @@ Exemplos de comandos:
 ```
 
 **Observações:**
-- Em linhas gerais, `/speckit.specify` espera a descrição de uma feature e `/speckit.plan` espera as decisões técnicas e de arquitetura para aquela feature.
+- Em linhas gerais, `/speckit.specify` espera a descrição de uma feature (obrigatório) e `/speckit.plan` espera as decisões técnicas e de arquitetura para aquela feature (opcional).
 - `/speckit.clarify`, `/speckit.tasks` e `/speckit.implement` não pedem argumento — só leem o spec.md e o plan.md já existentes.
 - Se o argumento couber inline, não precisa criar arquivos temporários.
 
