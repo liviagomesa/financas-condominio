@@ -9,13 +9,14 @@ import { Account, AccountFilters, ACCOUNT_TYPE_LABELS } from '../../shared/model
 import { Fund } from '../../shared/models/fund.model';
 import { Party } from '../../shared/models/party.model';
 import { BulkActionsBar } from '../../shared/components/bulk-actions-bar/bulk-actions-bar';
+import { RowActions } from '../../shared/components/row-actions/row-actions';
 import { AccountService } from '../../shared/services/account.service';
 import { FundService } from '../../shared/services/fund.service';
 import { PartyService } from '../../shared/services/party.service';
 
 @Component({
   selector: 'app-account-list',
-  imports: [RouterLink, FormsModule, DecimalPipe, DatePipe, BulkActionsBar],
+  imports: [RouterLink, FormsModule, DecimalPipe, DatePipe, BulkActionsBar, RowActions],
   templateUrl: './account-list.html',
   styleUrl: './account-list.scss',
 })

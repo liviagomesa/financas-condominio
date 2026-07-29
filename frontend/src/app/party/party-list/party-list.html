@@ -42,16 +42,7 @@
           <td>{{ party.name }}</td>
           <td>{{ party.pixKey || '-' }}</td>
           <td class="text-end">
-            <a class="btn btn-sm btn-outline-secondary" [routerLink]="['/parties', party.id, 'edit']"
-              >Editar</a
-            >
-            <button
-              type="button"
-              class="btn btn-sm btn-outline-danger ms-1"
-              (click)="remove(party)"
-            >
-              Remover
-            </button>
+            <app-row-actions [editLink]="['/parties', party.id, 'edit']" (remove)="remove(party)" />
           </td>
         </tr>
       }

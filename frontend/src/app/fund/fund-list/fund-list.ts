@@ -6,11 +6,12 @@ import { bulkDelete } from '../../shared/bulk-delete';
 import { createSelection } from '../../shared/list-selection';
 import { Fund } from '../../shared/models/fund.model';
 import { BulkActionsBar } from '../../shared/components/bulk-actions-bar/bulk-actions-bar';
+import { RowActions } from '../../shared/components/row-actions/row-actions';
 import { FundService } from '../../shared/services/fund.service';
 
 @Component({
   selector: 'app-fund-list',
-  imports: [RouterLink, DecimalPipe, BulkActionsBar],
+  imports: [RouterLink, DecimalPipe, BulkActionsBar, RowActions],
   templateUrl: './fund-list.html',
   styleUrl: './fund-list.scss',
 })

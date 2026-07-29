@@ -121,7 +121,9 @@ frontend/
 │   ├── account/
 │   │   ├── account-list/          # filtro "Unidade" → "Parte"; + filtro "Fundo"; coluna
 │   │   │                          # "Contraparte" → "Parte" (account.party.name); + tfoot com
-│   │   │                          # total líquido (computed sobre accounts())
+│   │   │                          # total líquido (computed sobre accounts()); pós-implementação:
+│   │   │                          # filtro "Tipo" e coluna "Tipo de lançamento" removidos da UI
+│   │   │                          # (tabela larga demais), ações por linha via row-actions/
 │   │   └── account-form/          # unitId/supplierId condicionados por tipo → partyId único
 │   │                              # + toggle "Parte específica"/"Grupo" (bulkMode generalizado)
 │   ├── app.routes.ts              # − /units, /suppliers; + /parties, /groups
@@ -140,7 +142,12 @@ frontend/
 │       ├── services/supplier.service.ts # REMOVIDO
 │       ├── list-selection.ts           # inalterado (reaproveitado)
 │       ├── bulk-delete.ts              # inalterado (reaproveitado)
-│       └── components/bulk-actions-bar/ # inalterado (reaproveitado)
+│       ├── components/bulk-actions-bar/ # inalterado (reaproveitado)
+│       └── components/row-actions/     # novo (pós-implementação) — editar/remover por linha,
+│                                        # ícones SVG inline; reaproveitado por account-list/
+│                                        # fund-list/party-list/group-list (fund-list fora do
+│                                        # escopo original desta feature, ajustado por
+│                                        # consistência numa revisão da usuária)
 └── package.json                   # inalterado (sem novas dependências)
 ```
 

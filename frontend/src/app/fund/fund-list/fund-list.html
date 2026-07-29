@@ -44,16 +44,7 @@
           <td>{{ fund.initialBalance | number: '1.2-2' }}</td>
           <td>{{ fund.realBalance | number: '1.2-2' }}</td>
           <td class="text-end">
-            <a class="btn btn-sm btn-outline-secondary" [routerLink]="['/funds', fund.id, 'edit']"
-              >Editar</a
-            >
-            <button
-              type="button"
-              class="btn btn-sm btn-outline-danger ms-1"
-              (click)="remove(fund)"
-            >
-              Remover
-            </button>
+            <app-row-actions [editLink]="['/funds', fund.id, 'edit']" (remove)="remove(fund)" />
           </td>
         </tr>
       }

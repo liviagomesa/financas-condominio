@@ -5,11 +5,12 @@ import { bulkDelete } from '../../shared/bulk-delete';
 import { createSelection } from '../../shared/list-selection';
 import { Group } from '../../shared/models/group.model';
 import { BulkActionsBar } from '../../shared/components/bulk-actions-bar/bulk-actions-bar';
+import { RowActions } from '../../shared/components/row-actions/row-actions';
 import { GroupService } from '../../shared/services/group.service';
 
 @Component({
   selector: 'app-group-list',
-  imports: [RouterLink, BulkActionsBar],
+  imports: [RouterLink, BulkActionsBar, RowActions],
   templateUrl: './group-list.html',
   styleUrl: './group-list.scss',
 })

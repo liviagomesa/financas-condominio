@@ -1,6 +1,24 @@
 <!--
 Sync Impact Report
 ==================
+Versão: 1.9.0 → 1.10.0
+
+Princípios modificados:
+- I. Arquitetura em Camadas — expandido: nova diretriz no parágrafo de frontend — toda listagem MUST reaproveitar `shared/components/row-actions/` para as ações individuais de editar/remover por linha (ícones SVG inline com `title`/`aria-label`, nunca texto, sem biblioteca de ícones externa), mesmo espírito do trio `list-selection`/`bulk-delete`/`bulk-actions-bar` já exigido para seleção múltipla.
+
+Motivação: durante uma revisão da usuária na feature 005-counterparty-groups, `account-list` (que tinha acabado de ganhar várias colunas novas — Parte, Fundo, total líquido) estava quebrando linha horizontalmente; a correção trocou os botões/links de texto (Editar, Remover, Registrar pagamento, Alterar) por ícones. Isso criou uma inconsistência nova: `account-list` passou a usar ícones enquanto `fund-list`/`party-list`/`group-list` continuavam com texto — a própria usuária identificou o problema e pediu um componente reaproveitável em vez de cada tela decidir seu próprio estilo. `RowActions` foi extraído para `shared/components/` e aplicado às quatro listagens; a correção de alinhamento vertical dos ícones (`vertical-align: -0.125em`, problema comum de SVG inline vs. baseline de texto) também foi identificada pela usuária e corrigida no mesmo componente, beneficiando as quatro telas de uma vez.
+
+Templates a verificar:
+- ✅ .specify/templates/plan-template.md — genérico, sem alterações necessárias
+- ✅ .specify/templates/spec-template.md — genérico, sem alterações necessárias
+- ✅ .specify/templates/tasks-template.md — genérico, sem alterações necessárias
+
+Itens pendentes (TODO): nenhum — `shared/components/row-actions/` já criado e aplicado a `account-list`/`fund-list`/`party-list`/`group-list` na mesma rodada.
+-->
+
+<!--
+Sync Impact Report (histórico — emenda anterior)
+==================
 Versão: 1.7.0 → 1.8.0
 
 Princípios modificados:
@@ -187,7 +205,7 @@ Quando uma entidade representa um agrupamento nomeado de outras entidades da mes
 
 Uma associação `LAZY` (padrão de `@ManyToMany`/`@OneToMany`) que o `Controller` precisa ler para montar o DTO de resposta (Princípio VI) MUST vir já resolvida pela própria consulta de leitura do `Repository` (`findById`/`findAll`) que alimenta esse fluxo — nunca por uma segunda consulta corretiva depois de um `save()`, nem contando com `@Transactional` no `Service` (Princípio II): a sessão do Hibernate já se encerrou quando o `Controller` recebe o retorno, dado que o projeto roda com `spring.jpa.open-in-view: false`. Duas formas válidas de resolver na própria consulta: `JOIN FETCH` numa query dedicada do Spring Data (`@Query` com `LEFT JOIN FETCH`) — preferencial, por só pagar o custo do `JOIN` nas consultas que de fato precisam da associação — ou `fetch = EAGER` direto na entidade, reservado para quando literalmente nenhum consumidor da entidade jamais precisaria dela sem aquela associação (ex.: `Group.members` — a única razão de um `Group` existir é agrupar `Party`s). Quando `JOIN FETCH` precisar trazer mais de uma coleção `List` da mesma entidade na mesma query, o Hibernate rejeita com `MultipleBagFetchException` — daí a preferência por `Set` sempre que a coleção não tiver ordem de negócio própria (Princípio IV); se duas coleções precisarem mesmo ser `List` (ordem de negócio genuína em ambas) e precisarem ser carregadas juntas, a saída é aceitar N+1 — tolerável dado o volume pequeno de dados deste projeto — mas só se o acesso ficar inteiramente dentro do `Service`; se o `Controller` precisar do campo, ele MUST vir por `JOIN FETCH`/`EAGER`, nunca por N+1 tocado na camada de apresentação.
 
-No frontend, cada entidade de domínio possui sua pasta de componentes, com `core/` para tratamento de erros e `shared/` para models, services, validators e configuração de URL base da API; `shared/components/` reúne componentes de UI reutilizáveis por mais de uma tela (ex.: `bulk-actions-bar/`), distintos dos models/services/validators soltos em `shared/`. Toda listagem que precisar de seleção múltipla + remoção em lote MUST reaproveitar o trio já estabelecido `shared/list-selection.ts` (estado de seleção, signal-based) + `shared/bulk-delete.ts` (remoção item a item, melhor esforço, sem endpoint transacional) + `shared/components/bulk-actions-bar/` (UI da barra de ação) — introduzido na feature 002-receivable-charges e já aplicado a `unit-list`/`account-list`/`supplier-list` — em vez de reimplementar seleção/remoção em lote do zero numa tela nova. Estado local de componente MUST ser gerenciado via `signal()` do Angular — não por campo simples nem `BehaviorSubject` — consequência do app rodar em modo zoneless (sem Zone.js). Rotas MUST seguir o padrão `/{recurso-plural}` (listagem), `/{recurso-plural}/new` (criação) e `/{recurso-plural}/:id/edit` (edição), espelhando a convenção de rotas de API do Princípio VI.
+No frontend, cada entidade de domínio possui sua pasta de componentes, com `core/` para tratamento de erros e `shared/` para models, services, validators e configuração de URL base da API; `shared/components/` reúne componentes de UI reutilizáveis por mais de uma tela (ex.: `bulk-actions-bar/`), distintos dos models/services/validators soltos em `shared/`. Toda listagem que precisar de seleção múltipla + remoção em lote MUST reaproveitar o trio já estabelecido `shared/list-selection.ts` (estado de seleção, signal-based) + `shared/bulk-delete.ts` (remoção item a item, melhor esforço, sem endpoint transacional) + `shared/components/bulk-actions-bar/` (UI da barra de ação) — introduzido na feature 002-receivable-charges e já aplicado a `unit-list`/`account-list`/`supplier-list` — em vez de reimplementar seleção/remoção em lote do zero numa tela nova. Toda listagem MUST reaproveitar `shared/components/row-actions/` para as ações individuais de editar/remover por linha — ícones SVG inline com `title`/`aria-label` (nunca texto), sem depender de biblioteca de ícones externa — introduzido na feature 005-counterparty-groups a partir de uma revisão da usuária (`account-list` tinha ficado largo demais e ganhou ícones; `fund-list`/`party-list`/`group-list` ainda usavam texto, inconsistência corrigida generalizando o componente para as quatro telas) e MUST ser reaproveitado por qualquer listagem nova em vez de reimplementar botões de ação do zero. Estado local de componente MUST ser gerenciado via `signal()` do Angular — não por campo simples nem `BehaviorSubject` — consequência do app rodar em modo zoneless (sem Zone.js). Rotas MUST seguir o padrão `/{recurso-plural}` (listagem), `/{recurso-plural}/new` (criação) e `/{recurso-plural}/:id/edit` (edição), espelhando a convenção de rotas de API do Princípio VI.
 
 A estrutura de pastas proposta é uma referência, não uma regra rígida: pode ser adaptada sempre que o padrão de mercado ou a necessidade do projeto justificar o desvio — exceto pacote base, ferramenta de build e ferramenta de migração definidos acima, que MUST permanecer estáveis entre features, salvo decisão explícita e documentada em contrário.
 
@@ -258,5 +276,5 @@ Emendas a esta constituição exigem: (1) descrição clara da mudança e sua mo
 
 Toda revisão de spec, plano ou tarefas MUST verificar conformidade com os princípios definidos aqui. Complexidade adicional (novas camadas, dependências, padrões) MUST ser justificada em relação aos princípios de simplicidade implícitos na arquitetura em camadas descrita no Princípio I.
 
-**Version**: 1.9.0 | **Ratified**: 2026-07-24 | **Last Amended**: 2026-07-29
+**Version**: 1.10.0 | **Ratified**: 2026-07-24 | **Last Amended**: 2026-07-29
 </content>

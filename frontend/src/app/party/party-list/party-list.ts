@@ -5,11 +5,12 @@ import { bulkDelete } from '../../shared/bulk-delete';
 import { createSelection } from '../../shared/list-selection';
 import { Party } from '../../shared/models/party.model';
 import { BulkActionsBar } from '../../shared/components/bulk-actions-bar/bulk-actions-bar';
+import { RowActions } from '../../shared/components/row-actions/row-actions';
 import { PartyService } from '../../shared/services/party.service';
 
 @Component({
   selector: 'app-party-list',
-  imports: [RouterLink, BulkActionsBar],
+  imports: [RouterLink, BulkActionsBar, RowActions],
   templateUrl: './party-list.html',
   styleUrl: './party-list.scss',
 })
