@@ -4,12 +4,12 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ApiError } from '../../core/error.interceptor';
 import { AccountType, ACCOUNT_TYPE_LABELS } from '../../shared/models/account.model';
 import { Fund } from '../../shared/models/fund.model';
-import { Supplier } from '../../shared/models/supplier.model';
-import { Unit } from '../../shared/models/unit.model';
+import { Group } from '../../shared/models/group.model';
+import { Party } from '../../shared/models/party.model';
 import { AccountService } from '../../shared/services/account.service';
 import { FundService } from '../../shared/services/fund.service';
-import { SupplierService } from '../../shared/services/supplier.service';
-import { UnitService } from '../../shared/services/unit.service';
+import { GroupService } from '../../shared/services/group.service';
+import { PartyService } from '../../shared/services/party.service';
 
 @Component({
   selector: 'app-account-form',
@@ -18,8 +18,8 @@ import { UnitService } from '../../shared/services/unit.service';
   styleUrl: './account-form.scss',
 })
 export class AccountForm implements OnInit {
-  protected readonly units = signal<Unit[]>([]);
-  protected readonly suppliers = signal<Supplier[]>([]);
+  protected readonly parties = signal<Party[]>([]);
+  protected readonly groups = signal<Group[]>([]);
   protected readonly funds = signal<Fund[]>([]);
   protected readonly errorMessage = signal<string | null>(null);
   protected readonly bulkMode = signal(false);
@@ -44,15 +44,15 @@ export class AccountForm implements OnInit {
     description: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
     fundId: new FormControl<number | null>(null, { validators: [Validators.required] }),
     recurring: new FormControl(false, { nonNullable: true }),
-    unitId: new FormControl<number | null>(null, { validators: [Validators.required] }),
-    supplierId: new FormControl<number | null>(null),
+    partyId: new FormControl<number | null>(null, { validators: [Validators.required] }),
+    groupId: new FormControl<number | null>(null),
     paymentDate: new FormControl('', { nonNullable: true }),
     observations: new FormControl('', { nonNullable: true }),
   });
 
   constructor(
-    private readonly unitService: UnitService,
-    private readonly supplierService: SupplierService,
+    private readonly partyService: PartyService,
+    private readonly groupService: GroupService,
     private readonly fundService: FundService,
     private readonly accountService: AccountService,
     private readonly router: Router,
@@ -60,8 +60,8 @@ export class AccountForm implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.unitService.findAll().subscribe((units) => this.units.set(units));
-    this.supplierService.findAll().subscribe((suppliers) => this.suppliers.set(suppliers));
+    this.partyService.findAll().subscribe((parties) => this.parties.set(parties));
+    this.groupService.findAll().subscribe((groups) => this.groups.set(groups));
     this.fundService.findAll().subscribe((funds) => this.funds.set(funds));
 
     const idParam = this.route.snapshot.paramMap.get('id');
@@ -69,7 +69,6 @@ export class AccountForm implements OnInit {
       this.accountId = Number(idParam);
       this.isEditMode = true;
       this.accountService.findById(this.accountId).subscribe((account) => {
-        this.applyTypeValidators(account.type);
         this.form.setValue({
           type: account.type,
           amount: account.amount,
@@ -77,34 +76,31 @@ export class AccountForm implements OnInit {
           description: account.description,
           fundId: account.fund.id,
           recurring: account.recurring,
-          unitId: account.unit?.id ?? null,
-          supplierId: account.supplier?.id ?? null,
+          partyId: account.party.id,
+          groupId: null,
           paymentDate: account.paymentDate ?? '',
           observations: account.observations ?? '',
         });
         this.form.controls.type.disable();
       });
-    } else {
-      this.applyTypeValidators(this.form.controls.type.value);
     }
-  }
-
-  setType(type: AccountType): void {
-    this.form.controls.type.setValue(type);
-    this.bulkMode.set(false);
-    this.applyTypeValidators(type);
   }
 
   setBulkMode(bulk: boolean): void {
     this.bulkMode.set(bulk);
-    const unitIdControl = this.form.controls.unitId;
+    const partyIdControl = this.form.controls.partyId;
+    const groupIdControl = this.form.controls.groupId;
     if (bulk) {
-      unitIdControl.clearValidators();
-      unitIdControl.setValue(null);
+      partyIdControl.clearValidators();
+      partyIdControl.setValue(null);
+      groupIdControl.setValidators([Validators.required]);
     } else {
-      unitIdControl.setValidators([Validators.required]);
+      groupIdControl.clearValidators();
+      groupIdControl.setValue(null);
+      partyIdControl.setValidators([Validators.required]);
     }
-    unitIdControl.updateValueAndValidity();
+    partyIdControl.updateValueAndValidity();
+    groupIdControl.updateValueAndValidity();
   }
 
   submit(): void {
@@ -129,43 +125,17 @@ export class AccountForm implements OnInit {
     const onError = (err: ApiError) => this.errorMessage.set(err.message);
 
     if (this.bulkMode()) {
-      this.accountService.createBulk(shared).subscribe({ next: onSuccess, error: onError });
+      this.accountService
+        .createBulk({ ...shared, type: raw.type, groupId: raw.groupId as number })
+        .subscribe({ next: onSuccess, error: onError });
     } else if (this.accountId) {
       this.accountService
-        .update(this.accountId, {
-          ...shared,
-          type: raw.type,
-          unitId: raw.unitId,
-          supplierId: raw.supplierId,
-        })
+        .update(this.accountId, { ...shared, type: raw.type, partyId: raw.partyId as number })
         .subscribe({ next: onSuccess, error: onError });
     } else {
       this.accountService
-        .create({
-          ...shared,
-          type: raw.type,
-          unitId: raw.unitId,
-          supplierId: raw.supplierId,
-        })
+        .create({ ...shared, type: raw.type, partyId: raw.partyId as number })
         .subscribe({ next: onSuccess, error: onError });
     }
-  }
-
-  private applyTypeValidators(type: AccountType): void {
-    const unitIdControl = this.form.controls.unitId;
-    const supplierIdControl = this.form.controls.supplierId;
-    if (type === 'RECEIVABLE') {
-      supplierIdControl.clearValidators();
-      supplierIdControl.setValue(null);
-      if (!this.bulkMode()) {
-        unitIdControl.setValidators([Validators.required]);
-      }
-    } else {
-      unitIdControl.clearValidators();
-      unitIdControl.setValue(null);
-      supplierIdControl.setValidators([Validators.required]);
-    }
-    unitIdControl.updateValueAndValidity();
-    supplierIdControl.updateValueAndValidity();
   }
 }

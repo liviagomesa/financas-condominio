@@ -13,6 +13,7 @@ dados PostgreSQL (container Docker) e frontend em Angular.
     - [3. Testes automatizados do backend](#3-testes-automatizados-do-backend)
     - [4. Frontend](#4-frontend)
   - [Decisões técnicas e premissas](#decisões-técnicas-e-premissas)
+    - [Transações e lazy loading (`open-in-view: false`)](#transações-e-lazy-loading-open-in-view-false)
   - [Uso de IA](#uso-de-ia)
     - [Fluxo SDD](#fluxo-sdd)
     - [Revisões e correções das entregas da IA](#revisões-e-correções-das-entregas-da-ia)
@@ -175,6 +176,59 @@ Acesse `http://localhost:4202`.
   obrigação). `UnitService.delete()` passou a checar `Account`/`Supplier` vinculados em vez
   de `Resident`.
 
+### Transações e lazy loading (`open-in-view: false`)
+
+O projeto roda com `spring.jpa.open-in-view: false` desde a feature 001 — decisão que, sozinha,
+parece um detalhe de configuração, mas molda várias regras do backend porque significa que **a
+sessão do Hibernate fecha assim que a transação do `Repository`/`Service` termina**, não fica
+aberta até o fim da requisição HTTP. Qualquer campo `LAZY` (`@ManyToMany`/`@OneToMany`) acessado
+depois disso — inclusive no `Controller`, ao montar o DTO de resposta — quebra com
+`LazyInitializationException`. As regras abaixo (Princípios I e II da constituição, v1.8.0)
+existem todas por causa disso.
+
+1. **`@Transactional` só em métodos de `Service` com mais de uma escrita, nunca na classe
+   inteira.** O critério é objetivo — conta quantas chamadas de `save()`/`delete()` o método
+   faz para completar uma operação de negócio; se for mais de uma, precisa da anotação (sem
+   ela, cada chamada ao `Repository` é sua própria transação, e uma falha no meio deixaria
+   parte do trabalho já comitada). Cogitamos anotar toda classe `Service` por padrão
+   defensivo (nunca depender de perceber a necessidade método a método), mas isso torna toda
+   entidade lida por qualquer método — inclusive os que só leem — gerenciada pelo
+   `EntityManager` durante toda a execução, arriscando persistência silenciosa via
+   dirty-checking do Hibernate se algum campo for mutado sem intenção de salvar. Único método
+   do projeto que precisa disso hoje: `AccountService.createForGroup` (um `save()` por
+   integrante de um lote).
+2. **Associação `LAZY` que o `Controller` precisa ler para montar o DTO de resposta MUST vir
+   já resolvida pela própria consulta de leitura do `Repository`** (`findById`/`findAll`) —
+   nunca por uma segunda consulta corretiva depois de um `save()`, e nunca contando com
+   `@Transactional` no `Service`: a transação já encerrou quando o `Controller` recebe o
+   retorno, então não alcança o `Controller` de forma nenhuma. Duas formas de resolver na
+   própria consulta:
+   - **`JOIN FETCH` numa query dedicada do Spring Data** (`@Query` com `LEFT JOIN FETCH`) —
+     preferencial, porque só paga o custo do `JOIN` nas consultas que realmente precisam da
+     associação.
+   - **`fetch = EAGER` direto na entidade** — só quando literalmente nenhum consumidor da
+     entidade jamais precisaria dela sem aquela associação. É o caso de `Group.members`: a
+     única razão de um `Group` existir é agrupar `Party`s, então carregar um `Group` sem seus
+     integrantes não tem uso real — `EAGER` aqui é **preferível** a `JOIN FETCH` dedicado, não só
+     uma exceção tolerada.
+3. **Coleção `@ManyToMany`/`@OneToMany` sem ordem de negócio própria MUST ser `Set`, não
+   `List`** — evita a complexidade de `@OrderColumn`, e evita que um `JOIN FETCH` dessa
+   coleção junto de outra coleção da mesma entidade quebre com `MultipleBagFetchException`
+   (o Hibernate rejeita duas coleções `List` — "bags" sem ordem — carregadas via `JOIN FETCH`
+   na mesma query; com `Set` isso não acontece). Se duas coleções precisarem mesmo ser `List`
+   (ordem de negócio genuína nas duas) e precisarem ser lidas juntas, a saída é aceitar N+1 —
+   tolerável dado o volume pequeno de dados deste projeto — mas só se o acesso ficar
+   inteiramente dentro do `Service`; se o `Controller` precisar do campo, ele MUST vir por
+   `JOIN FETCH`/`EAGER`, nunca por N+1 tocado na camada de apresentação (mesmo argumento do
+   item 2).
+4. **Uma operação de negócio que escreve em mais de um `Service` MUST ser orquestrada por um
+   único método `@Transactional`, nunca pelo `Controller` chamando os `Service`s em
+   sequência** — se a segunda chamada falhar depois que o `Controller` já invocou a primeira,
+   a primeira ficaria comitada de forma inconsistente. A propagação padrão do Spring
+   (`Propagation.REQUIRED`) garante que qualquer `Service`/`Repository` chamado de dentro de
+   um método `@Transactional` participa da mesma transação, sem precisar fundir os `Service`s
+   numa classe só.
+
 ## Uso de IA
 
 ### Fluxo SDD
@@ -285,4 +339,9 @@ Utilizei o GitHub Spec Kit integrado ao Claude Code para conduzir o desenvolvime
   real (YAGNI). Construir o utilitário já pensando em reuso custa pouco a mais do que uma
   solução específica da tela, e evita ter que extrair a abstração correndo depois, quando
   unidades/fornecedores eventualmente crescerem.
+- **Saldo líquido por Parte, não só o total agregado da tela de Contas**: o total dinâmico
+  adicionado nesta rodada (`netTotal` em `account-list`) soma ENTRADA/SAÍDA das contas
+  atualmente exibidas, não por Parte individual — uma extensão útil seria expor, na tela de
+  Partes, o saldo líquido de cada uma (quanto ela deve/tem a receber no total), no mesmo
+  espírito do saldo real já calculado por Fundo desde a feature 004.
 

@@ -1,15 +1,17 @@
 import { DatePipe, DecimalPipe } from '@angular/common';
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, computed, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { ApiError } from '../../core/error.interceptor';
 import { bulkDelete } from '../../shared/bulk-delete';
 import { createSelection } from '../../shared/list-selection';
-import { Account, AccountFilters, AccountType, ACCOUNT_TYPE_LABELS } from '../../shared/models/account.model';
-import { Unit } from '../../shared/models/unit.model';
+import { Account, AccountFilters, ACCOUNT_TYPE_LABELS } from '../../shared/models/account.model';
+import { Fund } from '../../shared/models/fund.model';
+import { Party } from '../../shared/models/party.model';
 import { BulkActionsBar } from '../../shared/components/bulk-actions-bar/bulk-actions-bar';
 import { AccountService } from '../../shared/services/account.service';
-import { UnitService } from '../../shared/services/unit.service';
+import { FundService } from '../../shared/services/fund.service';
+import { PartyService } from '../../shared/services/party.service';
 
 @Component({
   selector: 'app-account-list',
@@ -19,13 +21,17 @@ import { UnitService } from '../../shared/services/unit.service';
 })
 export class AccountList implements OnInit {
   protected readonly accounts = signal<Account[]>([]);
-  protected readonly units = signal<Unit[]>([]);
+  protected readonly parties = signal<Party[]>([]);
+  protected readonly funds = signal<Fund[]>([]);
   protected readonly errorMessage = signal<string | null>(null);
   protected readonly accountTypeLabels = ACCOUNT_TYPE_LABELS;
   protected readonly selection = createSelection<Account>((account) => account.id);
   protected readonly payingId = signal<number | null>(null);
-  protected typeFilter: '' | AccountType = '';
-  protected selectedUnitId: number | null = null;
+  protected readonly netTotal = computed(() =>
+    this.accounts().reduce((total, a) => (a.type === 'RECEIVABLE' ? total + a.amount : total - a.amount), 0)
+  );
+  protected selectedPartyId: number | null = null;
+  protected selectedFundId: number | null = null;
   protected paidFilter: '' | 'true' | 'false' = '';
   protected overdueOnly = false;
   protected dueYearMonth = '';
@@ -34,21 +40,19 @@ export class AccountList implements OnInit {
 
   constructor(
     private readonly accountService: AccountService,
-    private readonly unitService: UnitService
+    private readonly partyService: PartyService,
+    private readonly fundService: FundService
   ) {}
 
   ngOnInit(): void {
-    this.unitService.findAll().subscribe((units) => this.units.set(units));
+    this.partyService.findAll().subscribe((parties) => this.parties.set(parties));
+    this.fundService.findAll().subscribe((funds) => this.funds.set(funds));
     this.load();
   }
 
   onFilterChange(): void {
     this.selection.clear();
     this.load();
-  }
-
-  counterpartLabel(account: Account): string {
-    return account.type === 'RECEIVABLE' ? (account.unit?.identifier ?? '-') : (account.supplier?.name ?? '-');
   }
 
   remove(account: Account): void {
@@ -101,8 +105,8 @@ export class AccountList implements OnInit {
 
   private load(): void {
     const filters: AccountFilters = {};
-    if (this.typeFilter) filters.type = this.typeFilter;
-    if (this.selectedUnitId != null) filters.unitId = this.selectedUnitId;
+    if (this.selectedPartyId != null) filters.partyId = this.selectedPartyId;
+    if (this.selectedFundId != null) filters.fundId = this.selectedFundId;
     if (this.paidFilter === 'true') filters.paid = true;
     if (this.paidFilter === 'false') filters.paid = false;
     if (this.overdueOnly) filters.overdue = true;

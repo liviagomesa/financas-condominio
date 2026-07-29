@@ -33,14 +33,14 @@ public class AccountController {
 
     @GetMapping
     public List<AccountResponse> findAll(
-            @RequestParam(required = false) Long unitId,
-            @RequestParam(required = false) Long supplierId,
+            @RequestParam(required = false) Long partyId,
+            @RequestParam(required = false) Long fundId,
             @RequestParam(required = false) AccountType type,
             @RequestParam(required = false) Boolean paid,
             @RequestParam(required = false) Boolean overdue,
             @RequestParam(required = false) String dueYearMonth,
             @RequestParam(required = false) String paymentYearMonth) {
-        return service.findAll(unitId, supplierId, type, paid, overdue, dueYearMonth, paymentYearMonth).stream()
+        return service.findAll(partyId, fundId, type, paid, overdue, dueYearMonth, paymentYearMonth).stream()
                 .map(this::toResponse)
                 .toList();
     }
@@ -59,8 +59,7 @@ public class AccountController {
                 request.description(),
                 request.fundId(),
                 request.recurring(),
-                request.unitId(),
-                request.supplierId(),
+                request.partyId(),
                 request.paymentDate(),
                 request.observations());
         return ResponseEntity.status(HttpStatus.CREATED).body(toResponse(account));
@@ -69,12 +68,14 @@ public class AccountController {
     @PostMapping("/bulk")
     public ResponseEntity<List<AccountResponse>> createBulk(@Valid @RequestBody AccountBulkRequest request) {
         List<AccountResponse> created = service
-                .createForAllUnits(
+                .createForGroup(
+                        request.type(),
                         request.amount(),
                         request.dueDate(),
                         request.description(),
                         request.fundId(),
                         request.recurring(),
+                        request.groupId(),
                         request.paymentDate(),
                         request.observations())
                 .stream()
@@ -93,8 +94,7 @@ public class AccountController {
                 request.description(),
                 request.fundId(),
                 request.recurring(),
-                request.unitId(),
-                request.supplierId(),
+                request.partyId(),
                 request.paymentDate(),
                 request.observations());
         return toResponse(account);

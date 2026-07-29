@@ -1,6 +1,84 @@
 <!--
 Sync Impact Report
 ==================
+Versão: 1.7.0 → 1.8.0
+
+Princípios modificados:
+- II. Separação Controller → Service → Repository — expandido: um método de `Service` que
+  executa mais de uma operação de escrita (`save`/`delete`, sequencial ou em loop) para
+  completar uma única operação de negócio MUST ser anotado `@Transactional` — critério
+  objetivo e verificável (basta contar quantas chamadas de escrita o método faz), não uma
+  convenção de "anotar sempre que parecer necessário". Deliberadamente NÃO é uma regra de
+  anotar `@Transactional` em toda a classe `Service` por padrão: fazer isso tornaria toda
+  entidade lida por qualquer método (inclusive métodos só de leitura) gerenciada pelo
+  `EntityManager` durante toda a execução, arriscando persistência silenciosa via
+  dirty-checking do Hibernate caso algum campo seja mutado por qualquer motivo que não seja a
+  intenção de salvar — um raio de exposição maior do que o problema original, que afeta só
+  métodos com múltiplas escritas. Nova diretriz: uma operação de negócio que escreve em mais
+  de um `Service` MUST ser orquestrada por um único método `@Transactional` (a propagação
+  padrão do Spring, `Propagation.REQUIRED`, garante que qualquer `Service`/`Repository`
+  chamado de dentro desse método participe da mesma transação), nunca pelo `Controller`
+  chamando os `Service`s em sequência — uma falha na segunda chamada deixaria a primeira já
+  comitada de forma inconsistente.
+- I. Arquitetura em Camadas — expandido: nova diretriz para associação `LAZY` que o
+  `Controller` precisa ler ao montar o DTO de resposta (Princípio VI) — MUST vir já resolvida
+  pela consulta de leitura do `Repository` (`findById`/`findAll`), preferencialmente via `JOIN
+  FETCH` numa query dedicada do Spring Data, nunca por uma segunda consulta corretiva depois
+  de um `save()` nem contando com `@Transactional` no `Service` (que não alcança o
+  `Controller`, dado `open-in-view: false`). `fetch = EAGER` direto na entidade continua válido,
+  mas só quando literalmente nenhum consumidor da entidade jamais precisaria dela sem aquela
+  associação (ex.: `Group.members`). Se duas coleções `List` precisarem ser lidas juntas via
+  `JOIN FETCH`, o Hibernate rejeita com `MultipleBagFetchException` — daí a preferência por
+  `Set` (Princípio IV); se ambas precisarem mesmo ser `List` (ordem de negócio genuína), a
+  saída é aceitar N+1, tolerável dado o volume pequeno de dados do projeto — mas só se o
+  acesso ficar inteiramente dentro do `Service`.
+- IV. Convenções de Código e Formatação — expandido: a regra de `Set` em vez de `List` passa a
+  cobrir também `@OneToMany` (não só `@ManyToMany`), e ganha uma segunda razão além de evitar
+  `@OrderColumn`: viabilizar `JOIN FETCH` de mais de uma coleção da mesma entidade na mesma
+  consulta, o que quebra com `List` (`MultipleBagFetchException`).
+
+Motivação: durante a implementação da feature 005-counterparty-groups,
+`AccountService.createForGroup` criava uma conta por integrante de um `Group` num loop de
+`repository.save()` sem `@Transactional` — cada `save()` é uma transação independente do Spring
+Data JPA, então uma falha no meio do lote deixaria contas já criadas comitadas (lote
+parcialmente aplicado). O mesmo padrão sem anotação já existia no método que este substituiu
+(`createForAllUnits`, de uma feature anterior) — não foi um problema introduzido por esta
+feature, só carregado adiante sem ser percebido, nem por revisão de código nem pelos testes
+Mockito (que mockam o `Repository` e não exercitam transação real). A discussão sobre como
+formalizar essa proteção passou por quatro rodadas com a usuária: (1) `@Transactional` só no
+método afetado; (2) a usuária trouxe a convenção (comum em outros projetos que já usou) de
+anotar toda classe `Service` por padrão defensivo, para nunca depender de perceber a
+necessidade método a método — chegou a ser aplicada nos 4 `Service`s; (3) a própria usuária
+identificou o efeito colateral do dirty-checking (mutação não intencional de uma entidade
+gerenciada sendo persistida sem `save()` explícito) como um raio de exposição maior que o
+problema original, e a decisão voltou a ser cirúrgica, ancorada num critério objetivo (contagem
+de escritas no método); (4) a usuária propôs uma política completa por escrito cobrindo também
+estratégia de fetch (`JOIN FETCH` como regra geral, `EAGER` só quando universalmente
+necessário, `Set` para viabilizar `JOIN FETCH` de múltiplas coleções) e pediu revisão antes de
+formalizar — três ajustes técnicos surgiram dessa revisão: `MultipleBagFetchException` só
+ocorre com duas ou mais coleções `List` buscadas juntas (não com uma coleção isolada); a ideia
+de "refazer a consulta com `JOIN FETCH` depois do `save()`" funciona mas é redundante neste
+projeto (o `Service` já resolve as entidades relacionadas antes de montar a entidade nova, então
+o retorno de `save()` já vem sem nada lazy — o ajuste certo é na consulta de leitura original);
+e um exemplo concreto de orquestração multi-`Service` explicando a propagação `REQUIRED` do
+Spring. Rodadas 2 e 3 já estavam registradas nesta mesma emenda (ainda não commitada no momento
+da rodada 4), por isso as mudanças da rodada 4 entram na mesma emenda, sem novo bump de versão.
+
+Templates a verificar:
+- ✅ .specify/templates/plan-template.md — genérico, sem alterações necessárias
+- ✅ .specify/templates/spec-template.md — genérico, sem alterações necessárias
+- ✅ .specify/templates/tasks-template.md — genérico, sem alterações necessárias
+
+Itens pendentes (TODO): nenhum — `@Transactional` de classe revertido nos 4 `Service`s,
+mantido só (nível de método) em `AccountService.createForGroup`, único método com múltiplas
+escritas hoje; `Group.members` permanece `fetch = EAGER` (caso de exceção legítima, todo
+consumidor de `Group` precisa de `members`) — nenhuma mudança de código adicional necessária
+nesta rodada, só formalização das regras já aplicadas.
+-->
+
+<!--
+Sync Impact Report (histórico — emenda anterior)
+==================
 Versão: 1.6.0 → 1.7.0
 
 Princípios modificados:
@@ -375,6 +453,25 @@ entidades pertencem a ele) MUST ser editada exclusivamente pela tela/formulário
 agrupamento — nunca pela tela de cada entidade membro — evitando duplicar a mesma interface de
 associação em dois lugares sem uma fonte de verdade única.
 
+Uma associação `LAZY` (padrão de `@ManyToMany`/`@OneToMany`) que o `Controller` precisa ler
+para montar o DTO de resposta (Princípio VI) MUST vir já resolvida pela própria consulta de
+leitura do `Repository` (`findById`/`findAll`) que alimenta esse fluxo — nunca por uma segunda
+consulta corretiva depois de um `save()`, nem contando com `@Transactional` no `Service`
+(Princípio II): a sessão do Hibernate já se encerrou quando o `Controller` recebe o retorno,
+dado que o projeto roda com `spring.jpa.open-in-view: false`. Duas formas válidas de resolver
+na própria consulta: `JOIN FETCH` numa query dedicada do Spring Data (`@Query` com `LEFT JOIN
+FETCH`) — preferencial, por só pagar o custo do `JOIN` nas consultas que de fato precisam da
+associação — ou `fetch = EAGER` direto na entidade, reservado para quando literalmente nenhum
+consumidor da entidade jamais precisaria dela sem aquela associação (ex.: `Group.members` — a
+única razão de um `Group` existir é agrupar `Party`s). Quando `JOIN FETCH` precisar trazer mais
+de uma coleção `List` da mesma entidade na mesma query, o Hibernate rejeita com
+`MultipleBagFetchException` — daí a preferência por `Set` sempre que a coleção não tiver ordem
+de negócio própria (Princípio IV); se duas coleções precisarem mesmo ser `List` (ordem de
+negócio genuína em ambas) e precisarem ser carregadas juntas, a saída é aceitar N+1 — tolerável
+dado o volume pequeno de dados deste projeto — mas só se o acesso ficar inteiramente dentro do
+`Service`; se o `Controller` precisar do campo, ele MUST vir por `JOIN FETCH`/`EAGER`, nunca
+por N+1 tocado na camada de apresentação.
+
 No frontend, cada entidade de domínio possui sua pasta de componentes, com `core/` para
 tratamento de erros e `shared/` para models, services, validators e configuração de URL
 base da API; `shared/components/` reúne componentes de UI reutilizáveis por mais de uma tela
@@ -402,6 +499,36 @@ O `Service` concentra as regras de negócio e é o único ponto que chama a inte
 toda a orquestração de dados passa pelo `Service`. Essa separação MUST ser respeitada em
 toda nova funcionalidade de backend, garantindo que a lógica de negócio permaneça
 centralizada e testável independentemente da camada de apresentação.
+
+Um método de `Service` que executa mais de uma operação de escrita (`save`/`delete`,
+sequencial ou em loop) para completar uma única operação de negócio MUST ser anotado
+`@Transactional` — sem isso, cada chamada ao `Repository` é sua própria transação
+independente do Spring Data JPA, e uma falha no meio da operação deixaria parte do trabalho já
+comitada (ex.: um `save()` por integrante de um lote — se um falhar, os anteriores já
+persistiram). O critério é objetivo (quantas escritas o método faz), verificável por inspeção,
+em vez de uma decisão caso a caso. Deliberadamente NÃO é `@Transactional` no nível da classe
+inteira: isso tornaria toda entidade lida por qualquer método (inclusive os que só leem)
+gerenciada pelo `EntityManager` durante toda a execução, arriscando persistência silenciosa
+via dirty-checking do Hibernate caso algum campo seja mutado por qualquer motivo que não seja
+a intenção de salvar — expondo métodos que não precisam de transação nenhuma a um risco novo,
+só para proteger os poucos que precisam. Leitura de uma associação `LAZY` que precisa
+acontecer dentro do próprio método do `Service` (não durante a montagem do DTO no
+`Controller`, ver abaixo) MUST ser resolvida preferencialmente por estratégia de fetch
+(`fetch = EAGER`/`JOIN FETCH`/`@EntityGraph`, Princípio I), que não abre escopo de transação
+nem carrega esse risco; `@Transactional(readOnly = true)` pontual no método fica reservado
+para o caso raro em que a estratégia de fetch não for viável (`readOnly = true` desativa o
+flush automático do Hibernate, evitando o mesmo risco de escrita acidental). Em nenhum caso
+`@Transactional` no `Service` substitui a estratégia de fetch para associações lidas durante a
+montagem do DTO de resposta no `Controller` (Princípio VI) — a transação do `Service` já foi
+encerrada quando o `Controller` recebe o retorno, dado que este projeto roda com
+`spring.jpa.open-in-view: false`.
+
+Uma operação de negócio que escreve em mais de um `Service` MUST ser orquestrada por um único
+método `@Transactional` — nunca pelo `Controller` chamando os `Service`s envolvidos em
+sequência, o que deixaria uma escrita já comitada de forma inconsistente caso uma chamada
+posterior falhasse. A propagação padrão do Spring (`Propagation.REQUIRED`) garante que
+qualquer `Service`/`Repository` chamado de dentro desse método participe da mesma transação,
+sem precisar fundir os `Service`s envolvidos numa classe só.
 
 ### III. Stack Técnica Definida
 O backend usa Java com Spring Boot (Spring Data JPA, Spring Security, Spring Web); o
@@ -455,11 +582,14 @@ DTO de request usado em `POST`/`PUT` inclui o campo, e o `Service.update()` comp
 recebido com o já persistido, rejeitando (400, via exception dedicada) qualquer tentativa de
 alterá-lo — em vez de omitir o campo do `PUT` ou ignorá-lo silenciosamente, o que esconderia
 uma tentativa inválida (seja da usuária ou de um bug no frontend) em vez de avisar sobre ela.
-Uma coleção de entidades numa relação `@ManyToMany` sem ordem de negócio própria MUST ser
-modelada como `Set`, não `List` — evita a complexidade de uma coluna de ordenação
-(`@OrderColumn`) sem necessidade real; quando a resposta de API precisar de uma ordem
-determinística (ex.: alfabética), essa ordenação MUST ser aplicada na camada de DTO/resposta,
-nunca persistida.
+Uma coleção de entidades numa relação `@ManyToMany`/`@OneToMany` sem ordem de negócio própria
+MUST ser modelada como `Set`, não `List` — evita a complexidade de uma coluna de ordenação
+(`@OrderColumn`) sem necessidade real, e evita que um `JOIN FETCH` dessa coleção junto de outra
+coleção da mesma entidade, na mesma consulta, quebre com `MultipleBagFetchException` (o
+Hibernate rejeita duas coleções `List` — "bags" sem ordem — carregadas via `JOIN FETCH`
+simultaneamente; com `Set` isso não acontece, ver Princípio I); quando a resposta de API
+precisar de uma ordem determinística (ex.: alfabética), essa ordenação MUST ser aplicada na
+camada de DTO/resposta, nunca persistida.
 Nomes de variáveis, classes, métodos, propriedades e tabelas de banco de dados MUST estar em
 inglês. Mensagens de erro internas (exceptions, logs) MUST estar em inglês. Mensagens de erro
 exibidas ao usuário final (respostas de API, frontend) MUST estar em português.
@@ -615,5 +745,5 @@ definidos aqui. Complexidade adicional (novas camadas, dependências, padrões) 
 justificada em relação aos princípios de simplicidade implícitos na arquitetura em camadas
 descrita no Princípio I.
 
-**Version**: 1.7.0 | **Ratified**: 2026-07-24 | **Last Amended**: 2026-07-29
+**Version**: 1.8.0 | **Ratified**: 2026-07-24 | **Last Amended**: 2026-07-29
 </content>

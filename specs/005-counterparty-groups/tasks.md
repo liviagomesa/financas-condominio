@@ -67,99 +67,99 @@ têm uma user story própria no spec desta feature).
 
 **⚠️ CRITICAL**: Nenhuma user story pode começar antes desta fase estar completa
 
-- [ ] T001 [P] Create migration Flyway
+- [X] T001 [P] Create migration Flyway
   `backend/src/main/resources/db/migration/V10__create_party_table.sql` (tabela `party`: `id`,
   `name VARCHAR(255) NOT NULL`, `pix_key VARCHAR(255) NULL`; índice único sobre
   `LOWER(TRIM(name))`, mesmo padrão de `unit_identifier_normalized_idx`/`fund_name_normalized_idx`
   — ver data-model.md)
-- [ ] T002 [P] Create migration Flyway
+- [X] T002 [P] Create migration Flyway
   `backend/src/main/resources/db/migration/V11__create_group_tables.sql` (tabela `party_group`:
   `id`, `name VARCHAR(255) NOT NULL`, índice único sobre `LOWER(TRIM(name))`; tabela de junção
   `party_group_member`: `group_id BIGINT NOT NULL REFERENCES party_group (id) ON DELETE CASCADE`,
   `party_id BIGINT NOT NULL REFERENCES party (id) ON DELETE CASCADE`, chave primária composta
   `(group_id, party_id)`, índice adicional em `party_id` — ver research.md sobre o nome físico
   `party_group` evitar a palavra reservada SQL `GROUP`)
-- [ ] T003 Create migration Flyway
+- [X] T003 Create migration Flyway
   `backend/src/main/resources/db/migration/V12__migrate_account_to_party.sql`
   (`ALTER TABLE account DROP CONSTRAINT account_type_counterparty_check`; `TRUNCATE TABLE
   account` — banco apenas de desenvolvimento, sem dado a preservar, ver research.md/spec
   Assumptions; `ALTER TABLE account DROP COLUMN unit_id`; `ALTER TABLE account DROP COLUMN
   supplier_id`; `ALTER TABLE account ADD COLUMN party_id BIGINT NOT NULL REFERENCES party (id)`;
   `CREATE INDEX account_party_id_idx ON account (party_id)`) (depends on T001)
-- [ ] T004 Create migration Flyway
+- [X] T004 Create migration Flyway
   `backend/src/main/resources/db/migration/V13__drop_unit_and_supplier_tables.sql`
   (`DROP TABLE supplier`; `DROP TABLE unit`) (depends on T003)
-- [ ] T005 [P] Create entidade JPA `Party` (`id`, `name` obrigatório, `pixKey` opcional) em
+- [X] T005 [P] Create entidade JPA `Party` (`id`, `name` obrigatório, `pixKey` opcional) em
   `backend/src/main/java/com/financas/party/domain/Party.java`
-- [ ] T006 Create interface de porta `PartyRepository` (`save`, `findById`, `findAll` ordenado
+- [X] T006 Create interface de porta `PartyRepository` (`save`, `findById`, `findAll` ordenado
   por nome, `findByNormalizedName`, `deleteById`, `existsById`) em
   `backend/src/main/java/com/financas/party/domain/PartyRepository.java` (depends on T005)
-- [ ] T007 Create `PartyJpaRepository` (Spring Data — query JPQL `findByNormalizedName` igual a
+- [X] T007 Create `PartyJpaRepository` (Spring Data — query JPQL `findByNormalizedName` igual a
   `FundJpaRepository`/`UnitJpaRepository`, e `findAllByOrderByNameAsc`) e `PartyRepositoryImpl`
   em `backend/src/main/java/com/financas/party/infra/` (depends on T006)
-- [ ] T008 [P] Create entidade JPA `Group` (`id`, `name` obrigatório, `members: Set<Party>` via
+- [X] T008 [P] Create entidade JPA `Group` (`id`, `name` obrigatório, `members: Set<Party>` via
   `@ManyToMany @JoinTable(name = "party_group_member", joinColumns = @JoinColumn(name =
   "group_id"), inverseJoinColumns = @JoinColumn(name = "party_id"))`, mapeada para a tabela
   `party_group` — ver research.md sobre `Set` em vez de `List`) em
   `backend/src/main/java/com/financas/group/domain/Group.java` (depends on T005)
-- [ ] T009 Create interface de porta `GroupRepository` (`save`, `findById`, `findAll` ordenado
+- [X] T009 Create interface de porta `GroupRepository` (`save`, `findById`, `findAll` ordenado
   por nome, `findByNormalizedName`, `deleteById`, `existsById`) em
   `backend/src/main/java/com/financas/group/domain/GroupRepository.java` (depends on T008)
-- [ ] T010 Create `GroupJpaRepository` (Spring Data) e `GroupRepositoryImpl` em
+- [X] T010 Create `GroupJpaRepository` (Spring Data) e `GroupRepositoryImpl` em
   `backend/src/main/java/com/financas/group/infra/` (depends on T009)
-- [ ] T011 Update entidade `Account`: campos `unit`/`supplier` (`@ManyToOne(optional = true)`)
+- [X] T011 Update entidade `Account`: campos `unit`/`supplier` (`@ManyToOne(optional = true)`)
   removidos, substituídos por `party: Party` (`@ManyToOne(optional = false) @JoinColumn(name =
   "party_id", nullable = false)`) em
   `backend/src/main/java/com/financas/account/domain/Account.java` (depends on T005)
-- [ ] T012 Update interface `AccountRepository` — remove `findByUnitId`/`findBySupplierId`/
+- [X] T012 Update interface `AccountRepository` — remove `findByUnitId`/`findBySupplierId`/
   `existsByUnitId`/`existsBySupplierId`, adiciona `List<Account> findByPartyId(Long partyId)` e
   `boolean existsByPartyId(Long partyId)` em
   `backend/src/main/java/com/financas/account/domain/AccountRepository.java` (depends on T011)
-- [ ] T013 Update `AccountJpaRepository` (deriva `findByPartyId`/`existsByPartyId` via
+- [X] T013 Update `AccountJpaRepository` (deriva `findByPartyId`/`existsByPartyId` via
   `account.party.id`) e `AccountRepositoryImpl` (implementa os dois novos métodos, remove os
   antigos de unit/supplier) em `backend/src/main/java/com/financas/account/infra/` (depends on
   T012)
-- [ ] T014 [P] Create `DuplicatePartyException extends ConflictException`
+- [X] T014 [P] Create `DuplicatePartyException extends ConflictException`
   ("Já existe uma parte cadastrada com o nome '...'.") em
   `backend/src/main/java/com/financas/party/domain/DuplicatePartyException.java`
-- [ ] T015 [P] Create `PartyHasAccountsException extends ConflictException`
+- [X] T015 [P] Create `PartyHasAccountsException extends ConflictException`
   ("Esta parte possui contas vinculadas e não pode ser removida.") em
   `backend/src/main/java/com/financas/party/domain/PartyHasAccountsException.java` (ver
   research.md — substitui o `ConflictException` genérico que `SupplierService` usava)
-- [ ] T016 [P] Create `DuplicateGroupException extends ConflictException`
+- [X] T016 [P] Create `DuplicateGroupException extends ConflictException`
   ("Já existe um grupo cadastrado com o nome '...'.") em
   `backend/src/main/java/com/financas/group/domain/DuplicateGroupException.java`
-- [ ] T017 [P] Create `EmptyGroupException extends ConflictException`
+- [X] T017 [P] Create `EmptyGroupException extends ConflictException`
   ("O grupo selecionado não possui integrantes. Adicione integrantes ao grupo antes de lançar
   contas em lote.") em
   `backend/src/main/java/com/financas/account/domain/EmptyGroupException.java`
-- [ ] T018 [P] Remove `NoUnitsRegisteredException`
+- [X] T018 [P] Remove `NoUnitsRegisteredException`
   (`backend/src/main/java/com/financas/account/domain/NoUnitsRegisteredException.java`) — o
   atalho implícito "todas as unidades" deixa de existir, generalizado por `Group` (FR-014/FR-015,
   ver spec Assumptions)
-- [ ] T019 [P] Create DTOs `PartyRequest` (`name` `@NotBlank`, `pixKey` opcional) e
+- [X] T019 [P] Create DTOs `PartyRequest` (`name` `@NotBlank`, `pixKey` opcional) e
   `PartyResponse` (`id`, `name`, `pixKey`; factory estático `from(Party)`) em
   `backend/src/main/java/com/financas/party/api/` (depends on T005)
-- [ ] T020 [P] Create DTOs `GroupRequest` (`name` `@NotBlank`, `partyIds: List<Long>`) e
+- [X] T020 [P] Create DTOs `GroupRequest` (`name` `@NotBlank`, `partyIds: List<Long>`) e
   `GroupResponse` (`id`, `name`, `members: List<PartyResponse>` ordenados por nome; factory
   estático `from(Group)`) em `backend/src/main/java/com/financas/group/api/` (depends on T008,
   T019)
-- [ ] T021 [P] Update DTOs `AccountRequest` (`unitId`/`supplierId` → `partyId: Long`) e
+- [X] T021 [P] Update DTOs `AccountRequest` (`unitId`/`supplierId` → `partyId: Long`) e
   `AccountBulkRequest` (adiciona `type: AccountType` explícito e `groupId: Long`, substituindo o
   antigo tipo/contraparte implícitos) em `backend/src/main/java/com/financas/account/api/`
   (depends on T011)
-- [ ] T022 [P] Update `AccountResponse`: campos `unit`/`supplier` (`UnitResponse`/
+- [X] T022 [P] Update `AccountResponse`: campos `unit`/`supplier` (`UnitResponse`/
   `SupplierResponse`, nullable) → campo único `party` (`PartyResponse`, nunca nulo);
   `from(Account account, FundResponse fundResponse)` monta `PartyResponse.from(account.getParty())`
   sem checagem de nulo em
   `backend/src/main/java/com/financas/account/api/AccountResponse.java` (depends on T019, T011)
-- [ ] T023 Implement `PartyService` — `create(name, pixKey)` validando nome único
+- [X] T023 Implement `PartyService` — `create(name, pixKey)` validando nome único
   (`findByNormalizedName`, FR-004); `findAll()` ordenado por nome; `findById`; `update(id, name,
   pixKey)` validando nome único (ignorando o próprio id); `delete(id)` bloqueando via
   `accountRepository.existsByPartyId(id)` (`PartyHasAccountsException`, FR-006) — em
   `backend/src/main/java/com/financas/party/domain/PartyService.java` (depends on T007, T014,
   T015, T013)
-- [ ] T024 Implement `GroupService` — `create(name, partyIds)`/`update(id, name, partyIds)`
+- [X] T024 Implement `GroupService` — `create(name, partyIds)`/`update(id, name, partyIds)`
   validando nome único (`findByNormalizedName`) e resolvendo cada `partyId` via
   `partyRepository.findById` (`NotFoundException` se algum não existir, FR-013); `findAll()`
   ordenado por nome; `findById`; `delete(id)` **sempre permitido**, sem nenhuma checagem de
@@ -167,7 +167,7 @@ têm uma user story própria no spec desta feature).
   `party_group_member`, via `ON DELETE CASCADE`) — em
   `backend/src/main/java/com/financas/group/domain/GroupService.java` (depends on T010, T016,
   T006)
-- [ ] T025 Update `AccountService`: remove `resolveUnit`/`resolveSupplier`, adiciona
+- [X] T025 Update `AccountService`: remove `resolveUnit`/`resolveSupplier`, adiciona
   `resolveParty(Long partyId)` (sempre obrigatório, sem ramificação por `type` — FR-001);
   `create`/`update` passam a receber `Long partyId` (em vez de `unitId`/`supplierId`);
   `createForAllUnits` é substituído por `createForGroup(AccountType type, BigDecimal amount,
@@ -180,38 +180,38 @@ têm uma user story própria no spec desta feature).
   adicional, combinado por E lógico com os demais (FR-009/FR-010); injeta `PartyRepository` e
   `GroupRepository` — em `backend/src/main/java/com/financas/account/domain/AccountService.java`
   (depends on T013, T006, T009, T017)
-- [ ] T026 Implement `PartyController` — `GET /api/parties`, `GET /api/parties/{id}`, `POST
+- [X] T026 Implement `PartyController` — `GET /api/parties`, `GET /api/parties/{id}`, `POST
   /api/parties`, `PUT /api/parties/{id}`, `DELETE /api/parties/{id}` — em
   `backend/src/main/java/com/financas/party/api/PartyController.java` (depends on T023, T019)
-- [ ] T027 Implement `GroupController` — `GET /api/groups`, `GET /api/groups/{id}`, `POST
+- [X] T027 Implement `GroupController` — `GET /api/groups`, `GET /api/groups/{id}`, `POST
   /api/groups`, `PUT /api/groups/{id}`, `DELETE /api/groups/{id}` — em
   `backend/src/main/java/com/financas/group/api/GroupController.java` (depends on T024, T020)
-- [ ] T028 Update `AccountController`: `GET /api/accounts` troca `unitId`/`supplierId` por
+- [X] T028 Update `AccountController`: `GET /api/accounts` troca `unitId`/`supplierId` por
   `partyId`, adiciona `fundId`; `POST`/`PUT` passam `request.partyId()` em vez de
   `unitId()`/`supplierId()`; `POST /api/accounts/bulk` chama `service.createForGroup(...)` com
   `request.type()` e `request.groupId()` — em
   `backend/src/main/java/com/financas/account/api/AccountController.java` (depends on T025,
   T021, T022)
-- [ ] T029 [P] Remove por completo o pacote `com.financas.unit`
+- [X] T029 [P] Remove por completo o pacote `com.financas.unit`
   (`backend/src/main/java/com/financas/unit/`: `Unit`, `UnitRepository`, `UnitService`,
   `DuplicateUnitException`, `UnitHasAccountsException`, `UnitHasSuppliersException`, `api/`,
   `infra/`) — substituído por `com.financas.party` (depends on T025)
-- [ ] T030 [P] Remove por completo o pacote `com.financas.supplier`
+- [X] T030 [P] Remove por completo o pacote `com.financas.supplier`
   (`backend/src/main/java/com/financas/supplier/`: `Supplier`, `SupplierRepository`,
   `SupplierService`, `api/`, `infra/`) — substituído por `com.financas.party` (depends on T025)
-- [ ] T031 [P] Remove `backend/src/test/java/com/financas/unit/` e
+- [X] T031 [P] Remove `backend/src/test/java/com/financas/unit/` e
   `backend/src/test/java/com/financas/supplier/` por completo (depends on T029, T030)
-- [ ] T032 [P] Create testes unitários `PartyServiceTest` (Mockito): `create`/`update` rejeitam
+- [X] T032 [P] Create testes unitários `PartyServiceTest` (Mockito): `create`/`update` rejeitam
   nome duplicado (case-insensitive, espaços nas extremidades) e aceitam nomes distintos
   (FR-004); `delete` bloqueado (`PartyHasAccountsException`) quando
   `AccountRepository.existsByPartyId` retorna `true`, permitido quando `false` (FR-006) — em
   `backend/src/test/java/com/financas/party/domain/PartyServiceTest.java` (depends on T023)
-- [ ] T033 [P] Create testes unitários `GroupServiceTest` (Mockito): `create`/`update` rejeitam
+- [X] T033 [P] Create testes unitários `GroupServiceTest` (Mockito): `create`/`update` rejeitam
   nome duplicado; `create`/`update` resolvem `partyIds` via `PartyRepository.findById`, lançando
   `NotFoundException` quando algum id não existir (FR-013); `delete` sempre permitido — com
   integrantes e sem integrantes, sem nenhuma checagem de bloqueio (FR-016) — em
   `backend/src/test/java/com/financas/group/domain/GroupServiceTest.java` (depends on T024)
-- [ ] T034 Update testes unitários `AccountServiceTest`: trocar mocks de `UnitRepository`/
+- [X] T034 Update testes unitários `AccountServiceTest`: trocar mocks de `UnitRepository`/
   `SupplierRepository` por `PartyRepository`; casos comprovando que qualquer combinação
   `type`×`party` é aceita (SAÍDA com uma Parte, ENTRADA com a mesma Parte — FR-001), sem mais
   nenhuma restrição de `resolveUnit`/`resolveSupplier`; `AccountTypeChangeNotAllowedException`
@@ -221,26 +221,26 @@ têm uma user story própria no spec desta feature).
   `partyId` isolado e `fundId` combinado com os demais filtros já existentes (FR-009/FR-010) —
   em `backend/src/test/java/com/financas/account/domain/AccountServiceTest.java` (depends on
   T025)
-- [ ] T035 [P] Create model `Party`/`PartyRequest` em
+- [X] T035 [P] Create model `Party`/`PartyRequest` em
   `frontend/src/app/shared/models/party.model.ts`
-- [ ] T036 Create `PartyService` (HttpClient: `findAll`, `findById`, `create`, `update`,
+- [X] T036 Create `PartyService` (HttpClient: `findAll`, `findById`, `create`, `update`,
   `delete`) em `frontend/src/app/shared/services/party.service.ts` (depends on T035, T026)
-- [ ] T037 [P] Create componente `party-list` (tabela: nome, chave pix; ação individual
+- [X] T037 [P] Create componente `party-list` (tabela: nome, chave pix; ação individual
   "Editar" por linha, navegando para `/parties/{id}/edit`, e "Remover" por linha com `confirm()`
   exibindo a mensagem de erro 409 do backend quando houver conta vinculada — mesmo padrão de
   `fund-list`/`account-list`; seleção múltipla/remoção em lote via `list-selection.ts`/
   `bulk-delete.ts`/`bulk-actions-bar` já existentes; mensagem de "nenhuma parte cadastrada"
   quando vazia) em `frontend/src/app/party/party-list/` (depends on T036)
-- [ ] T038 [P] Create componente `party-form` (campos nome e chave pix, ambos os únicos campos
+- [X] T038 [P] Create componente `party-form` (campos nome e chave pix, ambos os únicos campos
   da entidade — sem seletor de grupo, FR-013; suporte a modo de edição via `GET
   /api/parties/{id}` + `PUT`, mesmo padrão de `unit-form`/`supplier-form`) em
   `frontend/src/app/party/party-form/` (depends on T036)
-- [ ] T039 Wire rotas `/parties`, `/parties/new`, `/parties/:id/edit` em
+- [X] T039 Wire rotas `/parties`, `/parties/new`, `/parties/:id/edit` em
   `frontend/src/app/app.routes.ts`; remove as rotas e imports de `UnitList`/`UnitForm`/
   `SupplierList`/`SupplierForm` (os componentes em si NÃO são apagados ainda — continuam
   compilando, só ficam órfãos de rota, ver nota de sequenciamento no topo) (depends on T037,
   T038)
-- [ ] T040 Update `frontend/src/app/app.html`: links de navegação "Unidades"/"Fornecedores" →
+- [X] T040 Update `frontend/src/app/app.html`: links de navegação "Unidades"/"Fornecedores" →
   "Partes" (depends on T039)
 
 **Checkpoint**: `mvn test` passando; `/api/parties`, `/api/groups` e `/api/accounts` (com
@@ -264,11 +264,11 @@ confirmar que o sistema continua recusando.
 
 ### Implementation for User Story 1
 
-- [ ] T041 [US1] Update `frontend/src/app/shared/models/account.model.ts`: remove os tipos/campos
+- [X] T041 [US1] Update `frontend/src/app/shared/models/account.model.ts`: remove os tipos/campos
   `unit`/`supplier` (`Account`) e `unitId`/`supplierId` (`AccountRequest`), adiciona `party: Party`
   (`Account`) e `partyId: number` (`AccountRequest`), importando `Party` de `./party.model`
   (depends on T035, T021, T022)
-- [ ] T042 [US1] Update componente `account-form`: remove a ramificação por `type` na escolha da
+- [X] T042 [US1] Update componente `account-form`: remove a ramificação por `type` na escolha da
   contraparte (hoje: `RECEIVABLE` mostra seletor de Unidade + toggle de bulk; `PAYABLE` mostra só
   seletor de Fornecedor); passa a exibir, para qualquer `type`, um único seletor "Parte" (sempre
   obrigatório) carregado via `PartyService.findAll()`; remove por completo o antigo toggle
@@ -293,7 +293,7 @@ negativo, sem bloqueio.
 
 ### Implementation for User Story 2
 
-- [ ] T043 [US2] Add `protected readonly netTotal = computed(() => this.accounts().reduce((total,
+- [X] T043 [US2] Add `protected readonly netTotal = computed(() => this.accounts().reduce((total,
   a) => a.type === 'RECEIVABLE' ? total + a.amount : total - a.amount, 0))` em
   `frontend/src/app/account/account-list/account-list.ts` (mesmo padrão de
   `totalRealBalance` em `fund-list.ts`) e uma linha `<tfoot>` exibindo `netTotal() | number:
@@ -317,10 +317,10 @@ só elas); combinar com outro filtro (ex.: tipo) e confirmar a combinação.
 
 ### Implementation for User Story 3
 
-- [ ] T044 [US3] Update `frontend/src/app/shared/models/account.model.ts`: `AccountFilters`
+- [X] T044 [US3] Update `frontend/src/app/shared/models/account.model.ts`: `AccountFilters`
   adiciona `fundId?: number` (edita o mesmo arquivo de T041/T054, mas sem depender deles —
   interface distinta, sem relação funcional; depende só do Foundational)
-- [ ] T045 [US3] Add `<select id="fundFilter">` (carregado via `FundService.findAll()`, já
+- [X] T045 [US3] Add `<select id="fundFilter">` (carregado via `FundService.findAll()`, já
   existente desde a feature 004) em
   `frontend/src/app/account/account-list/account-list.html`, propriedade `selectedFundId` e
   inclusão de `filters.fundId` em `load()` em
@@ -343,13 +343,13 @@ antes chamada "Contraparte" exibe o rótulo "Parte".
 
 ### Implementation for User Story 4
 
-- [ ] T046 [US4] Update `frontend/src/app/account/account-list/`: troca o import de
+- [X] T046 [US4] Update `frontend/src/app/account/account-list/`: troca o import de
   `UnitService`/`Unit` por `PartyService`/`Party`; renomeia o filtro `selectedUnitId`/`unitId`
   para `selectedPartyId`/`partyId` (rótulo do `<label>` e `<option>` "Todas as unidades" →
   "Todas as partes"); renomeia o cabeçalho da coluna "Contraparte" para "Parte"; remove o método
   `counterpartLabel()` e substitui a célula correspondente por `{{ account.party.name }}`
   (depends on T042, T036)
-- [ ] T047 [P] [US4] Remove `frontend/src/app/unit/`, `frontend/src/app/supplier/`,
+- [X] T047 [P] [US4] Remove `frontend/src/app/unit/`, `frontend/src/app/supplier/`,
   `frontend/src/app/shared/models/unit.model.ts`, `frontend/src/app/shared/models/
   supplier.model.ts`, `frontend/src/app/shared/services/unit.service.ts` e
   `frontend/src/app/shared/services/supplier.service.ts` — a partir daqui nada mais no frontend
@@ -373,26 +373,26 @@ lançadas permanecem intactas; tentar lançar para um grupo vazio e confirmar o 
 
 ### Implementation for User Story 5
 
-- [ ] T048 [P] [US5] Create model `Group`/`GroupRequest` em
+- [X] T048 [P] [US5] Create model `Group`/`GroupRequest` em
   `frontend/src/app/shared/models/group.model.ts`
-- [ ] T049 [US5] Create `GroupService` (HttpClient: `findAll`, `findById`, `create`, `update`,
+- [X] T049 [US5] Create `GroupService` (HttpClient: `findAll`, `findById`, `create`, `update`,
   `delete`) em `frontend/src/app/shared/services/group.service.ts` (depends on T048, T027)
-- [ ] T050 [P] [US5] Create componente `group-list` (tabela: nome, contagem de integrantes;
+- [X] T050 [P] [US5] Create componente `group-list` (tabela: nome, contagem de integrantes;
   ação individual "Editar" por linha, navegando para `/groups/{id}/edit`, e "Remover" por linha
   com `confirm()` — sempre permitido, mesmo com integrantes (FR-016) — mesmo padrão de
   `fund-list`/`account-list`; seleção múltipla/remoção em lote via `list-selection.ts`/
   `bulk-delete.ts`/`bulk-actions-bar`; mensagem de "nenhum grupo cadastrado" quando vazia) em
   `frontend/src/app/group/group-list/` (depends on T049)
-- [ ] T051 [P] [US5] Create componente `group-form` (campo nome + seletor múltiplo de Partes
+- [X] T051 [P] [US5] Create componente `group-form` (campo nome + seletor múltiplo de Partes
   integrantes, carregado via `PartyService.findAll()`; envia `partyIds` no `POST`/`PUT`; suporte
   a modo de edição) em `frontend/src/app/group/group-form/` (depends on T049, T036)
-- [ ] T052 [US5] Wire rotas `/groups`, `/groups/new`, `/groups/:id/edit` em
+- [X] T052 [US5] Wire rotas `/groups`, `/groups/new`, `/groups/:id/edit` em
   `frontend/src/app/app.routes.ts` (depends on T050, T051)
-- [ ] T053 [US5] Add link de navegação "Grupos" em `frontend/src/app/app.html` (depends on T052)
-- [ ] T054 [US5] Update `frontend/src/app/shared/models/account.model.ts`: `AccountBulkRequest`
+- [X] T053 [US5] Add link de navegação "Grupos" em `frontend/src/app/app.html` (depends on T052)
+- [X] T054 [US5] Update `frontend/src/app/shared/models/account.model.ts`: `AccountBulkRequest`
   adiciona `type: AccountType` (antes implícito) e `groupId: number` (substitui a busca
   implícita por "todas as unidades") (depends on T041)
-- [ ] T055 [US5] Update componente `account-form`: reintroduz um toggle "Parte específica"/
+- [X] T055 [US5] Update componente `account-form`: reintroduz um toggle "Parte específica"/
   "Grupo" (só em modo criação, `!isEditMode`); modo "Grupo" carrega grupos via
   `GroupService.findAll()` e, ao submeter, chama `accountService.createBulk({ ...shared, type,
   groupId })` em vez de `create`/`update`; modo "Parte específica" continua usando `partyId`
@@ -406,17 +406,25 @@ lançadas permanecem intactas; tentar lançar para um grupo vazio e confirmar o 
 
 **Purpose**: Validações finais e documentação
 
-- [ ] T056 [P] Run roteiro de validação manual de `quickstart.md` de ponta a ponta (API real +
+- [X] T056 [P] Run roteiro de validação manual de `quickstart.md` de ponta a ponta (API real +
   navegador), incluindo os 15 cenários (qualquer combinação tipo×Parte, total líquido negativo,
   filtro de Fundo, filtro/coluna "Parte", Grupos e lançamento em lote, bloqueios de remoção)
-- [ ] T057 [P] Update `README.md` com as decisões técnicas desta feature (unificação
+- [X] T057 [P] Update `README.md` com as decisões técnicas desta feature (unificação
   `Unit`+`Supplier` → `Party`, remoção do padrão de FK dupla + CHECK constraint em `Account`,
   `Group` com tabela física `party_group`, total líquido calculado no frontend, migration que
   recria `party`/`account` do zero por não haver dado real a preservar), conforme Fluxo de
   Commits da constituição
-- [ ] T058 [P] Review mensagens de erro do `GlobalExceptionHandler` para os novos casos desta
+- [X] T058 [P] Review mensagens de erro do `GlobalExceptionHandler` para os novos casos desta
   feature (400/404/409 de `parties`/`groups`/`accounts`), garantindo consistência em português
   (Convenções de API REST)
+- [X] T059 Revisão da usuária pós-implementação: `frontend/src/app/account/account-list/`
+  estava quebrando linha horizontalmente (colunas demais). Remove o filtro "Tipo"
+  (Entrada/Saída) da UI — `AccountService`/`GET /api/accounts` continuam aceitando o
+  query param `type`, só a UI deixou de expor esse controle; remove a coluna "Tipo de
+  lançamento" (Recorrente/Extra); substitui os botões/links de ação (Editar, Remover,
+  Registrar pagamento, Alterar) por ícones SVG inline com `title`/`aria-label` (hint), sem
+  adicionar biblioteca de ícones nova. Ajusta `spec.md` (FR-009, US2 AC2, US3 texto/AC2) e
+  `quickstart.md` (passo 6) para não referenciar mais o filtro "tipo" removido da UI.
 
 ---
 

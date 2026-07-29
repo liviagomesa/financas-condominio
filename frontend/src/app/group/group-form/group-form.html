@@ -1,0 +1,43 @@
+<h1 class="h3 mb-3">{{ isEditMode ? 'Editar grupo' : 'Novo grupo' }}</h1>
+
+<form [formGroup]="form" (ngSubmit)="submit()" class="col-md-6">
+  <div class="mb-3">
+    <label for="name" class="form-label">Nome</label>
+    <input
+      id="name"
+      type="text"
+      class="form-control"
+      formControlName="name"
+      placeholder="Ex.: Bloco A"
+    />
+    @if (form.controls.name.invalid && form.controls.name.touched) {
+      <div class="text-danger small mt-1">O nome é obrigatório.</div>
+    }
+  </div>
+
+  <div class="mb-3">
+    <label class="form-label d-block">Integrantes</label>
+    @if (!parties().length) {
+      <p class="text-muted">Nenhuma parte cadastrada.</p>
+    } @else {
+      @for (party of parties(); track party.id) {
+        <div class="form-check">
+          <input
+            class="form-check-input"
+            type="checkbox"
+            [id]="'party-' + party.id"
+            [checked]="isPartySelected(party)"
+            (change)="toggleParty(party)"
+          />
+          <label class="form-check-label" [for]="'party-' + party.id">{{ party.name }}</label>
+        </div>
+      }
+    }
+  </div>
+
+  @if (errorMessage()) {
+    <div class="alert alert-danger">{{ errorMessage() }}</div>
+  }
+
+  <button type="submit" class="btn btn-primary">Salvar</button>
+</form>

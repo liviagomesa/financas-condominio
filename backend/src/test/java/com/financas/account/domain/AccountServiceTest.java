@@ -9,16 +9,16 @@ import static org.mockito.Mockito.when;
 
 import com.financas.fund.domain.Fund;
 import com.financas.fund.domain.FundRepository;
-import com.financas.shared.exceptions.BadRequestException;
+import com.financas.group.domain.Group;
+import com.financas.group.domain.GroupRepository;
+import com.financas.party.domain.Party;
+import com.financas.party.domain.PartyRepository;
 import com.financas.shared.exceptions.NotFoundException;
-import com.financas.supplier.domain.Supplier;
-import com.financas.supplier.domain.SupplierRepository;
-import com.financas.unit.domain.Unit;
-import com.financas.unit.domain.UnitRepository;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -33,10 +33,10 @@ class AccountServiceTest {
     private AccountRepository repository;
 
     @Mock
-    private UnitRepository unitRepository;
+    private PartyRepository partyRepository;
 
     @Mock
-    private SupplierRepository supplierRepository;
+    private GroupRepository groupRepository;
 
     @Mock
     private FundRepository fundRepository;
@@ -45,13 +45,13 @@ class AccountServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new AccountService(repository, unitRepository, supplierRepository, fundRepository);
+        service = new AccountService(repository, partyRepository, groupRepository, fundRepository);
     }
 
     @Test
-    void createsReceivableWithAllFieldsWhenUnitExists() {
-        Unit unit = withId(new Unit("Bloco A - 101"), 1L);
-        when(unitRepository.findById(1L)).thenReturn(Optional.of(unit));
+    void createsReceivableForAnyParty() {
+        Party party = withId(new Party("Bloco A - 101", null), 1L);
+        when(partyRepository.findById(1L)).thenReturn(Optional.of(party));
         stubFund(1L);
         when(repository.save(any(Account.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -64,20 +64,18 @@ class AccountServiceTest {
                 true,
                 1L,
                 null,
-                null,
                 null);
 
         assertThat(created.getType()).isEqualTo(AccountType.RECEIVABLE);
         assertThat(created.getAmount()).isEqualByComparingTo("350.00");
-        assertThat(created.getUnit()).isEqualTo(unit);
-        assertThat(created.getSupplier()).isNull();
+        assertThat(created.getParty()).isEqualTo(party);
         assertThat(created.isPaid()).isFalse();
     }
 
     @Test
-    void createsPayableWithAllFieldsWhenSupplierExists() {
-        Supplier supplier = withId(new Supplier("Empresa de Limpeza XYZ", null, null), 1L);
-        when(supplierRepository.findById(1L)).thenReturn(Optional.of(supplier));
+    void createsPayableForTheSamePartyUsedAsReceivable() {
+        Party party = withId(new Party("Bloco A - 101", null), 1L);
+        when(partyRepository.findById(1L)).thenReturn(Optional.of(party));
         stubFund(1L);
         when(repository.save(any(Account.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -85,29 +83,27 @@ class AccountServiceTest {
                 AccountType.PAYABLE,
                 new BigDecimal("400.00"),
                 LocalDate.of(2026, 8, 5),
-                "Limpeza - Agosto/2026",
+                "Reembolso",
                 1L,
                 false,
-                null,
                 1L,
                 null,
                 "Disse que vai pagar mês que vem");
 
         assertThat(created.getType()).isEqualTo(AccountType.PAYABLE);
-        assertThat(created.getSupplier()).isEqualTo(supplier);
-        assertThat(created.getUnit()).isNull();
+        assertThat(created.getParty()).isEqualTo(party);
         assertThat(created.getObservations()).isEqualTo("Disse que vai pagar mês que vem");
     }
 
     @Test
     void createAcceptsZeroAmount() {
-        Unit unit = withId(new Unit("Bloco A - 101"), 1L);
-        when(unitRepository.findById(1L)).thenReturn(Optional.of(unit));
+        Party party = withId(new Party("Bloco A - 101", null), 1L);
+        when(partyRepository.findById(1L)).thenReturn(Optional.of(party));
         stubFund(1L);
         when(repository.save(any(Account.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         Account created = service.create(
-                AccountType.RECEIVABLE, BigDecimal.ZERO, LocalDate.now(), "Taxa", 1L, true, 1L, null, null, null);
+                AccountType.RECEIVABLE, BigDecimal.ZERO, LocalDate.now(), "Taxa", 1L, true, 1L, null, null);
 
         assertThat(created.getAmount()).isEqualByComparingTo(BigDecimal.ZERO);
     }
@@ -122,7 +118,6 @@ class AccountServiceTest {
                         1L,
                         true,
                         1L,
-                        null,
                         null,
                         null))
                 .isInstanceOf(InvalidAccountAmountException.class);
@@ -143,7 +138,6 @@ class AccountServiceTest {
                         true,
                         1L,
                         null,
-                        null,
                         null))
                 .isInstanceOf(NotFoundException.class);
 
@@ -151,81 +145,19 @@ class AccountServiceTest {
     }
 
     @Test
-    void rejectsReceivableWithoutUnit() {
+    void rejectsCreateWithoutParty() {
         stubFund(1L);
 
         assertThatThrownBy(() -> service.create(
-                        AccountType.RECEIVABLE,
-                        new BigDecimal("350.00"),
-                        LocalDate.now(),
-                        "Taxa",
-                        1L,
-                        true,
-                        null,
-                        null,
-                        null,
-                        null))
-                .isInstanceOf(BadRequestException.class);
-    }
-
-    @Test
-    void rejectsReceivableWithSupplier() {
-        stubFund(1L);
-
-        assertThatThrownBy(() -> service.create(
-                        AccountType.RECEIVABLE,
-                        new BigDecimal("350.00"),
-                        LocalDate.now(),
-                        "Taxa",
-                        1L,
-                        true,
-                        1L,
-                        1L,
-                        null,
-                        null))
-                .isInstanceOf(BadRequestException.class);
-    }
-
-    @Test
-    void rejectsPayableWithoutSupplier() {
-        stubFund(1L);
-
-        assertThatThrownBy(() -> service.create(
-                        AccountType.PAYABLE,
-                        new BigDecimal("400.00"),
-                        LocalDate.now(),
-                        "Limpeza",
-                        1L,
-                        false,
-                        null,
-                        null,
-                        null,
-                        null))
-                .isInstanceOf(BadRequestException.class);
-    }
-
-    @Test
-    void rejectsPayableWithUnit() {
-        stubFund(1L);
-
-        assertThatThrownBy(() -> service.create(
-                        AccountType.PAYABLE,
-                        new BigDecimal("400.00"),
-                        LocalDate.now(),
-                        "Limpeza",
-                        1L,
-                        false,
-                        1L,
-                        1L,
-                        null,
-                        null))
-                .isInstanceOf(BadRequestException.class);
+                        AccountType.RECEIVABLE, new BigDecimal("350.00"), LocalDate.now(), "Taxa", 1L, true, null,
+                        null, null))
+                .isInstanceOf(com.financas.shared.exceptions.BadRequestException.class);
     }
 
     @Test
     void updateRejectsTypeChange() {
-        Unit unit = withId(new Unit("Bloco A - 101"), 1L);
-        Account existing = withId(receivable(unit, new BigDecimal("350.00"), LocalDate.now()), 10L);
+        Party party = withId(new Party("Bloco A - 101", null), 1L);
+        Account existing = withId(receivable(party, new BigDecimal("350.00"), LocalDate.now()), 10L);
         when(repository.findById(10L)).thenReturn(Optional.of(existing));
 
         assertThatThrownBy(() -> service.update(
@@ -236,7 +168,6 @@ class AccountServiceTest {
                         "Taxa",
                         1L,
                         true,
-                        null,
                         1L,
                         null,
                         null))
@@ -244,39 +175,42 @@ class AccountServiceTest {
     }
 
     @Test
-    void createForAllUnitsAlwaysCreatesReceivableType() {
-        Unit unitA = withId(new Unit("Bloco A - 101"), 1L);
-        Unit unitB = withId(new Unit("Bloco A - 102"), 2L);
+    void createForGroupCreatesOneAccountPerMemberWithExplicitType() {
+        Party partyA = withId(new Party("Bloco A - 101", null), 1L);
+        Party partyB = withId(new Party("Bloco A - 102", null), 2L);
+        Group group = withId(new Group("Bloco A", Set.of(partyA, partyB)), 1L);
         stubFund(1L);
-        when(unitRepository.findAll()).thenReturn(List.of(unitA, unitB));
+        when(groupRepository.findById(1L)).thenReturn(Optional.of(group));
         when(repository.save(any(Account.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        List<Account> created = service.createForAllUnits(
-                new BigDecimal("350.00"), LocalDate.of(2026, 8, 10), "Taxa", 1L, true, null, null);
+        List<Account> created = service.createForGroup(
+                AccountType.RECEIVABLE, new BigDecimal("350.00"), LocalDate.of(2026, 8, 10), "Taxa", 1L, true, 1L,
+                null, null);
 
         assertThat(created).hasSize(2);
         assertThat(created).allSatisfy(account -> assertThat(account.getType()).isEqualTo(AccountType.RECEIVABLE));
-        assertThat(created).extracting(Account::getUnit).containsExactly(unitA, unitB);
+        assertThat(created).extracting(Account::getParty).containsExactlyInAnyOrder(partyA, partyB);
     }
 
     @Test
-    void rejectsCreateForAllUnitsWhenNoUnitsAreRegistered() {
+    void rejectsCreateForGroupWhenGroupIsEmpty() {
+        Group group = withId(new Group("Bloco A", Set.of()), 1L);
         stubFund(1L);
-        when(unitRepository.findAll()).thenReturn(List.of());
+        when(groupRepository.findById(1L)).thenReturn(Optional.of(group));
 
-        assertThatThrownBy(() -> service.createForAllUnits(
-                        new BigDecimal("350.00"), LocalDate.now(), "Taxa", 1L, true, null, null))
-                .isInstanceOf(NoUnitsRegisteredException.class);
+        assertThatThrownBy(() -> service.createForGroup(
+                        AccountType.RECEIVABLE, new BigDecimal("350.00"), LocalDate.now(), "Taxa", 1L, true, 1L, null,
+                        null))
+                .isInstanceOf(EmptyGroupException.class);
 
         verify(repository, never()).save(any());
     }
 
     @Test
     void findAllFiltersByTypeAlone() {
-        Unit unit = withId(new Unit("Bloco A - 101"), 1L);
-        Supplier supplier = withId(new Supplier("Fornecedor", null, null), 1L);
-        Account receivableAccount = withId(receivable(unit, new BigDecimal("350.00"), LocalDate.now()), 1L);
-        Account payableAccount = withId(payable(supplier, new BigDecimal("400.00"), LocalDate.now()), 2L);
+        Party party = withId(new Party("Bloco A - 101", null), 1L);
+        Account receivableAccount = withId(receivable(party, new BigDecimal("350.00"), LocalDate.now()), 1L);
+        Account payableAccount = withId(payable(party, new BigDecimal("400.00"), LocalDate.now()), 2L);
         when(repository.findAll()).thenReturn(List.of(receivableAccount, payableAccount));
 
         assertThat(service.findAll(null, null, AccountType.PAYABLE, null, null, null, null))
@@ -286,44 +220,48 @@ class AccountServiceTest {
     }
 
     @Test
-    void findAllCombinesTypeWithSupplierId() {
-        Supplier supplier = withId(new Supplier("Fornecedor", null, null), 1L);
-        when(supplierRepository.findById(1L)).thenReturn(Optional.of(supplier));
-        Account payableAccount = withId(payable(supplier, new BigDecimal("400.00"), LocalDate.now()), 2L);
-        when(repository.findBySupplierId(1L)).thenReturn(List.of(payableAccount));
+    void findAllCombinesTypeWithPartyId() {
+        Party party = withId(new Party("Bloco A - 101", null), 1L);
+        when(partyRepository.findById(1L)).thenReturn(Optional.of(party));
+        Account payableAccount = withId(payable(party, new BigDecimal("400.00"), LocalDate.now()), 2L);
+        when(repository.findByPartyId(1L)).thenReturn(List.of(payableAccount));
 
-        assertThat(service.findAll(null, 1L, AccountType.PAYABLE, null, null, null, null))
+        assertThat(service.findAll(1L, null, AccountType.PAYABLE, null, null, null, null))
                 .containsExactly(payableAccount);
     }
 
     @Test
-    void findAllCombinesTypeWithUnitIdPaidAndOverdue() {
-        Unit unit = withId(new Unit("Bloco A - 101"), 1L);
-        when(unitRepository.findById(1L)).thenReturn(Optional.of(unit));
+    void findAllCombinesFundIdWithOtherFilters() {
+        Fund fundA = withId(new Fund("Piscina", BigDecimal.ZERO), 1L);
+        Fund fundB = withId(new Fund("Jardim", BigDecimal.ZERO), 2L);
+        Party party = withId(new Party("Bloco A - 101", null), 1L);
+        Account inFundA = withId(receivableWithFund(party, fundA, new BigDecimal("350.00")), 1L);
+        Account inFundB = withId(receivableWithFund(party, fundB, new BigDecimal("100.00")), 2L);
+        when(repository.findAll()).thenReturn(List.of(inFundA, inFundB));
+
+        assertThat(service.findAll(null, 1L, null, null, null, null, null)).containsExactly(inFundA);
+    }
+
+    @Test
+    void findAllCombinesTypeWithPartyIdPaidAndOverdue() {
+        Party party = withId(new Party("Bloco A - 101", null), 1L);
+        when(partyRepository.findById(1L)).thenReturn(Optional.of(party));
         Account overdueReceivable =
-                withId(receivable(unit, new BigDecimal("350.00"), LocalDate.now().minusDays(1)), 1L);
+                withId(receivable(party, new BigDecimal("350.00"), LocalDate.now().minusDays(1)), 1L);
         Account paidReceivable = withId(
-                receivableWithPayment(unit, new BigDecimal("350.00"), LocalDate.now().minusDays(1), LocalDate.now()),
+                receivableWithPayment(party, new BigDecimal("350.00"), LocalDate.now().minusDays(1), LocalDate.now()),
                 2L);
-        when(repository.findByUnitId(1L)).thenReturn(List.of(overdueReceivable, paidReceivable));
+        when(repository.findByPartyId(1L)).thenReturn(List.of(overdueReceivable, paidReceivable));
 
         assertThat(service.findAll(1L, null, AccountType.RECEIVABLE, false, true, null, null))
                 .containsExactly(overdueReceivable);
     }
 
     @Test
-    void findAllThrowsWhenUnitIdFilterDoesNotExist() {
-        when(unitRepository.findById(999L)).thenReturn(Optional.empty());
+    void findAllThrowsWhenPartyIdFilterDoesNotExist() {
+        when(partyRepository.findById(999L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.findAll(999L, null, null, null, null, null, null))
-                .isInstanceOf(NotFoundException.class);
-    }
-
-    @Test
-    void findAllThrowsWhenSupplierIdFilterDoesNotExist() {
-        when(supplierRepository.findById(999L)).thenReturn(Optional.empty());
-
-        assertThatThrownBy(() -> service.findAll(null, 999L, null, null, null, null, null))
                 .isInstanceOf(NotFoundException.class);
     }
 
@@ -343,7 +281,6 @@ class AccountServiceTest {
                         true,
                         1L,
                         null,
-                        null,
                         null))
                 .isInstanceOf(NotFoundException.class);
         assertThatThrownBy(() -> service.delete(999L)).isInstanceOf(NotFoundException.class);
@@ -351,8 +288,8 @@ class AccountServiceTest {
 
     @Test
     void registerPaymentMarksPayableAccountAsPaid() {
-        Supplier supplier = withId(new Supplier("Fornecedor", null, null), 1L);
-        Account existing = withId(payable(supplier, new BigDecimal("400.00"), LocalDate.now()), 10L);
+        Party party = withId(new Party("Fornecedor", null), 1L);
+        Account existing = withId(payable(party, new BigDecimal("400.00"), LocalDate.now()), 10L);
         when(repository.findById(10L)).thenReturn(Optional.of(existing));
         when(repository.save(any(Account.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -364,43 +301,36 @@ class AccountServiceTest {
 
     @Test
     void overdueFilterIncludesPendingPayableAndExcludesPaidPayable() {
-        Supplier supplier = withId(new Supplier("Fornecedor", null, null), 1L);
+        Party party = withId(new Party("Fornecedor", null), 1L);
         LocalDate yesterday = LocalDate.now().minusDays(1);
-        Account overduePending = withId(payable(supplier, new BigDecimal("400.00"), yesterday), 1L);
+        Account overduePending = withId(payable(party, new BigDecimal("400.00"), yesterday), 1L);
         Account overduePaid =
-                withId(payableWithPayment(supplier, new BigDecimal("400.00"), yesterday, LocalDate.now()), 2L);
+                withId(payableWithPayment(party, new BigDecimal("400.00"), yesterday, LocalDate.now()), 2L);
         when(repository.findAll()).thenReturn(List.of(overduePending, overduePaid));
 
         assertThat(service.findAll(null, null, null, null, true, null, null)).containsExactly(overduePending);
     }
 
-    private Account receivable(Unit unit, BigDecimal amount, LocalDate dueDate) {
-        return new Account(AccountType.RECEIVABLE, amount, dueDate, "Taxa", testFund(), true, unit, null, null, null);
+    private Account receivable(Party party, BigDecimal amount, LocalDate dueDate) {
+        return new Account(AccountType.RECEIVABLE, amount, dueDate, "Taxa", testFund(), true, party, null, null);
     }
 
-    private Account receivableWithPayment(Unit unit, BigDecimal amount, LocalDate dueDate, LocalDate paymentDate) {
-        return new Account(
-                AccountType.RECEIVABLE, amount, dueDate, "Taxa", testFund(), true, unit, null, paymentDate, null);
+    private Account receivableWithFund(Party party, Fund fund, BigDecimal amount) {
+        return new Account(AccountType.RECEIVABLE, amount, LocalDate.now(), "Taxa", fund, true, party, null, null);
     }
 
-    private Account payable(Supplier supplier, BigDecimal amount, LocalDate dueDate) {
+    private Account receivableWithPayment(Party party, BigDecimal amount, LocalDate dueDate, LocalDate paymentDate) {
         return new Account(
-                AccountType.PAYABLE, amount, dueDate, "Limpeza", testFund(), false, null, supplier, null, null);
+                AccountType.RECEIVABLE, amount, dueDate, "Taxa", testFund(), true, party, paymentDate, null);
     }
 
-    private Account payableWithPayment(
-            Supplier supplier, BigDecimal amount, LocalDate dueDate, LocalDate paymentDate) {
+    private Account payable(Party party, BigDecimal amount, LocalDate dueDate) {
+        return new Account(AccountType.PAYABLE, amount, dueDate, "Limpeza", testFund(), false, party, null, null);
+    }
+
+    private Account payableWithPayment(Party party, BigDecimal amount, LocalDate dueDate, LocalDate paymentDate) {
         return new Account(
-                AccountType.PAYABLE,
-                amount,
-                dueDate,
-                "Limpeza",
-                testFund(),
-                false,
-                null,
-                supplier,
-                paymentDate,
-                null);
+                AccountType.PAYABLE, amount, dueDate, "Limpeza", testFund(), false, party, paymentDate, null);
     }
 
     private Fund testFund() {
@@ -413,14 +343,14 @@ class AccountServiceTest {
         return fund;
     }
 
-    private Unit withId(Unit unit, Long id) {
-        ReflectionTestUtils.setField(unit, "id", id);
-        return unit;
+    private Party withId(Party party, Long id) {
+        ReflectionTestUtils.setField(party, "id", id);
+        return party;
     }
 
-    private Supplier withId(Supplier supplier, Long id) {
-        ReflectionTestUtils.setField(supplier, "id", id);
-        return supplier;
+    private Group withId(Group group, Long id) {
+        ReflectionTestUtils.setField(group, "id", id);
+        return group;
     }
 
     private Account withId(Account account, Long id) {

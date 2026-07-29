@@ -1,0 +1,62 @@
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h3 mb-0">Partes</h1>
+  <a class="btn btn-primary" routerLink="/parties/new">Nova parte</a>
+</div>
+
+@if (errorMessage()) {
+  <div class="alert alert-danger">{{ errorMessage() }}</div>
+}
+
+<app-bulk-actions-bar
+  [selectedCount]="selection.selectedCount()"
+  entityLabelPlural="partes"
+  (remove)="removeSelected()"
+/>
+
+@if (parties().length) {
+  <table class="table table-striped">
+    <thead>
+      <tr>
+        <th>
+          <input
+            type="checkbox"
+            [checked]="selection.isAllSelected(parties())"
+            (change)="selection.toggleAll(parties())"
+          />
+        </th>
+        <th>Nome</th>
+        <th>Chave PIX</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (party of parties(); track party.id) {
+        <tr>
+          <td>
+            <input
+              type="checkbox"
+              [checked]="selection.isSelected(party)"
+              (change)="selection.toggle(party)"
+            />
+          </td>
+          <td>{{ party.name }}</td>
+          <td>{{ party.pixKey || '-' }}</td>
+          <td class="text-end">
+            <a class="btn btn-sm btn-outline-secondary" [routerLink]="['/parties', party.id, 'edit']"
+              >Editar</a
+            >
+            <button
+              type="button"
+              class="btn btn-sm btn-outline-danger ms-1"
+              (click)="remove(party)"
+            >
+              Remover
+            </button>
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+} @else {
+  <p class="text-muted">Nenhuma parte cadastrada.</p>
+}

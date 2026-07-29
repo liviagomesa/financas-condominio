@@ -2,35 +2,36 @@ package com.financas.account.domain;
 
 import com.financas.fund.domain.Fund;
 import com.financas.fund.domain.FundRepository;
+import com.financas.group.domain.Group;
+import com.financas.group.domain.GroupRepository;
+import com.financas.party.domain.Party;
+import com.financas.party.domain.PartyRepository;
 import com.financas.shared.exceptions.BadRequestException;
 import com.financas.shared.exceptions.NotFoundException;
-import com.financas.supplier.domain.Supplier;
-import com.financas.supplier.domain.SupplierRepository;
-import com.financas.unit.domain.Unit;
-import com.financas.unit.domain.UnitRepository;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.time.format.DateTimeParseException;
 import java.util.List;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class AccountService {
 
     private final AccountRepository repository;
-    private final UnitRepository unitRepository;
-    private final SupplierRepository supplierRepository;
+    private final PartyRepository partyRepository;
+    private final GroupRepository groupRepository;
     private final FundRepository fundRepository;
 
     public AccountService(
             AccountRepository repository,
-            UnitRepository unitRepository,
-            SupplierRepository supplierRepository,
+            PartyRepository partyRepository,
+            GroupRepository groupRepository,
             FundRepository fundRepository) {
         this.repository = repository;
-        this.unitRepository = unitRepository;
-        this.supplierRepository = supplierRepository;
+        this.partyRepository = partyRepository;
+        this.groupRepository = groupRepository;
         this.fundRepository = fundRepository;
     }
 
@@ -41,44 +42,36 @@ public class AccountService {
             String description,
             Long fundId,
             boolean recurring,
-            Long unitId,
-            Long supplierId,
+            Long partyId,
             LocalDate paymentDate,
             String observations) {
         validateNonNegativeAmount(amount);
         Fund fund = findFundOrThrow(fundId);
-        Unit unit = resolveUnit(type, unitId, supplierId);
-        Supplier supplier = resolveSupplier(type, unitId, supplierId);
-        return repository.save(new Account(
-                type, amount, dueDate, description, fund, recurring, unit, supplier, paymentDate, observations));
+        Party party = resolveParty(partyId);
+        return repository.save(
+                new Account(type, amount, dueDate, description, fund, recurring, party, paymentDate, observations));
     }
 
-    public List<Account> createForAllUnits(
+    @Transactional
+    public List<Account> createForGroup(
+            AccountType type,
             BigDecimal amount,
             LocalDate dueDate,
             String description,
             Long fundId,
             boolean recurring,
+            Long groupId,
             LocalDate paymentDate,
             String observations) {
         validateNonNegativeAmount(amount);
         Fund fund = findFundOrThrow(fundId);
-        List<Unit> units = unitRepository.findAll();
-        if (units.isEmpty()) {
-            throw new NoUnitsRegisteredException();
+        Group group = findGroupOrThrow(groupId);
+        if (group.getMembers().isEmpty()) {
+            throw new EmptyGroupException();
         }
-        return units.stream()
-                .map(unit -> repository.save(new Account(
-                        AccountType.RECEIVABLE,
-                        amount,
-                        dueDate,
-                        description,
-                        fund,
-                        recurring,
-                        unit,
-                        null,
-                        paymentDate,
-                        observations)))
+        return group.getMembers().stream()
+                .map(party -> repository.save(new Account(
+                        type, amount, dueDate, description, fund, recurring, party, paymentDate, observations)))
                 .toList();
     }
 
@@ -87,24 +80,25 @@ public class AccountService {
      * necessidade de índices ou consultas otimizadas dedicadas.
      */
     public List<Account> findAll(
-            Long unitId,
-            Long supplierId,
+            Long partyId,
+            Long fundId,
             AccountType type,
             Boolean paid,
             Boolean overdue,
             String dueYearMonth,
             String paymentYearMonth) {
         List<Account> accounts;
-        if (unitId != null) {
-            findUnitOrThrow(unitId);
-            accounts = repository.findByUnitId(unitId);
-        } else if (supplierId != null) {
-            findSupplierOrThrow(supplierId);
-            accounts = repository.findBySupplierId(supplierId);
+        if (partyId != null) {
+            findPartyOrThrow(partyId);
+            accounts = repository.findByPartyId(partyId);
         } else {
             accounts = repository.findAll();
         }
 
+        if (fundId != null) {
+            accounts =
+                    accounts.stream().filter(a -> a.getFund().getId().equals(fundId)).toList();
+        }
         if (type != null) {
             accounts = accounts.stream().filter(a -> a.getType() == type).toList();
         }
@@ -144,8 +138,7 @@ public class AccountService {
             String description,
             Long fundId,
             boolean recurring,
-            Long unitId,
-            Long supplierId,
+            Long partyId,
             LocalDate paymentDate,
             String observations) {
         Account account = findById(id);
@@ -154,15 +147,13 @@ public class AccountService {
         }
         validateNonNegativeAmount(amount);
         Fund fund = findFundOrThrow(fundId);
-        Unit unit = resolveUnit(type, unitId, supplierId);
-        Supplier supplier = resolveSupplier(type, unitId, supplierId);
+        Party party = resolveParty(partyId);
         account.setAmount(amount);
         account.setDueDate(dueDate);
         account.setDescription(description);
         account.setFund(fund);
         account.setRecurring(recurring);
-        account.setUnit(unit);
-        account.setSupplier(supplier);
+        account.setParty(party);
         account.setPaymentDate(paymentDate);
         account.setObservations(observations);
         return repository.save(account);
@@ -187,45 +178,22 @@ public class AccountService {
         }
     }
 
-    private Unit resolveUnit(AccountType type, Long unitId, Long supplierId) {
-        if (type == AccountType.RECEIVABLE) {
-            if (unitId == null) {
-                throw new BadRequestException("A unidade é obrigatória para uma conta a receber.");
-            }
-            if (supplierId != null) {
-                throw new BadRequestException(
-                        "Uma conta a receber não pode informar um fornecedor.");
-            }
-            return findUnitOrThrow(unitId);
+    private Party resolveParty(Long partyId) {
+        if (partyId == null) {
+            throw new BadRequestException("A parte é obrigatória.");
         }
-        if (unitId != null) {
-            throw new BadRequestException("Uma conta a pagar não pode informar uma unidade.");
-        }
-        return null;
+        return findPartyOrThrow(partyId);
     }
 
-    private Supplier resolveSupplier(AccountType type, Long unitId, Long supplierId) {
-        if (type == AccountType.PAYABLE) {
-            if (supplierId == null) {
-                throw new BadRequestException("O fornecedor é obrigatório para uma conta a pagar.");
-            }
-            return findSupplierOrThrow(supplierId);
-        }
-        return null;
-    }
-
-    private Unit findUnitOrThrow(Long unitId) {
-        return unitRepository
-                .findById(unitId)
+    private Party findPartyOrThrow(Long partyId) {
+        return partyRepository
+                .findById(partyId)
                 .orElseThrow(() -> new NotFoundException(
-                        "Unidade não encontrada. Cadastre uma unidade antes de lançar uma conta a receber."));
+                        "Parte não encontrada. Cadastre uma parte antes de lançar uma conta."));
     }
 
-    private Supplier findSupplierOrThrow(Long supplierId) {
-        return supplierRepository
-                .findById(supplierId)
-                .orElseThrow(() -> new NotFoundException(
-                        "Fornecedor não encontrado. Cadastre um fornecedor antes de lançar uma conta a pagar."));
+    private Group findGroupOrThrow(Long groupId) {
+        return groupRepository.findById(groupId).orElseThrow(() -> new NotFoundException("Grupo não encontrado."));
     }
 
     private Fund findFundOrThrow(Long fundId) {

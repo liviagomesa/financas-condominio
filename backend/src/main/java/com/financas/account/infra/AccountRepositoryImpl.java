@@ -31,13 +31,8 @@ public class AccountRepositoryImpl implements AccountRepository {
     }
 
     @Override
-    public List<Account> findByUnitId(Long unitId) {
-        return jpaRepository.findByUnitId(unitId);
-    }
-
-    @Override
-    public List<Account> findBySupplierId(Long supplierId) {
-        return jpaRepository.findBySupplierId(supplierId);
+    public List<Account> findByPartyId(Long partyId) {
+        return jpaRepository.findByPartyId(partyId);
     }
 
     @Override
@@ -56,13 +51,8 @@ public class AccountRepositoryImpl implements AccountRepository {
     }
 
     @Override
-    public boolean existsByUnitId(Long unitId) {
-        return jpaRepository.existsByUnitId(unitId);
-    }
-
-    @Override
-    public boolean existsBySupplierId(Long supplierId) {
-        return jpaRepository.existsBySupplierId(supplierId);
+    public boolean existsByPartyId(Long partyId) {
+        return jpaRepository.existsByPartyId(partyId);
     }
 
     @Override

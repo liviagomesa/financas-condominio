@@ -49,7 +49,7 @@ Ao final da tabela de Contas, preciso ver o valor líquido (entradas menos saíd
 **Acceptance Scenarios**:
 
 1. **Given** a tela de Contas com contas de entrada e de saída cadastradas, **When** a tela é carregada sem filtros, **Then** a linha de total ao final da tabela exibe o valor líquido: soma das contas de ENTRADA menos soma das contas de SAÍDA.
-2. **Given** a tela de Contas exibindo um total, **When** a usuária aplica um filtro (tipo, Parte, fundo, status, mês, etc.), **Then** o total é recalculado imediatamente para refletir somente as contas que passam no filtro.
+2. **Given** a tela de Contas exibindo um total, **When** a usuária aplica um filtro (Parte, fundo, status, mês, etc.), **Then** o total é recalculado imediatamente para refletir somente as contas que passam no filtro.
 3. **Given** a tela de Contas exibindo um total, **When** a usuária cria, edita o valor ou remove uma conta (individualmente ou em lote), **Then** o total é atualizado automaticamente para refletir a nova lista, sem exigir recarregamento manual da página.
 4. **Given** um filtro aplicado que não retorna nenhuma conta, **When** a tabela é exibida vazia, **Then** o total exibido é zero.
 5. **Given** algumas linhas marcadas via checkbox de seleção (usado para remoção em lote), **When** a usuária observa o total ao final da tabela, **Then** o total continua refletindo todas as linhas visíveis/filtradas, independentemente de quais estão selecionadas via checkbox.
@@ -59,7 +59,7 @@ Ao final da tabela de Contas, preciso ver o valor líquido (entradas menos saíd
 
 ### User Story 3 - Filtrar contas por Fundo (Priority: P2)
 
-Na tela de Contas, preciso filtrar a listagem por Fundo, da mesma forma que já filtro por tipo, Parte, status e período, para conseguir ver rapidamente todos os lançamentos de um fundo específico.
+Na tela de Contas, preciso filtrar a listagem por Fundo, da mesma forma que já filtro por Parte, status e período, para conseguir ver rapidamente todos os lançamentos de um fundo específico.
 
 **Why this priority**: Filtro adicional autocontido, de baixo risco, que aumenta o valor da tela sem depender das demais mudanças estruturais.
 
@@ -68,7 +68,7 @@ Na tela de Contas, preciso filtrar a listagem por Fundo, da mesma forma que já 
 **Acceptance Scenarios**:
 
 1. **Given** contas lançadas em mais de um fundo, **When** a usuária seleciona um fundo específico no novo filtro de Fundo, **Then** a tabela exibe somente as contas daquele fundo.
-2. **Given** o filtro de Fundo combinado com outro filtro já existente (ex.: tipo ou status), **When** ambos estão preenchidos, **Then** a tabela exibe somente as contas que atendem aos dois filtros simultaneamente (E lógico).
+2. **Given** o filtro de Fundo combinado com outro filtro já existente (ex.: status), **When** ambos estão preenchidos, **Then** a tabela exibe somente as contas que atendem aos dois filtros simultaneamente (E lógico).
 3. **Given** o filtro de Fundo preenchido, **When** a usuária o limpa (volta para "Todos"), **Then** a tabela volta a exibir contas de todos os fundos, respeitando os demais filtros ativos.
 
 ---
@@ -127,7 +127,7 @@ Preciso poder reunir Partes em Grupos, e, ao lançar uma conta, escolher lançá
 - **FR-006**: O sistema MUST impedir a exclusão de uma Parte que tenha qualquer conta vinculada, independentemente do tipo dessa conta (SAÍDA ou ENTRADA).
 - **FR-007**: A tela de Contas MUST exibir, ao final da tabela, uma linha de total com o valor líquido das contas atualmente exibidas (filtradas): soma das contas do tipo ENTRADA menos a soma das contas do tipo SAÍDA — podendo ser negativo — independentemente de quais linhas estejam marcadas pelo checkbox de seleção em lote.
 - **FR-008**: O total exibido ao final da tabela de Contas MUST se recalcular automaticamente sempre que a lista de contas exibida mudar — por aplicação/remoção de filtro, ou por criação, edição ou remoção de conta — sem exigir recarregamento manual da página.
-- **FR-009**: A tela de Contas MUST oferecer um filtro por Fundo, combinável por E lógico com os demais filtros já existentes (tipo, Parte, status, período, vencidos).
+- **FR-009**: A tela de Contas MUST oferecer um filtro por Fundo, combinável por E lógico com os demais filtros já existentes na tela (Parte, status, período, vencidos) — o filtro por tipo (SAÍDA/ENTRADA) foi removido da UI após revisão da usuária (a tabela ficava larga demais), mas a API `GET /api/accounts` continua aceitando o parâmetro `type` para uso futuro/integração.
 - **FR-010**: O filtro hoje chamado "Unidade" na tela de Contas MUST ser renomeado para "Parte" e passar a listar todas as Partes cadastradas, permitindo filtrar contas de qualquer tipo por qualquer Parte.
 - **FR-011**: A coluna hoje chamada "Contraparte" na tabela de Contas MUST ser renomeada para "Parte".
 - **FR-012**: O sistema MUST permitir criar, listar, editar e excluir Grupos, cada um identificado por um nome obrigatório e único (mesma regra de unicidade normalizada — sem diferenciar maiúsculas/minúsculas nem espaços nas extremidades — já aplicada à Parte em FR-004).

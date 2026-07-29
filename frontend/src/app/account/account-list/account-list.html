@@ -5,25 +5,31 @@
 
 <div class="row mb-3">
   <div class="col-md-2">
-    <label for="typeFilter" class="form-label">Tipo</label>
-    <select id="typeFilter" class="form-select" [(ngModel)]="typeFilter" (ngModelChange)="onFilterChange()">
-      <option value="">Todas</option>
-      <option value="RECEIVABLE">Entrada</option>
-      <option value="PAYABLE">Saída</option>
+    <label for="partyFilter" class="form-label">Parte</label>
+    <select
+      id="partyFilter"
+      class="form-select"
+      [(ngModel)]="selectedPartyId"
+      (ngModelChange)="onFilterChange()"
+    >
+      <option [ngValue]="null">Todas as partes</option>
+      @for (party of parties(); track party.id) {
+        <option [ngValue]="party.id">{{ party.name }}</option>
+      }
     </select>
   </div>
 
   <div class="col-md-2">
-    <label for="unitFilter" class="form-label">Unidade</label>
+    <label for="fundFilter" class="form-label">Fundo</label>
     <select
-      id="unitFilter"
+      id="fundFilter"
       class="form-select"
-      [(ngModel)]="selectedUnitId"
+      [(ngModel)]="selectedFundId"
       (ngModelChange)="onFilterChange()"
     >
-      <option [ngValue]="null">Todas as unidades</option>
-      @for (unit of units(); track unit.id) {
-        <option [ngValue]="unit.id">{{ unit.identifier }}</option>
+      <option [ngValue]="null">Todos os fundos</option>
+      @for (fund of funds(); track fund.id) {
+        <option [ngValue]="fund.id">{{ fund.name }}</option>
       }
     </select>
   </div>
@@ -99,9 +105,8 @@
         <th>Vencimento</th>
         <th>Descrição</th>
         <th>Fundo</th>
-        <th>Tipo de lançamento</th>
         <th>Status</th>
-        <th>Contraparte</th>
+        <th>Parte</th>
         <th>Obs.</th>
         <th></th>
       </tr>
@@ -125,7 +130,6 @@
           <td>{{ account.dueDate | date: 'dd/MM/yyyy' }}</td>
           <td>{{ account.description }}</td>
           <td>{{ account.fund.name }}</td>
-          <td>{{ account.recurring ? 'Recorrente' : 'Extra' }}</td>
           <td>
             @if (payingId() === account.id) {
               <div class="d-flex align-items-center gap-1">
@@ -139,29 +143,73 @@
               </div>
             } @else if (account.paymentDate) {
               <span class="badge text-bg-success">Pago em {{ account.paymentDate | date: 'dd/MM/yyyy' }}</span>
-              <button type="button" class="btn btn-sm btn-link" (click)="startPayment(account)">Alterar</button>
+              <button
+                type="button"
+                class="btn btn-sm btn-link p-0 ms-1"
+                title="Alterar pagamento"
+                aria-label="Alterar pagamento"
+                (click)="startPayment(account)"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                  <path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168l10-10zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207 11.207 2.5zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293l6.5-6.5zm-9.761 5.175-.106.106-1.528 3.821 3.821-1.528.106-.106A.5.5 0 0 1 5 12.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.468-.325z" />
+                </svg>
+              </button>
             } @else {
               <span class="badge text-bg-warning">Pendente</span>
-              <button type="button" class="btn btn-sm btn-link" (click)="startPayment(account)">
-                Registrar pagamento
+              <button
+                type="button"
+                class="btn btn-sm btn-link p-0 ms-1"
+                title="Registrar pagamento"
+                aria-label="Registrar pagamento"
+                (click)="startPayment(account)"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                  <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.749.749 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z" />
+                </svg>
               </button>
             }
           </td>
-          <td>{{ counterpartLabel(account) }}</td>
+          <td>{{ account.party.name }}</td>
           <td>
             @if (account.observations) {
               <span class="badge text-bg-secondary" [title]="account.observations">Obs.</span>
             }
           </td>
           <td class="text-end">
-            <a class="btn btn-sm btn-outline-secondary" [routerLink]="['/accounts', account.id, 'edit']">Editar</a>
-            <button type="button" class="btn btn-sm btn-outline-danger ms-1" (click)="remove(account)">
-              Remover
+            <a
+              class="btn btn-sm btn-outline-secondary"
+              [routerLink]="['/accounts', account.id, 'edit']"
+              title="Editar"
+              aria-label="Editar"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                <path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168l10-10zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207 11.207 2.5zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293l6.5-6.5zm-9.761 5.175-.106.106-1.528 3.821 3.821-1.528.106-.106A.5.5 0 0 1 5 12.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.468-.325z" />
+              </svg>
+            </a>
+            <button
+              type="button"
+              class="btn btn-sm btn-outline-danger ms-1"
+              title="Remover"
+              aria-label="Remover"
+              (click)="remove(account)"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5Zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5Zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6Z" />
+                <path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1ZM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118ZM2.5 3V2h11v1h-11Z" />
+              </svg>
             </button>
           </td>
         </tr>
       }
     </tbody>
+    <tfoot>
+      <tr>
+        <th></th>
+        <th>Total líquido</th>
+        <th>{{ netTotal() | number: '1.2-2' }}</th>
+        <th colspan="7"></th>
+      </tr>
+    </tfoot>
   </table>
 } @else {
   <p class="text-muted">Nenhuma conta cadastrada.</p>

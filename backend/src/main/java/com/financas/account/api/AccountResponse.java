@@ -3,8 +3,7 @@ package com.financas.account.api;
 import com.financas.account.domain.Account;
 import com.financas.account.domain.AccountType;
 import com.financas.fund.api.FundResponse;
-import com.financas.supplier.api.SupplierResponse;
-import com.financas.unit.api.UnitResponse;
+import com.financas.party.api.PartyResponse;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
@@ -18,8 +17,7 @@ public record AccountResponse(
         boolean recurring,
         LocalDate paymentDate,
         String observations,
-        UnitResponse unit,
-        SupplierResponse supplier) {
+        PartyResponse party) {
 
     public static AccountResponse from(Account account, FundResponse fundResponse) {
         return new AccountResponse(
@@ -32,7 +30,6 @@ public record AccountResponse(
                 account.isRecurring(),
                 account.getPaymentDate(),
                 account.getObservations(),
-                account.getUnit() != null ? UnitResponse.from(account.getUnit()) : null,
-                account.getSupplier() != null ? SupplierResponse.from(account.getSupplier()) : null);
+                PartyResponse.from(account.getParty()));
     }
 }

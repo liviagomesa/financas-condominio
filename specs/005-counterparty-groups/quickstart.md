@@ -72,8 +72,8 @@ Os cenários abaixo espelham os Acceptance Scenarios do [spec.md](./spec.md).
 6. **Ver o total líquido na tela de Contas** (US2, FR-007/FR-008): acesse `/accounts` sem
    filtros. Confirme que a linha de total ao final da tabela exibe `Σ ENTRADA − Σ SAÍDA` das
    contas listadas (com os valores dos passos 3–4, o total deve refletir a diferença entre as
-   duas). Aplique um filtro (ex.: por tipo) e confirme que o total muda de acordo. Lance uma nova
-   conta e confirme que o total é atualizado sem recarregar a página manualmente.
+   duas). Aplique um filtro (ex.: por status) e confirme que o total muda de acordo. Lance uma
+   nova conta e confirme que o total é atualizado sem recarregar a página manualmente.
 7. **Total negativo, sem bloqueio** (US2, cenário 6): lance mais contas de SAÍDA do que de
    ENTRADA para a mesma seleção de filtros, de forma que o total fique negativo. Confirme que o
    sistema exibe o valor negativo normalmente, sem nenhum aviso ou bloqueio.

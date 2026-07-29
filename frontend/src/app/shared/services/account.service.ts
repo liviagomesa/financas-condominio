@@ -18,8 +18,8 @@ export class AccountService {
 
   findAll(filters?: AccountFilters): Observable<Account[]> {
     const params: Record<string, string | number | boolean> = {};
-    if (filters?.unitId != null) params['unitId'] = filters.unitId;
-    if (filters?.supplierId != null) params['supplierId'] = filters.supplierId;
+    if (filters?.partyId != null) params['partyId'] = filters.partyId;
+    if (filters?.fundId != null) params['fundId'] = filters.fundId;
     if (filters?.type != null) params['type'] = filters.type;
     if (filters?.paid != null) params['paid'] = filters.paid;
     if (filters?.overdue != null) params['overdue'] = filters.overdue;

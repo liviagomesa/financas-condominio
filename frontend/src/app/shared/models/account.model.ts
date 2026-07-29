@@ -1,6 +1,5 @@
 import { Fund } from './fund.model';
-import { Supplier } from './supplier.model';
-import { Unit } from './unit.model';
+import { Party } from './party.model';
 
 export type AccountType = 'RECEIVABLE' | 'PAYABLE';
 
@@ -19,8 +18,7 @@ export interface Account {
   recurring: boolean;
   paymentDate: string | null;
   observations: string | null;
-  unit: Unit | null;
-  supplier: Supplier | null;
+  party: Party;
 }
 
 export interface AccountRequest {
@@ -30,18 +28,19 @@ export interface AccountRequest {
   description: string;
   fundId: number;
   recurring: boolean;
-  unitId: number | null;
-  supplierId: number | null;
+  partyId: number;
   paymentDate: string | null;
   observations: string | null;
 }
 
 export interface AccountBulkRequest {
+  type: AccountType;
   amount: number;
   dueDate: string;
   description: string;
   fundId: number;
   recurring: boolean;
+  groupId: number;
   paymentDate: string | null;
   observations: string | null;
 }
@@ -51,8 +50,8 @@ export interface AccountPaymentRequest {
 }
 
 export interface AccountFilters {
-  unitId?: number;
-  supplierId?: number;
+  partyId?: number;
+  fundId?: number;
   type?: AccountType;
   paid?: boolean;
   overdue?: boolean;

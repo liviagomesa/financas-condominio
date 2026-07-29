@@ -11,9 +11,7 @@ public interface AccountRepository {
 
     List<Account> findAll();
 
-    List<Account> findByUnitId(Long unitId);
-
-    List<Account> findBySupplierId(Long supplierId);
+    List<Account> findByPartyId(Long partyId);
 
     List<Account> findByFundId(Long fundId);
 
@@ -21,9 +19,7 @@ public interface AccountRepository {
 
     boolean existsById(Long id);
 
-    boolean existsByUnitId(Long unitId);
-
-    boolean existsBySupplierId(Long supplierId);
+    boolean existsByPartyId(Long partyId);
 
     boolean existsByFundId(Long fundId);
 }

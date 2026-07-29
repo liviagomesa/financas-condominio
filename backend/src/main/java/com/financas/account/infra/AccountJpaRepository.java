@@ -6,15 +6,11 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface AccountJpaRepository extends JpaRepository<Account, Long> {
 
-    List<Account> findByUnitId(Long unitId);
-
-    List<Account> findBySupplierId(Long supplierId);
+    List<Account> findByPartyId(Long partyId);
 
     List<Account> findByFundId(Long fundId);
 
-    boolean existsByUnitId(Long unitId);
-
-    boolean existsBySupplierId(Long supplierId);
+    boolean existsByPartyId(Long partyId);
 
     boolean existsByFundId(Long fundId);
 }

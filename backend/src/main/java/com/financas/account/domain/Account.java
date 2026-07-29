@@ -1,8 +1,7 @@
 package com.financas.account.domain;
 
 import com.financas.fund.domain.Fund;
-import com.financas.supplier.domain.Supplier;
-import com.financas.unit.domain.Unit;
+import com.financas.party.domain.Party;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -44,13 +43,9 @@ public class Account {
     @Column(nullable = false)
     private boolean recurring;
 
-    @ManyToOne(optional = true)
-    @JoinColumn(name = "unit_id", nullable = true)
-    private Unit unit;
-
-    @ManyToOne(optional = true)
-    @JoinColumn(name = "supplier_id", nullable = true)
-    private Supplier supplier;
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "party_id", nullable = false)
+    private Party party;
 
     @Column(name = "payment_date")
     private LocalDate paymentDate;
@@ -68,8 +63,7 @@ public class Account {
             String description,
             Fund fund,
             boolean recurring,
-            Unit unit,
-            Supplier supplier,
+            Party party,
             LocalDate paymentDate,
             String observations) {
         this.type = type;
@@ -78,8 +72,7 @@ public class Account {
         this.description = description;
         this.fund = fund;
         this.recurring = recurring;
-        this.unit = unit;
-        this.supplier = supplier;
+        this.party = party;
         this.paymentDate = paymentDate;
         this.observations = observations;
     }
@@ -132,20 +125,12 @@ public class Account {
         this.recurring = recurring;
     }
 
-    public Unit getUnit() {
-        return unit;
+    public Party getParty() {
+        return party;
     }
 
-    public void setUnit(Unit unit) {
-        this.unit = unit;
-    }
-
-    public Supplier getSupplier() {
-        return supplier;
-    }
-
-    public void setSupplier(Supplier supplier) {
-        this.supplier = supplier;
+    public void setParty(Party party) {
+        this.party = party;
     }
 
     public LocalDate getPaymentDate() {

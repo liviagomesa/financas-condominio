@@ -16,8 +16,7 @@ public record AccountRequest(
         @NotBlank(message = "A descrição da conta é obrigatória.") String description,
         @NotNull(message = "O fundo é obrigatório.") Long fundId,
         @NotNull(message = "O tipo do lançamento é obrigatório.") Boolean recurring,
-        Long unitId,
-        Long supplierId,
+        @NotNull(message = "A parte é obrigatória.") Long partyId,
         LocalDate paymentDate,
         String observations) {
 }
