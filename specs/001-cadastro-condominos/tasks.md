@@ -186,145 +186,66 @@ description: "Task list template for feature implementation"
 
 ## Phase 10: Retrofit — Testes automatizados de regras de negócio
 
-**Purpose**: adicionado numa revisão pós-implementação (constitution emendada para exigir
-cobertura de teste automatizado para regras de negócio — ver `constitution.md` Princípio
-III). Sem tarefas de spec/plan novas: não há mudança de requisito funcional, só cobertura
-de teste para o que já foi implementado.
+**Purpose**: adicionado numa revisão pós-implementação (constitution emendada para exigir cobertura de teste automatizado para regras de negócio — ver `constitution.md` Princípio III). Sem tarefas de spec/plan novas: não há mudança de requisito funcional, só cobertura de teste para o que já foi implementado.
 
-- [X] T053 [P] Create testes unitários de `UnitService` (Mockito: criação com identificador
-  duplicado — incluindo variação de caixa/espaços —, edição mantendo o próprio identificador
-  vs. colidindo com outra unidade, `findById` inexistente, remoção bloqueada com condômino
-  vinculado e permitida sem vínculo) em
-  `backend/src/test/java/com/financas/unit/domain/UnitServiceTest.java`
-- [X] T054 [P] Create testes unitários de `ResidentService` (Mockito: criação com unidade
-  inexistente, `findById`/remoção de condômino inexistente, edição referenciando unidade
-  inexistente) em `backend/src/test/java/com/financas/resident/domain/ResidentServiceTest.java`
-- [X] T055 [P] Create testes parametrizados de `BrazilianPhoneValidator` (formatos válidos
-  com/sem formatação, DDD + 8 ou 9 dígitos; formatos inválidos; nulo/vazio aceito por ser
-  campo opcional) em
-  `backend/src/test/java/com/financas/resident/domain/BrazilianPhoneValidatorTest.java`
+- [X] T053 [P] Create testes unitários de `UnitService` (Mockito: criação com identificador duplicado — incluindo variação de caixa/espaços —, edição mantendo o próprio identificador vs. colidindo com outra unidade, `findById` inexistente, remoção bloqueada com condômino vinculado e permitida sem vínculo) em `backend/src/test/java/com/financas/unit/domain/UnitServiceTest.java`
+- [X] T054 [P] Create testes unitários de `ResidentService` (Mockito: criação com unidade inexistente, `findById`/remoção de condômino inexistente, edição referenciando unidade inexistente) em `backend/src/test/java/com/financas/resident/domain/ResidentServiceTest.java`
+- [X] T055 [P] Create testes parametrizados de `BrazilianPhoneValidator` (formatos válidos com/sem formatação, DDD + 8 ou 9 dígitos; formatos inválidos; nulo/vazio aceito por ser campo opcional) em `backend/src/test/java/com/financas/resident/domain/BrazilianPhoneValidatorTest.java`
 
-**Checkpoint**: `mvn test` — 24 testes, 0 falhas (1 de contexto Spring + 10 do validador de
-telefone + 6 do `ResidentService` + 7 do `UnitService`).
+**Checkpoint**: `mvn test` — 24 testes, 0 falhas (1 de contexto Spring + 10 do validador de telefone + 6 do `ResidentService` + 7 do `UnitService`).
 
 ---
 
 ## Phase 11: Extensão — Bloqueio de remoção de unidade com lançamentos vinculados (feature 002)
 
-**Purpose**: adicionado durante o planejamento da feature `002-receivable-charges`, que
-estendeu o FR-006 desta feature (ver spec.md/plan.md, seção "Atualização (feature 002)").
-Depende da entidade `Receivable` da feature 002 já existir (`ReceivableRepository`).
+**Purpose**: adicionado durante o planejamento da feature `002-receivable-charges`, que estendeu o FR-006 desta feature (ver spec.md/plan.md, seção "Atualização (feature 002)"). Depende da entidade `Receivable` da feature 002 já existir (`ReceivableRepository`).
 
-- [X] T056 [US6] Create `UnitHasReceivablesException` em
-  `backend/src/main/java/com/financas/unit/domain/` (regra de negócio da própria entidade —
-  mesmo padrão de `UnitHasResidentsException`) e mapear para 409 com mensagem em português no
-  `GlobalExceptionHandler` (reaproveita o handler genérico de `ConflictException`, sem código
-  extra)
-- [X] T057 [US6] Update `UnitService.delete()` para também verificar
-  `ReceivableRepository.existsByUnitId(id)`, lançando `UnitHasReceivablesException` quando
-  houver lançamento vinculado, em
-  `backend/src/main/java/com/financas/unit/domain/UnitService.java` (depends on T048 desta
-  feature, e na entidade `Receivable` da feature 002)
-- [X] T058 [P] [US6] Update tratamento de erro 409 em `unit-list` (frontend) para exibir a
-  mensagem correta também quando o vínculo for por lançamento de conta a receber (a mensagem
-  já vem pronta do backend — sem lógica nova no frontend além de exibir o texto retornado),
-  em `frontend/src/app/unit/unit-list/` (depends on T049, T057) — confirmado sem alteração de
-  código necessária: `unit-list.ts` já exibia `err.message` genericamente antes desta feature
-- [X] T059 [P] Create testes unitários da nova regra em `UnitServiceTest` (Mockito: remoção
-  permitida quando não há condômino nem lançamento vinculado, remoção bloqueada quando há
-  lançamento vinculado) em
-  `backend/src/test/java/com/financas/unit/domain/UnitServiceTest.java` — tarefa adicionada
-  durante a implementação da feature 002 para fechar a exigência de cobertura de teste de
-  regra de negócio (Princípio III), que não tinha sido incluída nesta Phase 11 originalmente
-  (depends on T057)
+- [X] T056 [US6] Create `UnitHasReceivablesException` em `backend/src/main/java/com/financas/unit/domain/` (regra de negócio da própria entidade — mesmo padrão de `UnitHasResidentsException`) e mapear para 409 com mensagem em português no `GlobalExceptionHandler` (reaproveita o handler genérico de `ConflictException`, sem código extra)
+- [X] T057 [US6] Update `UnitService.delete()` para também verificar `ReceivableRepository.existsByUnitId(id)`, lançando `UnitHasReceivablesException` quando houver lançamento vinculado, em `backend/src/main/java/com/financas/unit/domain/UnitService.java` (depends on T048 desta feature, e na entidade `Receivable` da feature 002)
+- [X] T058 [P] [US6] Update tratamento de erro 409 em `unit-list` (frontend) para exibir a mensagem correta também quando o vínculo for por lançamento de conta a receber (a mensagem já vem pronta do backend — sem lógica nova no frontend além de exibir o texto retornado), em `frontend/src/app/unit/unit-list/` (depends on T049, T057) — confirmado sem alteração de código necessária: `unit-list.ts` já exibia `err.message` genericamente antes desta feature
+- [X] T059 [P] Create testes unitários da nova regra em `UnitServiceTest` (Mockito: remoção permitida quando não há condômino nem lançamento vinculado, remoção bloqueada quando há lançamento vinculado) em `backend/src/test/java/com/financas/unit/domain/UnitServiceTest.java` — tarefa adicionada durante a implementação da feature 002 para fechar a exigência de cobertura de teste de regra de negócio (Princípio III), que não tinha sido incluída nesta Phase 11 originalmente (depends on T057)
 
-**Checkpoint**: `DELETE /api/units/{id}` bloqueia remoção tanto por condômino quanto por
-lançamento de conta a receber vinculado.
+**Checkpoint**: `DELETE /api/units/{id}` bloqueia remoção tanto por condômino quanto por lançamento de conta a receber vinculado.
 
 ---
 
 ## Phase 12: Extensão — Seleção múltipla e remoção em lote (feature 002, FR-018)
 
-**Purpose**: adicionado durante uma rodada de correções pós-implementação da feature
-`002-receivable-charges`, que introduziu seleção múltipla + remoção em lote (melhor esforço)
-na listagem de lançamentos e criou, para isso, um par de utilitários compartilhados de
-frontend. Esta fase aplica o mesmo padrão às listagens desta feature (ver spec.md/plan.md,
-seção "Atualização (feature 002 — seleção múltipla e remoção em lote, FR-018)"). Depende de
-`frontend/src/app/shared/list-selection.ts`, `bulk-delete.ts` e
-`shared/components/bulk-actions-bar/` (feature 002, Phase 8: T063-T065) já existirem.
+**Purpose**: adicionado durante uma rodada de correções pós-implementação da feature `002-receivable-charges`, que introduziu seleção múltipla + remoção em lote (melhor esforço) na listagem de lançamentos e criou, para isso, um par de utilitários compartilhados de frontend. Esta fase aplica o mesmo padrão às listagens desta feature (ver spec.md/plan.md, seção "Atualização (feature 002 — seleção múltipla e remoção em lote, FR-018)"). Depende de `frontend/src/app/shared/list-selection.ts`, `bulk-delete.ts` e `shared/components/bulk-actions-bar/` (feature 002, Phase 8: T063-T065) já existirem.
 
-- [ ] T060 [P] Apply seleção múltipla (coluna de checkbox por linha + "selecionar todos") e o
-  `bulk-actions-bar` a `unit-list`, reaproveitando `list-selection.ts`/`bulk-delete.ts`/
-  `bulk-actions-bar` da feature 002, em `frontend/src/app/unit/unit-list/` (depends on
-  T063-T065 de `specs/002-receivable-charges/tasks.md`)
-- [ ] T061 [P] Apply o mesmo padrão a `resident-list`, em
-  `frontend/src/app/resident/resident-list/` (depends on T063-T065 de
-  `specs/002-receivable-charges/tasks.md`)
-- [ ] T062 [P] Run roteiro de validação manual do cenário de remoção em lote em `unit-list`
-  (incluindo o caso de melhor esforço: selecionar uma unidade com condôminos vinculados junto
-  de outra sem vínculo, e confirmar que só a segunda é removida, com a primeira reportada como
-  falha) e em `resident-list`, atualizando `quickstart.md` desta feature com o roteiro
+- [ ] T060 [P] Apply seleção múltipla (coluna de checkbox por linha + "selecionar todos") e o `bulk-actions-bar` a `unit-list`, reaproveitando `list-selection.ts`/`bulk-delete.ts`/`bulk-actions-bar` da feature 002, em `frontend/src/app/unit/unit-list/` (depends on T063-T065 de `specs/002-receivable-charges/tasks.md`)
+- [ ] T061 [P] Apply o mesmo padrão a `resident-list`, em `frontend/src/app/resident/resident-list/` (depends on T063-T065 de `specs/002-receivable-charges/tasks.md`)
+- [ ] T062 [P] Run roteiro de validação manual do cenário de remoção em lote em `unit-list` (incluindo o caso de melhor esforço: selecionar uma unidade com condôminos vinculados junto de outra sem vínculo, e confirmar que só a segunda é removida, com a primeira reportada como falha) e em `resident-list`, atualizando `quickstart.md` desta feature com o roteiro
 
-**Checkpoint**: `unit-list` e `resident-list` permitem selecionar múltiplos registros e
-removê-los em uma única ação, com o mesmo comportamento de melhor esforço já validado em
-`receivable-list`.
+**Checkpoint**: `unit-list` e `resident-list` permitem selecionar múltiplos registros e removê-los em uma única ação, com o mesmo comportamento de melhor esforço já validado em `receivable-list`.
 
 ---
 
 ## Phase 13: Extensão — Remoção completa do cadastro de condôminos (feature 003)
 
-**Purpose**: adicionado durante o planejamento da feature `003-accounts-payable-suppliers`,
-que remove por completo o cadastro de condôminos desta feature (ver spec.md/plan.md, seção
-"Atualização (feature 003 — remoção de condômino, generalização de contas)"). As tarefas
-originais de condômino (T024-T036, T041, T043, T045-T046, T054) permanecem marcadas `[X]`
-como registro histórico — o código que elas produziram está sendo retirado, não refeito.
+**Purpose**: adicionado durante o planejamento da feature `003-accounts-payable-suppliers`, que remove por completo o cadastro de condôminos desta feature (ver spec.md/plan.md, seção "Atualização (feature 003 — remoção de condômino, generalização de contas)"). As tarefas originais de condômino (T024-T036, T041, T043, T045-T046, T054) permanecem marcadas `[X]` como registro histórico — o código que elas produziram está sendo retirado, não refeito.
 
-- [X] T063 [P] Remove por completo o pacote `com.financas.resident` (domain/api/infra) —
-  `Resident.java`, `BrazilianPhone.java`, `BrazilianPhoneValidator.java`,
-  `ResidentRequest.java`, `ResidentResponse.java`, `ResidentService.java`,
-  `ResidentController.java`, `ResidentRepository.java`, `ResidentJpaRepository.java`,
-  `ResidentRepositoryImpl.java` — e os testes correspondentes em
-  `backend/src/test/java/com/financas/resident/`
-- [X] T064 Create migration Flyway
-  `backend/src/main/resources/db/migration/V7__drop_resident_table.sql` (`DROP TABLE
-  resident`) (depends on T063)
-- [X] T065 [P] Remove por completo `frontend/src/app/resident/` (`resident-list/`,
-  `resident-form/`)
-- [X] T066 [P] Remove `frontend/src/app/shared/models/resident.model.ts` e
-  `frontend/src/app/shared/services/resident.service.ts`
+- [X] T063 [P] Remove por completo o pacote `com.financas.resident` (domain/api/infra) — `Resident.java`, `BrazilianPhone.java`, `BrazilianPhoneValidator.java`, `ResidentRequest.java`, `ResidentResponse.java`, `ResidentService.java`, `ResidentController.java`, `ResidentRepository.java`, `ResidentJpaRepository.java`, `ResidentRepositoryImpl.java` — e os testes correspondentes em `backend/src/test/java/com/financas/resident/`
+- [X] T064 Create migration Flyway `backend/src/main/resources/db/migration/V7__drop_resident_table.sql` (`DROP TABLE resident`) (depends on T063)
+- [X] T065 [P] Remove por completo `frontend/src/app/resident/` (`resident-list/`, `resident-form/`)
+- [X] T066 [P] Remove `frontend/src/app/shared/models/resident.model.ts` e `frontend/src/app/shared/services/resident.service.ts`
 - [X] T067 Remove as rotas `/residents*` de `frontend/src/app/app.routes.ts` (depends on T065)
-- [X] T068 Remove o link de navegação "Condôminos" de `frontend/src/app/app.html` (depends on
-  T067)
+- [X] T068 Remove o link de navegação "Condôminos" de `frontend/src/app/app.html` (depends on T067)
 
-**Checkpoint**: nenhum código, rota ou tabela relacionado a condômino permanece no sistema
-(ver SC-006 de `specs/003-accounts-payable-suppliers/spec.md`).
+**Checkpoint**: nenhum código, rota ou tabela relacionado a condômino permanece no sistema (ver SC-006 de `specs/003-accounts-payable-suppliers/spec.md`).
 
 ---
 
 ## Phase 14: Extensão — `UnitService` passa a checar fornecedor, não mais condômino (feature 003)
 
-**Purpose**: adicionado durante o planejamento da feature `003-accounts-payable-suppliers`
-(ver spec.md/plan.md, seção "Atualização (feature 003...)"). Depende das entidades `Account`
-(renomeada de `Receivable`) e `Supplier` da feature 003 já existirem.
+**Purpose**: adicionado durante o planejamento da feature `003-accounts-payable-suppliers` (ver spec.md/plan.md, seção "Atualização (feature 003...)"). Depende das entidades `Account` (renomeada de `Receivable`) e `Supplier` da feature 003 já existirem.
 
-- [X] T069 Rename `UnitHasReceivablesException` → `UnitHasAccountsException` em
-  `backend/src/main/java/com/financas/unit/domain/` (mensagem atualizada para "contas
-  vinculadas") (depends on a entidade `Account` da feature 003 já existir)
-- [X] T070 [P] Create `UnitHasSuppliersException` em
-  `backend/src/main/java/com/financas/unit/domain/` (mesmo padrão de
-  `UnitHasAccountsException`) (depends on a entidade `Supplier` da feature 003 já existir)
-- [X] T071 Update `UnitService.delete()` para remover a checagem de `ResidentRepository` e
-  passar a checar `AccountRepository.existsByUnitId` (renomeado de `ReceivableRepository`) e
-  `SupplierRepository.existsByUnitId` (nova), em
-  `backend/src/main/java/com/financas/unit/domain/UnitService.java` (depends on T063, T069,
-  T070)
-- [X] T072 [P] Update `UnitServiceTest` removendo os casos de condômino vinculado e
-  adicionando casos de fornecedor vinculado (remoção bloqueada com fornecedor associado,
-  permitida sem vínculo), em
-  `backend/src/test/java/com/financas/unit/domain/UnitServiceTest.java` (depends on T071)
+- [X] T069 Rename `UnitHasReceivablesException` → `UnitHasAccountsException` em `backend/src/main/java/com/financas/unit/domain/` (mensagem atualizada para "contas vinculadas") (depends on a entidade `Account` da feature 003 já existir)
+- [X] T070 [P] Create `UnitHasSuppliersException` em `backend/src/main/java/com/financas/unit/domain/` (mesmo padrão de `UnitHasAccountsException`) (depends on a entidade `Supplier` da feature 003 já existir)
+- [X] T071 Update `UnitService.delete()` para remover a checagem de `ResidentRepository` e passar a checar `AccountRepository.existsByUnitId` (renomeado de `ReceivableRepository`) e `SupplierRepository.existsByUnitId` (nova), em `backend/src/main/java/com/financas/unit/domain/UnitService.java` (depends on T063, T069, T070)
+- [X] T072 [P] Update `UnitServiceTest` removendo os casos de condômino vinculado e adicionando casos de fornecedor vinculado (remoção bloqueada com fornecedor associado, permitida sem vínculo), em `backend/src/test/java/com/financas/unit/domain/UnitServiceTest.java` (depends on T071)
 
-**Checkpoint**: `DELETE /api/units/{id}` bloqueia remoção por conta ou fornecedor vinculado, e
-nunca mais por condômino.
+**Checkpoint**: `DELETE /api/units/{id}` bloqueia remoção por conta ou fornecedor vinculado, e nunca mais por condômino.
 
 ---
 
@@ -341,27 +262,14 @@ nunca mais por condômino.
 - **User Story 5 (Phase 7)**: Depende de US2 (T029, T031) e US3 (T039)
 - **User Story 6 (Phase 8)**: Depende de US1 (T015, T017), US2 (T026, para checar vínculo) e US3 (T038)
 - **Polish (Phase 9)**: Depende de todas as user stories desejadas estarem completas
-- **Extensão US6 (Phase 11)**: Depende de US6 (T048, T049) desta feature e da entidade
-  `Receivable` da feature `002-receivable-charges` já existir
-- **Extensão seleção múltipla (Phase 12)**: Depende de US3 (T038, T039 — listagens já
-  exibindo estado vazio) desta feature e dos utilitários compartilhados T063-T065 da feature
-  `002-receivable-charges` (Phase 8) já existirem
-- **Extensão remoção de condômino (Phase 13)**: Sem dependência de outra feature — pode
-  rodar assim que a feature `003-accounts-payable-suppliers` decidir seguir com a remoção
-  (após aprovação da usuária, ver plan.md)
-- **Extensão `UnitService` checa fornecedor (Phase 14)**: Depende da Phase 13 desta feature
-  (T063) e das entidades `Account`/`Supplier` da feature `003-accounts-payable-suppliers` já
-  existirem
+- **Extensão US6 (Phase 11)**: Depende de US6 (T048, T049) desta feature e da entidade `Receivable` da feature `002-receivable-charges` já existir
+- **Extensão seleção múltipla (Phase 12)**: Depende de US3 (T038, T039 — listagens já exibindo estado vazio) desta feature e dos utilitários compartilhados T063-T065 da feature `002-receivable-charges` (Phase 8) já existirem
+- **Extensão remoção de condômino (Phase 13)**: Sem dependência de outra feature — pode rodar assim que a feature `003-accounts-payable-suppliers` decidir seguir com a remoção (após aprovação da usuária, ver plan.md)
+- **Extensão `UnitService` checa fornecedor (Phase 14)**: Depende da Phase 13 desta feature (T063) e das entidades `Account`/`Supplier` da feature `003-accounts-payable-suppliers` já existirem
 
 ### Notas de dependência entre stories
 
-Diferente do caso ideal onde todas as user stories seriam 100% independentes, aqui
-US2 depende do `UnitService` (US1) para resolver a unidade referenciada, e US3
-depende das listagens mínimas criadas em US1/US2 para exibi-las por completo —
-isso reflete a ordem P1 → P1 → P1 já definida no spec (unidade é pré-requisito de
-condômino, que por sua vez precisa existir para ser listado). US4, US5 e US6
-dependem apenas de operações (PUT/DELETE) sobre entidades já criadas nas stories
-anteriores, sem acoplar regras de negócio novas entre si.
+Diferente do caso ideal onde todas as user stories seriam 100% independentes, aqui US2 depende do `UnitService` (US1) para resolver a unidade referenciada, e US3 depende das listagens mínimas criadas em US1/US2 para exibi-las por completo — isso reflete a ordem P1 → P1 → P1 já definida no spec (unidade é pré-requisito de condômino, que por sua vez precisa existir para ser listado). US4, US5 e US6 dependem apenas de operações (PUT/DELETE) sobre entidades já criadas nas stories anteriores, sem acoplar regras de negócio novas entre si.
 
 ### Parallel Opportunities
 
@@ -407,18 +315,13 @@ Task: "Create UnitService (HttpClient) em frontend/src/app/shared/services/unit.
 
 ### Observação sobre MVP real
 
-Como US1, US2 e US3 são todas P1 no spec, o produto só entrega valor real de
-ponta a ponta (cadastrar E ver o cadastro) após as três estarem completas — US1
-sozinha cadastra unidades, mas o objetivo do produto (gerenciar condôminos) só é
-alcançado com US1 + US2 + US3 juntas. Considere isso ao decidir onde parar para
-uma primeira validação com a usuária.
+Como US1, US2 e US3 são todas P1 no spec, o produto só entrega valor real de ponta a ponta (cadastrar E ver o cadastro) após as três estarem completas — US1 sozinha cadastra unidades, mas o objetivo do produto (gerenciar condôminos) só é alcançado com US1 + US2 + US3 juntas. Considere isso ao decidir onde parar para uma primeira validação com a usuária.
 
 ---
 
 ## Notes
 
 - [P] = arquivos diferentes, sem dependências pendentes
-- Cada user story é independentemente completável e testável, exceto pelas
-  dependências de dados descritas acima (unidade é pré-requisito de condômino)
+- Cada user story é independentemente completável e testável, exceto pelas dependências de dados descritas acima (unidade é pré-requisito de condômino)
 - Commit ao final de cada tarefa ou grupo lógico de tarefas
 - Pare em qualquer checkpoint para validar a story isoladamente antes de seguir

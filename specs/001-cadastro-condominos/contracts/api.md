@@ -2,8 +2,7 @@
 
 Base path: `/api`
 
-Formato de erro padrão (todas as respostas 4xx), mensagens em português
-(FR-016, Convenções de Código):
+Formato de erro padrão (todas as respostas 4xx), mensagens em português (FR-016, Convenções de Código):
 
 ```json
 {
@@ -49,8 +48,7 @@ Cadastra uma nova unidade (FR-001).
 
 **Erros**:
 - `400` — `identifier` vazio/ausente (FR-001).
-- `409` — `identifier` já usado por outra unidade, considerando comparação
-  normalizada (FR-002).
+- `409` — `identifier` já usado por outra unidade, considerando comparação normalizada (FR-002).
 
 ### `PUT /api/units/{id}`
 
@@ -73,22 +71,13 @@ Remove uma unidade (FR-005).
 
 **Erros**:
 - `404` — unidade `{id}` não encontrada (FR-016).
-- `409` — unidade possui ao menos uma conta (a pagar ou a receber) associada, ou ao menos um
-  fornecedor associado (FR-006). **Redação vigente, atualizada pela feature 003**
-  (`specs/003-accounts-payable-suppliers/contracts/api.md`) — a redação original considerava
-  condômino associado (feature 001) e lançamento de conta a receber associado (feature 002);
-  condômino foi removido do produto e "lançamento de conta a receber" foi generalizado para
-  "conta".
+- `409` — unidade possui ao menos uma conta (a pagar ou a receber) associada, ou ao menos um fornecedor associado (FR-006). **Redação vigente, atualizada pela feature 003** (`specs/003-accounts-payable-suppliers/contracts/api.md`) — a redação original considerava condômino associado (feature 001) e lançamento de conta a receber associado (feature 002); condômino foi removido do produto e "lançamento de conta a receber" foi generalizado para "conta".
 
-> Confirmação explícita da usuária antes da chamada é responsabilidade do
-> frontend (diálogo de confirmação); o endpoint executa a remoção diretamente
-> quando chamado.
+> Confirmação explícita da usuária antes da chamada é responsabilidade do frontend (diálogo de confirmação); o endpoint executa a remoção diretamente quando chamado.
 
 ## Condôminos — `/api/residents` — REMOVIDO (feature 003)
 
-> **Rota removida por completo pela feature 003** (`specs/003-accounts-payable-suppliers/`,
-> FR-016) — `/api/residents*` não existe mais; qualquer chamada retorna `404` (rota
-> inexistente). Contrato original preservado abaixo como registro histórico.
+> **Rota removida por completo pela feature 003** (`specs/003-accounts-payable-suppliers/`, FR-016) — `/api/residents*` não existe mais; qualquer chamada retorna `404` (rota inexistente). Contrato original preservado abaixo como registro histórico.
 
 ### `GET /api/residents`
 
@@ -106,8 +95,7 @@ Lista todos os condôminos cadastrados, com unidade associada (FR-013).
   }
 ]
 ```
-`email`/`phone` podem ser `null`. Lista vazia (`[]`) quando não há condôminos
-cadastrados (FR-014).
+`email`/`phone` podem ser `null`. Lista vazia (`[]`) quando não há condôminos cadastrados (FR-014).
 
 ### `GET /api/residents/{id}`
 
@@ -136,11 +124,8 @@ Cadastra um novo condômino (FR-007).
 **Response 201**: condômino criado, no mesmo formato do `GET`.
 
 **Erros**:
-- `400` — `name` ou `unitId` ausentes/vazios (FR-011); `email` em formato
-  inválido quando preenchido (FR-012); `phone` fora do formato brasileiro quando
-  preenchido (FR-017).
-- `404` — `unitId` não corresponde a nenhuma unidade cadastrada (orienta a
-  cadastrar a unidade primeiro — Edge Case do spec).
+- `400` — `name` ou `unitId` ausentes/vazios (FR-011); `email` em formato inválido quando preenchido (FR-012); `phone` fora do formato brasileiro quando preenchido (FR-017).
+- `404` — `unitId` não corresponde a nenhuma unidade cadastrada (orienta a cadastrar a unidade primeiro — Edge Case do spec).
 
 ### `PUT /api/residents/{id}`
 
@@ -152,8 +137,7 @@ Edita nome, unidade, e-mail e/ou telefone de um condômino (FR-010).
 
 **Erros**:
 - `400` — mesmas validações do `POST` (FR-011, FR-012, FR-017).
-- `404` — condômino `{id}` não encontrado, ou `unitId` informado não existe
-  (FR-016).
+- `404` — condômino `{id}` não encontrado, ou `unitId` informado não existe (FR-016).
 
 ### `DELETE /api/residents/{id}`
 
@@ -164,5 +148,4 @@ Remove um condômino (FR-015).
 **Erros**:
 - `404` — condômino `{id}` não encontrado (FR-016).
 
-> Confirmação explícita da usuária antes da chamada é responsabilidade do
-> frontend, assim como em `DELETE /api/units/{id}`.
+> Confirmação explícita da usuária antes da chamada é responsabilidade do frontend, assim como em `DELETE /api/units/{id}`.

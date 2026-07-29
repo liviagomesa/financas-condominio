@@ -1,8 +1,6 @@
 # Specification Quality Checklist: Contas a Pagar, Fornecedores e Unificação de Contas
 
-**Purpose**: Validate specification completeness and quality before proceeding to planning
-**Created**: 2026-07-27
-**Feature**: [spec.md](../spec.md)
+**Purpose**: Validate specification completeness and quality before proceeding to planning **Created**: 2026-07-27 **Feature**: [spec.md](../spec.md)
 
 ## Content Quality
 
@@ -31,6 +29,4 @@
 
 ## Notes
 
-- Todos os itens passaram. A única pendência (escopo do campo "conta destino"/"fundo" na conta
-  unificada, FR-022) foi resolvida com a usuária: o campo passa a se chamar "fundo" e é
-  obrigatório para os dois tipos de conta (a pagar e a receber).
+- Todos os itens passaram. A única pendência (escopo do campo "conta destino"/"fundo" na conta unificada, FR-022) foi resolvida com a usuária: o campo passa a se chamar "fundo" e é obrigatório para os dois tipos de conta (a pagar e a receber).

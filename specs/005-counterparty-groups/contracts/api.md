@@ -2,8 +2,7 @@
 
 Base path: `/api`
 
-Formato de erro padrão (todas as respostas 4xx), mensagens em português (Convenções de API
-REST), inalterado em relação às features anteriores:
+Formato de erro padrão (todas as respostas 4xx), mensagens em português (Convenções de API REST), inalterado em relação às features anteriores:
 
 ```json
 {
@@ -16,8 +15,7 @@ REST), inalterado em relação às features anteriores:
 
 ### `GET /api/parties`
 
-Lista todas as Partes cadastradas, ordenadas por nome (FR-010 — filtro "Parte" na tela de Contas
-consome esta lista).
+Lista todas as Partes cadastradas, ordenadas por nome (FR-010 — filtro "Parte" na tela de Contas consome esta lista).
 
 **Response 200**:
 ```json
@@ -45,8 +43,7 @@ Cadastra uma nova Parte (FR-003/FR-004).
 
 **Erros**:
 - `400` — `name` ausente/vazio.
-- `409` — já existe uma parte com o mesmo nome (comparação sem diferenciar maiúsculas/minúsculas
-  nem espaços nas extremidades) — FR-004.
+- `409` — já existe uma parte com o mesmo nome (comparação sem diferenciar maiúsculas/minúsculas nem espaços nas extremidades) — FR-004.
 
 ### `PUT /api/parties/{id}`
 
@@ -58,9 +55,7 @@ Edita nome e/ou chave pix de uma Parte existente. Mesmo corpo do `POST`.
 
 ### `DELETE /api/parties/{id}`
 
-Remove uma Parte, bloqueando quando houver ao menos uma conta (de qualquer tipo) vinculada
-(FR-006). Pertencer a um ou mais Grupos **não** bloqueia a remoção — a associação é removida
-automaticamente.
+Remove uma Parte, bloqueando quando houver ao menos uma conta (de qualquer tipo) vinculada (FR-006). Pertencer a um ou mais Grupos **não** bloqueia a remoção — a associação é removida automaticamente.
 
 **Response 204**: sem corpo.
 
@@ -72,8 +67,7 @@ automaticamente.
 
 ### `GET /api/groups`
 
-Lista todos os Grupos cadastrados, ordenados por nome, cada um com a lista completa de suas
-Partes integrantes (ordenadas por nome).
+Lista todos os Grupos cadastrados, ordenados por nome, cada um com a lista completa de suas Partes integrantes (ordenadas por nome).
 
 **Response 200**:
 ```json
@@ -88,8 +82,7 @@ Partes integrantes (ordenadas por nome).
   }
 ]
 ```
-Lista vazia (`[]`) quando não há grupos cadastrados. `members` pode ser `[]` (grupo sem
-integrantes ainda) — não é impedido de existir, só de ser usado em lançamento em lote (FR-015).
+Lista vazia (`[]`) quando não há grupos cadastrados. `members` pode ser `[]` (grupo sem integrantes ainda) — não é impedido de existir, só de ser usado em lançamento em lote (FR-015).
 
 ### `GET /api/groups/{id}`
 
@@ -114,9 +107,7 @@ Cadastra um novo Grupo, com sua composição inicial de integrantes (FR-012/FR-0
 
 ### `PUT /api/groups/{id}`
 
-Edita o nome e/ou a composição completa de integrantes de um Grupo (FR-013 — único ponto de
-edição de composição). `partyIds` enviado substitui a lista de integrantes por completo (não é
-incremental).
+Edita o nome e/ou a composição completa de integrantes de um Grupo (FR-013 — único ponto de edição de composição). `partyIds` enviado substitui a lista de integrantes por completo (não é incremental).
 
 **Request**: mesmo corpo do `POST`.
 
@@ -126,8 +117,7 @@ incremental).
 
 ### `DELETE /api/groups/{id}`
 
-Remove um Grupo. Sempre permitido, mesmo com integrantes — não afeta nenhuma conta já lançada
-para seus antigos integrantes (FR-016).
+Remove um Grupo. Sempre permitido, mesmo com integrantes — não afeta nenhuma conta já lançada para seus antigos integrantes (FR-016).
 
 **Response 204**: sem corpo.
 
@@ -135,16 +125,13 @@ para seus antigos integrantes (FR-016).
 
 ## Impacto em `/api/accounts` (features 002/003/004)
 
-`unit`/`supplier` deixam de existir na resposta e no corpo de requisição; ambos são substituídos
-por `party` (resposta, objeto completo) / `partyId` (requisição, Long) — mesmo princípio já
-aplicado a `fund`/`fundId` na feature 004.
+`unit`/`supplier` deixam de existir na resposta e no corpo de requisição; ambos são substituídos por `party` (resposta, objeto completo) / `partyId` (requisição, Long) — mesmo princípio já aplicado a `fund`/`fundId` na feature 004.
 
 ### `GET /api/accounts`
 
 Novos/alterados query params:
 - `partyId` (Long, opcional) — substitui `unitId`/`supplierId` (FR-010).
-- `fundId` (Long, opcional, **novo**) — filtra por fundo (FR-009), combinado por E lógico com os
-  demais filtros já existentes (`type`, `paid`, `overdue`, `dueYearMonth`, `paymentYearMonth`).
+- `fundId` (Long, opcional, **novo**) — filtra por fundo (FR-009), combinado por E lógico com os demais filtros já existentes (`type`, `paid`, `overdue`, `dueYearMonth`, `paymentYearMonth`).
 
 ```
 GET /api/accounts?partyId=1&fundId=2&type=PAYABLE&paid=false
@@ -167,10 +154,7 @@ GET /api/accounts?partyId=1&fundId=2&type=PAYABLE&paid=false
   }
 ]
 ```
-`party` nunca é `null` (diferente de `unit`/`supplier` antes, que eram mutuamente exclusivos e um
-deles sempre `null`) — toda conta tem exatamente uma Parte, de qualquer tipo (FR-001). Não há
-campo de total nesta resposta — o total líquido exibido na tela de Contas (User Story 2) é
-calculado pelo frontend a partir desta mesma lista (ver research.md).
+`party` nunca é `null` (diferente de `unit`/`supplier` antes, que eram mutuamente exclusivos e um deles sempre `null`) — toda conta tem exatamente uma Parte, de qualquer tipo (FR-001). Não há campo de total nesta resposta — o total líquido exibido na tela de Contas (User Story 2) é calculado pelo frontend a partir desta mesma lista (ver research.md).
 
 ### `GET /api/accounts/{id}`
 
@@ -178,8 +162,7 @@ Mesmo formato de `party` do `GET` de coleção.
 
 ### `POST /api/accounts` / `PUT /api/accounts/{id}`
 
-`unitId`/`supplierId` são substituídos por um único `partyId` (Long, sempre obrigatório,
-independentemente de `type` — FR-001):
+`unitId`/`supplierId` são substituídos por um único `partyId` (Long, sempre obrigatório, independentemente de `type` — FR-001):
 
 ```json
 {
@@ -198,14 +181,11 @@ independentemente de `type` — FR-001):
 **Erros (novos/alterados)**:
 - `400` — `partyId` ausente.
 - `404` — `partyId` informado não corresponde a uma parte cadastrada.
-- `400` — tentativa de alterar `type` num `PUT` (inalterado desde a feature 002 —
-  `AccountTypeChangeNotAllowedException`).
+- `400` — tentativa de alterar `type` num `PUT` (inalterado desde a feature 002 — `AccountTypeChangeNotAllowedException`).
 
 ### `POST /api/accounts/bulk` (generalizado — antes só "todas as unidades", sempre `RECEIVABLE`)
 
-Cria uma conta para cada Parte integrante de um Grupo (FR-014). `type` passa a ser explícito
-(antes implícito, sempre `RECEIVABLE`); `groupId` substitui a busca implícita por "todas as
-unidades cadastradas".
+Cria uma conta para cada Parte integrante de um Grupo (FR-014). `type` passa a ser explícito (antes implícito, sempre `RECEIVABLE`); `groupId` substitui a busca implícita por "todas as unidades cadastradas".
 
 **Request**:
 ```json
@@ -222,8 +202,7 @@ unidades cadastradas".
 }
 ```
 
-**Response 201**: array de contas criadas, uma por integrante do grupo, mesmo formato do
-`GET /api/accounts`.
+**Response 201**: array de contas criadas, uma por integrante do grupo, mesmo formato do `GET /api/accounts`.
 
 **Erros**:
 - `400` — `groupId` ou `type` ausente.

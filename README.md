@@ -1,7 +1,6 @@
 # Sistema de Gerenciamento de Condomínio
 
-Sistema de gestão de recebimentos e pagamentos de um condomínio. Composto por API REST em Java, banco de
-dados PostgreSQL (container Docker) e frontend em Angular.
+Sistema de gestão de recebimentos e pagamentos de um condomínio. Composto por API REST em Java, banco de dados PostgreSQL (container Docker) e frontend em Angular.
 
 ## Sumário
 - [Sistema de Gerenciamento de Condomínio](#sistema-de-gerenciamento-de-condomínio)
@@ -35,11 +34,7 @@ Na raiz do projeto:
 docker compose up -d
 ```
 
-Sobe um único container com o PostgreSQL, exposto na porta `5434` do host
-(não `5432`, para não conflitar com uma instalação nativa de PostgreSQL que
-já possa existir na máquina; nem `5433`, usada inicialmente mas depois
-liberada por conflitar com um port-forward do VS Code nesta máquina de
-desenvolvimento).
+Sobe um único container com o PostgreSQL, exposto na porta `5434` do host (não `5432`, para não conflitar com uma instalação nativa de PostgreSQL que já possa existir na máquina).
 
 ### 2. Backend (API)
 
@@ -69,165 +64,34 @@ Acesse `http://localhost:4202`.
 
 ## Decisões técnicas e premissas
 
-- **Stack**: Java 21 (LTS) + Spring Boot 4.1.x (Spring Data JPA, Spring Web) no
-  backend, com Maven como build tool e Flyway para migrations; Angular 22 +
-  TypeScript 6 + Bootstrap 5 no frontend; PostgreSQL 18.4. Versões escolhidas
-  por já estarem instaladas na máquina de desenvolvimento e coincidirem com as
-  mais recentes estáveis do mercado no momento (ver `research.md` da feature
-  001 para o detalhamento). Novas features devem reutilizar essas mesmas
-  versões (regra registrada na `constitution.md`).
-- **Sem Spring Security por enquanto**: não há requisito de
-  autenticação/autorização até o momento; a dependência só será adicionada
-  quando essa necessidade surgir de fato.
-- **Estrutura por entidade**: backend organizado em `unit/`, `resident/` e
-  `shared/`, cada um com `api/`/`domain/`/`infra/`; `shared/` reservado a
-  recursos verdadeiramente transversais (`GlobalExceptionHandler`, exceptions
-  genéricas `NotFoundException`/`ConflictException`). Exceptions de regra de
-  negócio de uma entidade (ex.: `DuplicateUnitException`) vivem no `domain/`
-  dela, não em `shared/`.
-- **Convenções de API**: rotas REST no padrão `/api/{recurso-plural-inglês}`;
-  erros 4xx sempre no formato `{ "message": string, "status": number }`;
-  confirmação de exclusão é responsabilidade do frontend (o backend executa a
-  remoção diretamente quando chamado).
-- **Porta do PostgreSQL no host**: o `docker-compose.yml` expõe o Postgres na
-  porta `5434`, não `5432` — durante a implementação, um PostgreSQL nativo já
-  instalado na máquina de desenvolvimento estava ocupando a porta padrão, e o
-  backend acabou se conectando ao serviço nativo (autenticação falhando) em
-  vez do container. Só foi percebido rodando a aplicação de verdade contra o
-  banco, não apenas compilando/testando com mocks. A porta intermediária
-  `5433` (usada até a rodada de correções de 002-receivable-charges) foi
-  abandonada depois por outro motivo: um port-forward do VS Code nesta
-  máquina passou a interceptar conexões `localhost:5433`, respondendo com um
-  erro de autenticação genuíno (mas de outro Postgres) em vez de alcançar o
-  container — só percebido rodando a aplicação de verdade de novo, mesma
-  lição de sempre validar contra o banco real antes de considerar uma rodada
-  concluída.
-- **Playwright como devDependency permanente do frontend**: usado para
-  validar visualmente cada mudança de UI em navegador headless. Inicialmente
-  era instalado sob demanda (`npm install --no-save`) e removido depois
-  (`rm -rf node_modules && npm install`) para não sujar o lockfile — mas o
-  passo de remoção reinstalava as ~460 dependências do projeto do zero
-  (~1 min), enquanto o Playwright em si (binário do Chromium já em cache
-  local) instala em segundos. Como toda mudança de frontend acaba exigindo
-  essa validação, manter o Playwright como devDependency declarada elimina
-  esse custo repetido de reinstalação completa.
-- **Datas: ISO-8601 internamente, DD/MM/AAAA só na UI, sem utilitário de
-  conversão**: `dueDate` e `paymentDate` trafegam no contrato de API e são
-  persistidas no formato ISO-8601 padrão do `LocalDate` (`yyyy-MM-dd`), sem
-  `@JsonFormat` customizado. A exibição em DD/MM/AAAA e a leitura da entrada
-  da usuária ficam só no frontend, usando recursos nativos do Angular/HTML —
-  `<input type="date">` (e `<input type="month">` para os filtros de
-  mês/ano) e o `DatePipe` (`| date:'dd/MM/yyyy'`) — sem nenhum utilitário de
-  conversão customizado, já que esses controles nativos resolvem as duas
-  pontas sozinhos.
-- **Registro de pagamento como campo único (`paymentDate`), sem `paid`
-  redundante**: um lançamento é "pago" quando `paymentDate` não é nulo; não
-  existe um campo `paid` separado, para não correr o risco dos dois ficarem
-  inconsistentes entre si. `paymentDate` pode ser informado já na criação
-  (individual ou em lote) — lançamento já nasce pago — ou registrado depois
-  via `POST /api/receivables/{id}/pay`, uma sub-rota de ação dedicada
-  (mesmo espírito da sub-rota `/bulk` já usada para criação em massa).
-- **Filtros de listagem em memória**: `GET /api/receivables` aceita filtros
-  combináveis (`paid`, `overdue`, `dueYearMonth`, `paymentYearMonth`),
-  aplicados em memória sobre a lista já carregada em `ReceivableService`, em
-  vez de consultas SQL dedicadas — dado o volume pequeno de registros
-  (poucas dezenas), a filtragem é feita em memória, sem necessidade de
-  índices ou consultas otimizadas dedicadas.
-- **Seleção múltipla e remoção em lote como utilitários compartilhados**:
-  `list-selection.ts` (estado de seleção, signal-based) e `bulk-delete.ts`
-  (remoção item a item, melhor esforço, sem endpoint transacional novo) +
-  o componente `bulk-actions-bar` ficam em `frontend/src/app/shared/`,
-  reaproveitados por `receivable-list`, `unit-list` e `resident-list` —
-  cada tela mantém sua própria tabela/colunas, só a seleção e a ação em
-  lote são compartilhadas.
-- **Portas de desenvolvimento fora do padrão (backend `8082`, frontend
-  `4202`)**: originalmente `8080`/`4200` (padrões do Spring Boot/Angular
-  CLI). Trocadas por decisão explícita da usuária, que roda vários projetos
-  Angular/Java na mesma máquina e queria evitar colisão recorrente com as
-  portas-padrão de outros projetos.
-- **Handler de `MethodArgumentTypeMismatchException` no `GlobalExceptionHandler`**: query
-  params que não correspondem ao tipo esperado pelo Spring (ex.: um `type`/`enum` fora do
-  conjunto aceito) agora retornam `400` com o formato padronizado `{ "message", "status" }`
-  em vez do erro genérico do Spring, mantendo consistência com as demais respostas de erro
-  da API.
-- **Generalização `Receivable` → `Account` via `ALTER TABLE ... RENAME`**: a feature
-  003 unificou contas a receber e a pagar numa única entidade `Account`
-  (`com.financas.account`, renomeado de `com.financas.receivable`), com um campo `type`
-  (`RECEIVABLE`/`PAYABLE`) imutável após a criação. A migration `V6` usa `RENAME
-  TABLE`/`RENAME COLUMN` em vez de criar a tabela do zero, preservando os dados e `id`s de
-  contas a receber já lançadas nas features 001/002 — validado rodando a aplicação de
-  verdade contra o banco com dados reais, não só migrations em banco vazio.
-- **Contraparte de `Account` modelada como duas FKs nullable + `CHECK` constraint**: em vez
-  de uma associação polimórfica entre `Unit` e `Supplier` (que não compartilham supertipo
-  nem justificam criar um só para isso), `Account` mantém `unit_id`/`supplier_id` nullable e
-  uma `CHECK CONSTRAINT` (`account_type_counterparty_check`) garantindo no banco que
-  exatamente uma das duas está preenchida, coerente com `type` — a mesma regra também é
-  validada em `AccountService` (camada de negócio), como dupla proteção.
-- **Nova entidade `Supplier` (fornecedor)**: nome obrigatório, unidade opcional e chave PIX
-  como texto livre (sem validação de formato — CPF/CNPJ/e-mail/telefone/chave aleatória têm
-  formatos diferentes e detectar/validar cada um não foi solicitado).
-- **Valor de conta aceita zero, rejeita só negativo**: regra alterada em relação à feature
-  002 (que exigia valor `> 0`) para permitir lançar uma conta como lembrete antes de saber o
-  valor exato (ex.: "sei que vou pagar algo desse fornecedor, mas ainda não sei quanto').
-  `@PositiveOrZero` no DTO, `compareTo(BigDecimal.ZERO) < 0` no `AccountService`.
-- **Remoção completa do cadastro de condôminos**: entidade, tabela (`DROP TABLE` na
-  migration `V7`), rotas e telas removidas por completo — sem soft delete ou tabela
-  "desativada" (ambiente local de uso pessoal, sem dado de produção a preservar por
-  obrigação). `UnitService.delete()` passou a checar `Account`/`Supplier` vinculados em vez
-  de `Resident`.
+- **Stack**: Java 21 (LTS) + Spring Boot 4.1.x (Spring Data JPA, Spring Web) no backend, com Maven como build tool e Flyway para migrations; Angular 22 + TypeScript 6 + Bootstrap 5 no frontend; PostgreSQL 18.4. Versões escolhidas por já estarem instaladas na máquina de desenvolvimento e coincidirem com as mais recentes estáveis do mercado no momento.
+- **Sem Spring Security por enquanto**: não há requisito de autenticação/autorização até o momento; a dependência só será adicionada quando essa necessidade surgir de fato.
+- **Estrutura por entidade**: backend organizado em `unit/`, `resident/` e `shared/`, cada um com `api/`/`domain/`/`infra/`; `shared/` reservado a recursos verdadeiramente transversais (`GlobalExceptionHandler`, exceptions genéricas `NotFoundException`/`ConflictException`). Exceptions de regra de negócio de uma entidade (ex.: `DuplicateUnitException`) vivem no `domain/` dela, não em `shared/`.
+- **Convenções de API**: rotas REST no padrão `/api/{recurso-plural-inglês}`; erros 4xx sempre no formato `{ "message": string, "status": number }`; confirmação de exclusão é responsabilidade do frontend (o backend executa a remoção diretamente quando chamado).
+- **Porta do PostgreSQL no host**: o `docker-compose.yml` expõe o Postgres na porta `5434`, não `5432` — durante a implementação, um PostgreSQL nativo já instalado na máquina de desenvolvimento estava ocupando a porta padrão, e o backend acabou se conectando ao serviço nativo (autenticação falhando) em vez do container. Só foi percebido rodando a aplicação de verdade contra o banco, não apenas compilando/testando com mocks. A porta intermediária `5433` (usada até a rodada de correções de 002-receivable-charges) foi abandonada depois por outro motivo: um port-forward do VS Code nesta máquina passou a interceptar conexões `localhost:5433`, respondendo com um erro de autenticação genuíno (mas de outro Postgres) em vez de alcançar o container — só percebido rodando a aplicação de verdade de novo, mesma lição de sempre validar contra o banco real antes de considerar uma rodada concluída.
+- **Playwright como devDependency permanente do frontend**: usado para validar visualmente cada mudança de UI em navegador headless. Inicialmente era instalado sob demanda (`npm install --no-save`) e removido depois (`rm -rf node_modules && npm install`) para não sujar o lockfile — mas o passo de remoção reinstalava as ~460 dependências do projeto do zero (~1 min), enquanto o Playwright em si (binário do Chromium já em cache local) instala em segundos. Como toda mudança de frontend acaba exigindo essa validação, manter o Playwright como devDependency declarada elimina esse custo repetido de reinstalação completa.
+- **Datas: ISO-8601 internamente, DD/MM/AAAA só na UI, sem utilitário de conversão**: `dueDate` e `paymentDate` trafegam no contrato de API e são persistidas no formato ISO-8601 padrão do `LocalDate` (`yyyy-MM-dd`), sem `@JsonFormat` customizado. A exibição em DD/MM/AAAA e a leitura da entrada da usuária ficam só no frontend, usando recursos nativos do Angular/HTML — `<input type="date">` (e `<input type="month">` para os filtros de mês/ano) e o `DatePipe` (`| date:'dd/MM/yyyy'`) — sem nenhum utilitário de conversão customizado, já que esses controles nativos resolvem as duas pontas sozinhos.
+- **Registro de pagamento como campo único (`paymentDate`), sem `paid` redundante**: um lançamento é "pago" quando `paymentDate` não é nulo; não existe um campo `paid` separado, para não correr o risco dos dois ficarem inconsistentes entre si. `paymentDate` pode ser informado já na criação (individual ou em lote) — lançamento já nasce pago — ou registrado depois via `POST /api/receivables/{id}/pay`, uma sub-rota de ação dedicada (mesmo espírito da sub-rota `/bulk` já usada para criação em massa).
+- **Filtros de listagem em memória**: `GET /api/receivables` aceita filtros combináveis (`paid`, `overdue`, `dueYearMonth`, `paymentYearMonth`), aplicados em memória sobre a lista já carregada em `ReceivableService`, em vez de consultas SQL dedicadas — dado o volume pequeno de registros (poucas dezenas), a filtragem é feita em memória, sem necessidade de índices ou consultas otimizadas dedicadas.
+- **Seleção múltipla e remoção em lote como utilitários compartilhados**: `list-selection.ts` (estado de seleção, signal-based) e `bulk-delete.ts` (remoção item a item, melhor esforço, sem endpoint transacional novo) + o componente `bulk-actions-bar` ficam em `frontend/src/app/shared/`, reaproveitados por `receivable-list`, `unit-list` e `resident-list` — cada tela mantém sua própria tabela/colunas, só a seleção e a ação em lote são compartilhadas.
+- **Portas de desenvolvimento fora do padrão (backend `8082`, frontend `4202`)**: originalmente `8080`/`4200` (padrões do Spring Boot/Angular CLI). Trocadas por decisão explícita da usuária, que roda vários projetos Angular/Java na mesma máquina e queria evitar colisão recorrente com as portas-padrão de outros projetos.
+- **Handler de `MethodArgumentTypeMismatchException` no `GlobalExceptionHandler`**: query params que não correspondem ao tipo esperado pelo Spring (ex.: um `type`/`enum` fora do conjunto aceito) agora retornam `400` com o formato padronizado `{ "message", "status" }` em vez do erro genérico do Spring, mantendo consistência com as demais respostas de erro da API.
+- **Generalização `Receivable` → `Account` via `ALTER TABLE ... RENAME`**: a feature 003 unificou contas a receber e a pagar numa única entidade `Account` (`com.financas.account`, renomeado de `com.financas.receivable`), com um campo `type` (`RECEIVABLE`/`PAYABLE`) imutável após a criação. A migration `V6` usa `RENAME TABLE`/`RENAME COLUMN` em vez de criar a tabela do zero, preservando os dados e `id`s de contas a receber já lançadas nas features 001/002 — validado rodando a aplicação de verdade contra o banco com dados reais, não só migrations em banco vazio.
+- **Contraparte de `Account` modelada como duas FKs nullable + `CHECK` constraint**: em vez de uma associação polimórfica entre `Unit` e `Supplier` (que não compartilham supertipo nem justificam criar um só para isso), `Account` mantém `unit_id`/`supplier_id` nullable e uma `CHECK CONSTRAINT` (`account_type_counterparty_check`) garantindo no banco que exatamente uma das duas está preenchida, coerente com `type` — a mesma regra também é validada em `AccountService` (camada de negócio), como dupla proteção.
+- **Nova entidade `Supplier` (fornecedor)**: nome obrigatório, unidade opcional e chave PIX como texto livre (sem validação de formato — CPF/CNPJ/e-mail/telefone/chave aleatória têm formatos diferentes e detectar/validar cada um não foi solicitado).
+- **Valor de conta aceita zero, rejeita só negativo**: regra alterada em relação à feature 002 (que exigia valor `> 0`) para permitir lançar uma conta como lembrete antes de saber o valor exato (ex.: "sei que vou pagar algo desse fornecedor, mas ainda não sei quanto'). `@PositiveOrZero` no DTO, `compareTo(BigDecimal.ZERO) < 0` no `AccountService`.
+- **Remoção completa do cadastro de condôminos**: entidade, tabela (`DROP TABLE` na migration `V7`), rotas e telas removidas por completo — sem soft delete ou tabela "desativada" (ambiente local de uso pessoal, sem dado de produção a preservar por obrigação). `UnitService.delete()` passou a checar `Account`/`Supplier` vinculados em vez de `Resident`.
 
 ### Transações e lazy loading (`open-in-view: false`)
 
-O projeto roda com `spring.jpa.open-in-view: false` desde a feature 001 — decisão que, sozinha,
-parece um detalhe de configuração, mas molda várias regras do backend porque significa que **a
-sessão do Hibernate fecha assim que a transação do `Repository`/`Service` termina**, não fica
-aberta até o fim da requisição HTTP. Qualquer campo `LAZY` (`@ManyToMany`/`@OneToMany`) acessado
-depois disso — inclusive no `Controller`, ao montar o DTO de resposta — quebra com
-`LazyInitializationException`. As regras abaixo (Princípios I e II da constituição, v1.8.0)
-existem todas por causa disso.
+O projeto roda com `spring.jpa.open-in-view: false` desde a feature 001 — decisão que, sozinha, parece um detalhe de configuração, mas molda várias regras do backend porque significa que **a sessão do Hibernate fecha assim que a transação do `Repository`/`Service` termina**, não fica aberta até o fim da requisição HTTP. Qualquer campo `LAZY` (`@ManyToMany`/`@OneToMany`) acessado depois disso — inclusive no `Controller`, ao montar o DTO de resposta — quebra com `LazyInitializationException`. As regras abaixo (Princípios I e II da constituição, v1.8.0) existem todas por causa disso.
 
-1. **`@Transactional` só em métodos de `Service` com mais de uma escrita, nunca na classe
-   inteira.** O critério é objetivo — conta quantas chamadas de `save()`/`delete()` o método
-   faz para completar uma operação de negócio; se for mais de uma, precisa da anotação (sem
-   ela, cada chamada ao `Repository` é sua própria transação, e uma falha no meio deixaria
-   parte do trabalho já comitada). Cogitamos anotar toda classe `Service` por padrão
-   defensivo (nunca depender de perceber a necessidade método a método), mas isso torna toda
-   entidade lida por qualquer método — inclusive os que só leem — gerenciada pelo
-   `EntityManager` durante toda a execução, arriscando persistência silenciosa via
-   dirty-checking do Hibernate se algum campo for mutado sem intenção de salvar. Único método
-   do projeto que precisa disso hoje: `AccountService.createForGroup` (um `save()` por
-   integrante de um lote).
-2. **Associação `LAZY` que o `Controller` precisa ler para montar o DTO de resposta MUST vir
-   já resolvida pela própria consulta de leitura do `Repository`** (`findById`/`findAll`) —
-   nunca por uma segunda consulta corretiva depois de um `save()`, e nunca contando com
-   `@Transactional` no `Service`: a transação já encerrou quando o `Controller` recebe o
-   retorno, então não alcança o `Controller` de forma nenhuma. Duas formas de resolver na
-   própria consulta:
-   - **`JOIN FETCH` numa query dedicada do Spring Data** (`@Query` com `LEFT JOIN FETCH`) —
-     preferencial, porque só paga o custo do `JOIN` nas consultas que realmente precisam da
-     associação.
-   - **`fetch = EAGER` direto na entidade** — só quando literalmente nenhum consumidor da
-     entidade jamais precisaria dela sem aquela associação. É o caso de `Group.members`: a
-     única razão de um `Group` existir é agrupar `Party`s, então carregar um `Group` sem seus
-     integrantes não tem uso real — `EAGER` aqui é **preferível** a `JOIN FETCH` dedicado, não só
-     uma exceção tolerada.
-3. **Coleção `@ManyToMany`/`@OneToMany` sem ordem de negócio própria MUST ser `Set`, não
-   `List`** — evita a complexidade de `@OrderColumn`, e evita que um `JOIN FETCH` dessa
-   coleção junto de outra coleção da mesma entidade quebre com `MultipleBagFetchException`
-   (o Hibernate rejeita duas coleções `List` — "bags" sem ordem — carregadas via `JOIN FETCH`
-   na mesma query; com `Set` isso não acontece). Se duas coleções precisarem mesmo ser `List`
-   (ordem de negócio genuína nas duas) e precisarem ser lidas juntas, a saída é aceitar N+1 —
-   tolerável dado o volume pequeno de dados deste projeto — mas só se o acesso ficar
-   inteiramente dentro do `Service`; se o `Controller` precisar do campo, ele MUST vir por
-   `JOIN FETCH`/`EAGER`, nunca por N+1 tocado na camada de apresentação (mesmo argumento do
-   item 2).
-4. **Uma operação de negócio que escreve em mais de um `Service` MUST ser orquestrada por um
-   único método `@Transactional`, nunca pelo `Controller` chamando os `Service`s em
-   sequência** — se a segunda chamada falhar depois que o `Controller` já invocou a primeira,
-   a primeira ficaria comitada de forma inconsistente. A propagação padrão do Spring
-   (`Propagation.REQUIRED`) garante que qualquer `Service`/`Repository` chamado de dentro de
-   um método `@Transactional` participa da mesma transação, sem precisar fundir os `Service`s
-   numa classe só.
+1. **`@Transactional` só em métodos de `Service` com mais de uma escrita, nunca na classe inteira.** O critério é objetivo — conta quantas chamadas de `save()`/`delete()` o método faz para completar uma operação de negócio; se for mais de uma, precisa da anotação (sem ela, cada chamada ao `Repository` é sua própria transação, e uma falha no meio deixaria parte do trabalho já comitada). Cogitamos anotar toda classe `Service` por padrão defensivo (nunca depender de perceber a necessidade método a método), mas isso torna toda entidade lida por qualquer método — inclusive os que só leem — gerenciada pelo `EntityManager` durante toda a execução, arriscando persistência silenciosa via dirty-checking do Hibernate se algum campo for mutado sem intenção de salvar. Único método do projeto que precisa disso hoje: `AccountService.createForGroup` (um `save()` por integrante de um lote).
+2. **Associação `LAZY` que o `Controller` precisa ler para montar o DTO de resposta MUST vir já resolvida pela própria consulta de leitura do `Repository`** (`findById`/`findAll`) — nunca por uma segunda consulta corretiva depois de um `save()`, e nunca contando com `@Transactional` no `Service`: a transação já encerrou quando o `Controller` recebe o retorno, então não alcança o `Controller` de forma nenhuma. Duas formas de resolver na própria consulta:
+   - **`JOIN FETCH` numa query dedicada do Spring Data** (`@Query` com `LEFT JOIN FETCH`) — preferencial, porque só paga o custo do `JOIN` nas consultas que realmente precisam da associação.
+   - **`fetch = EAGER` direto na entidade** — só quando literalmente nenhum consumidor da entidade jamais precisaria dela sem aquela associação. É o caso de `Group.members`: a única razão de um `Group` existir é agrupar `Party`s, então carregar um `Group` sem seus integrantes não tem uso real — `EAGER` aqui é **preferível** a `JOIN FETCH` dedicado, não só uma exceção tolerada.
+3. **Coleção `@ManyToMany`/`@OneToMany` sem ordem de negócio própria MUST ser `Set`, não `List`** — evita a complexidade de `@OrderColumn`, e evita que um `JOIN FETCH` dessa coleção junto de outra coleção da mesma entidade quebre com `MultipleBagFetchException` (o Hibernate rejeita duas coleções `List` — "bags" sem ordem — carregadas via `JOIN FETCH` na mesma query; com `Set` isso não acontece). Se duas coleções precisarem mesmo ser `List` (ordem de negócio genuína nas duas) e precisarem ser lidas juntas, a saída é aceitar N+1 — tolerável dado o volume pequeno de dados deste projeto — mas só se o acesso ficar inteiramente dentro do `Service`; se o `Controller` precisar do campo, ele MUST vir por `JOIN FETCH`/`EAGER`, nunca por N+1 tocado na camada de apresentação (mesmo argumento do item 2).
+4. **Uma operação de negócio que escreve em mais de um `Service` MUST ser orquestrada por um único método `@Transactional`, nunca pelo `Controller` chamando os `Service`s em sequência** — se a segunda chamada falhar depois que o `Controller` já invocou a primeira, a primeira ficaria comitada de forma inconsistente. A propagação padrão do Spring (`Propagation.REQUIRED`) garante que qualquer `Service`/`Repository` chamado de dentro de um método `@Transactional` participa da mesma transação, sem precisar fundir os `Service`s numa classe só.
 
 ## Uso de IA
 
@@ -239,7 +103,7 @@ Utilizei o GitHub Spec Kit integrado ao Claude Code para conduzir o desenvolvime
 
 2. **Contexto para o Claude Code**: informações sobre o produto são importantes para a realização de tarefas de projeto pelo Claude Code, mas não se encaixam no `constitution.md`. Assim, guardei essas informações no `CLAUDE.md`.
 
-3. **Especificação**: a partir das funcionalidades listadas no `CLAUDE.md`, gerei com o Claude Code uma especificação formal de cada funcionalidade. Exemplo: `/speckit.specify Cadastro de condôminos: permitir criar, editar, listar e remover condôminos, com nome, unidade, e-mail e telefone de contato. Cada condômino pertence a uma unidade única do condomínio.` 
+3. **Especificação**: a partir das funcionalidades listadas no `CLAUDE.md`, gerei com o Claude Code uma especificação formal de cada funcionalidade. Exemplo: `/speckit.specify Cadastro de condôminos: permitir criar, editar, listar e remover condôminos, com nome, unidade, e-mail e telefone de contato. Cada condômino pertence a uma unidade única do condomínio.`
 
 4. **Clarificação**: Em seguida, usei `/speckit.clarify` para varrer o spec e perguntar o que ficou faltando (não é preciso antecipar todas as possíveis lacunas no `/speckit.specify`).
 
@@ -247,101 +111,28 @@ Utilizei o GitHub Spec Kit integrado ao Claude Code para conduzir o desenvolvime
 
 6. **Implementação**: implementei com `/speckit.implement` e rodei `/speckit.converge` para checar o código já implementado contra spec/plan/tasks.
 
-7. **Revisão da constituição**: depois de implementada a feature, peço uma revisão da
-   `constitution.md` à luz dos artefatos gerados e do código implementado, procurando
-   decisões que não são específicas daquela feature e que deveriam virar padrão do projeto
-   em vez de ficarem só documentadas ali — sem isso, cada feature roda numa sessão de IA
-   isolada que só compartilha a `constitution.md` com as demais (não os planos de features
-   já implementadas). O procedimento inteiro (o que procurar, como categorizar, quando
-   commitar) está formalizado na própria `constitution.md`, na seção "Revisão da
-   Constituição Pós-Implementação" — para acionar, basta pedir algo como "pode rodar a
-   revisão da constituição agora", sem precisar repetir um prompt grande a cada vez.
+7. **Revisão da constituição**: depois de implementada a feature, peço uma revisão da `constitution.md` à luz dos artefatos gerados e do código implementado, procurando decisões que não são específicas daquela feature e que deveriam virar padrão do projeto em vez de ficarem só documentadas ali — sem isso, cada feature roda numa sessão de IA isolada que só compartilha a `constitution.md` com as demais (não os planos de features já implementadas). O procedimento inteiro (o que procurar, como categorizar, quando commitar) está formalizado na própria `constitution.md`, na seção "Revisão da Constituição Pós-Implementação" — para acionar, basta pedir algo como "pode rodar a revisão da constituição agora", sem precisar repetir um prompt grande a cada vez.
 
-8. **Edições de features já existentes**: para mudanças depois do fluxo completo dos
-   comandos do Spec Kit (sem criar feature ou branch nova, sem rodar `/speckit.specify` ou
-   `/speckit.plan` de novo), o procedimento está formalizado na `constitution.md`, seção
-   "Edição de Features Já Implementadas" — basta descrever a mudança desejada e referenciar
-   esse fluxo.
+8. **Edições de features já existentes**: para mudanças depois do fluxo completo dos comandos do Spec Kit (sem criar feature ou branch nova, sem rodar `/speckit.specify` ou `/speckit.plan` de novo), o procedimento está formalizado na `constitution.md`, seção "Edição de Features Já Implementadas" — basta descrever a mudança desejada e referenciar esse fluxo.
 
 9. **Fluxo de trabalho paralelo:** utilizei o `/remote-control` do Claude Code para acompanhar e aprovar tarefas em execução mesmo longe do computador. Também mantive, em paralelo, uma sessão de chat separada com o Claude para discutir decisões de arquitetura, revisar premissas e planejar próximos passos antes de repassar instruções ao Claude Code — isso ajudou a economizar contexto na sessão de execução e a chegar a cada tarefa com a decisão já pensada, em vez de deixar a ferramenta decidir sozinha.
 
-10. **Novas features**: para novas features (que não existem no enunciado inicial), rodei o fluxo do speckit novamente. Com isso, cada feature tem uma branch dentro de `.specify/`. 
+10. **Novas features**: para novas features (que não existem no enunciado inicial), rodei o fluxo do speckit novamente. Com isso, cada feature tem uma branch dentro de `.specify/`.
 
 > O problema disso: ao trabalhar numa feature, o Claude não sabe sobre o contexto das demais (somente o `constitution.md` é compartilhado entre features). Com isso, não há restrição que o impeça de editar e atrapalhar código originado de outras features já implementadas.
 > A garantia de não conflito vem de duas fontes combinadas: testes automatizados e revisão humana.
 
 ### Revisões e correções das entregas da IA
 
-- **Padrões implícitos não viram regra de projeto sozinhos**: ao gerar o `plan.md` e o
-  `tasks.md` da primeira feature (cadastro de condôminos e unidades), o Claude tomou várias
-  decisões que não eram específicas dessa feature — nome do pacote base do backend,
-  ferramenta de build, ferramenta de migração de banco, onde exceptions de regra de negócio
-  devem viver dentro da estrutura `api/domain/infra/shared`, formato padrão de erro da API,
-  convenção de rotas REST. Nenhuma dessas decisões foi promovida à `constitution.md`
-  automaticamente — ficaram só documentadas no plano daquela feature. Como cada feature roda
-  numa sessão de IA isolada que só compartilha a `constitution.md` com as demais (não os
-  `plan.md`/`research.md` de features já implementadas), isso é um risco real: uma próxima
-  feature poderia divergir sem perceber (usar Gradle em vez de Maven, colocar uma exception
-  de negócio em `shared/` em vez de `domain/`, inventar outro formato de erro). Só notei o
-  risco ao revisar o plano e perguntei diretamente se aquilo não deveria virar padrão de
-  projeto; o Claude concordou e propôs uma emenda à constituição (v1.0.0 → v1.1.0)
-  formalizando essas decisões antes de qualquer código ser escrito.
-  **Lição**: ao revisar um `plan.md`/`tasks.md` gerado por IA, vale perguntar ativamente
-  quais decisões ali são genéricas o suficiente para virar regra na constituição, em vez de
-  assumir que a IA vai sinalizar isso sozinha.
-- **Formato de data levado longe demais na primeira tentativa**: ao planejar a feature de
-  lançamentos de contas a receber, a IA seguiu a constituição ao pé da letra e exigiu
-  `dd/MM/yyyy` também no contrato de API (não só na UI), forçando conversão manual
-  desnecessária no backend. Questionei essa decisão, e a correção inicial ainda propôs um
-  utilitário de conversão dedicado no frontend — perguntei se isso era mesmo necessário, já
-  que `<input type="date">` e o `DatePipe` do Angular já resolvem a exibição/entrada sem
-  código customizado. Foi confirmado que sim, o utilitário era desnecessário, e a constituição
-  foi ajustada de novo antes de qualquer código ser escrito.
-- **Correções pedidas antes da implementação da rodada de pagamento**: pagamento já na
-  criação do lançamento (sem precisar criar e só depois marcar como pago em uma ação
-  separada), remoção do campo `paid` redundante (o status "pago" passou a ser derivado só de
-  `paymentDate` não ser nulo) e, como mencionado acima, remoção de um utilitário de conversão
-  de data dedicado, em favor de `DatePipe`/`<input type="date">` nativos.
+- **Padrões implícitos não viram regra de projeto sozinhos**: ao gerar o `plan.md` e o `tasks.md` da primeira feature (cadastro de condôminos e unidades), o Claude tomou várias decisões que não eram específicas dessa feature — nome do pacote base do backend, ferramenta de build, ferramenta de migração de banco, onde exceptions de regra de negócio devem viver dentro da estrutura `api/domain/infra/shared`, formato padrão de erro da API, convenção de rotas REST. Nenhuma dessas decisões foi promovida à `constitution.md` automaticamente — ficaram só documentadas no plano daquela feature. Como cada feature roda numa sessão de IA isolada que só compartilha a `constitution.md` com as demais (não os `plan.md`/`research.md` de features já implementadas), isso é um risco real: uma próxima feature poderia divergir sem perceber (usar Gradle em vez de Maven, colocar uma exception de negócio em `shared/` em vez de `domain/`, inventar outro formato de erro). Só notei o risco ao revisar o plano e perguntei diretamente se aquilo não deveria virar padrão de projeto; o Claude concordou e propôs uma emenda à constituição (v1.0.0 → v1.1.0) formalizando essas decisões antes de qualquer código ser escrito. **Lição**: ao revisar um `plan.md`/`tasks.md` gerado por IA, vale perguntar ativamente quais decisões ali são genéricas o suficiente para virar regra na constituição, em vez de assumir que a IA vai sinalizar isso sozinha.
+- **Formato de data levado longe demais na primeira tentativa**: ao planejar a feature de lançamentos de contas a receber, a IA seguiu a constituição ao pé da letra e exigiu `dd/MM/yyyy` também no contrato de API (não só na UI), forçando conversão manual desnecessária no backend. Questionei essa decisão, e a correção inicial ainda propôs um utilitário de conversão dedicado no frontend — perguntei se isso era mesmo necessário, já que `<input type="date">` e o `DatePipe` do Angular já resolvem a exibição/entrada sem código customizado. Foi confirmado que sim, o utilitário era desnecessário, e a constituição foi ajustada de novo antes de qualquer código ser escrito.
+- **Correções pedidas antes da implementação da rodada de pagamento**: pagamento já na criação do lançamento (sem precisar criar e só depois marcar como pago em uma ação separada), remoção do campo `paid` redundante (o status "pago" passou a ser derivado só de `paymentDate` não ser nulo) e, como mencionado acima, remoção de um utilitário de conversão de data dedicado, em favor de `DatePipe`/`<input type="date">` nativos.
 
 ## O que eu faria diferente ou melhoraria com mais tempo
 
-- **Cálculo automático de saldo líquido por unidade**: hoje cada conta é lançada e consultada
-  isoladamente, sem nenhum agregado. Uma melhoria natural seria calcular, por unidade, o saldo
-  líquido entre o que ela tem a receber (contas do tipo "a receber" da própria unidade) e o
-  que fornecedores vinculados a ela têm a pagar (contas do tipo "a pagar" de `Supplier`s
-  associados à mesma unidade) — útil, por exemplo, quando um fornecedor é também morador e o
-  condomínio quer saber o saldo líquido consolidado dessa unidade. Ficou fora do escopo da
-  feature 003 (registrado como Assumption no `spec.md`) para não misturar uma funcionalidade
-  de agregação/relatório com a generalização de `Receivable` em `Account` e a criação de
-  `Supplier` — mas é um passo natural depois que as duas entidades já convivem no mesmo
-  sistema.
+- **Cálculo automático de saldo líquido por unidade**: hoje cada conta é lançada e consultada isoladamente, sem nenhum agregado. Uma melhoria natural seria calcular, por unidade, o saldo líquido entre o que ela tem a receber (contas do tipo "a receber" da própria unidade) e o que fornecedores vinculados a ela têm a pagar (contas do tipo "a pagar" de `Supplier`s associados à mesma unidade) — útil, por exemplo, quando um fornecedor é também morador e o condomínio quer saber o saldo líquido consolidado dessa unidade. Ficou fora do escopo da feature 003 (registrado como Assumption no `spec.md`) para não misturar uma funcionalidade de agregação/relatório com a generalização de `Receivable` em `Account` e a criação de `Supplier` — mas é um passo natural depois que as duas entidades já convivem no mesmo sistema.
 - **Geração automática/recorrente de lançamentos mensais**: hoje tanto o lançamento individual quanto o em lote (`POST /api/accounts/bulk`) são ações manuais disparadas pela usuária todo mês. Uma automação (ex.: job agendado gerando a taxa condominial do mês automaticamente para lançamentos marcados como `recurring`) reduziria ainda mais o trabalho manual, mas dependeria de definir regras de idempotência (não duplicar o lançamento do mês se a ação manual também for usada).
-- **Validação de formato da chave PIX**: hoje `pixKey` em `Supplier` é texto livre, sem
-  validar se é um CPF/CNPJ/e-mail/telefone/chave aleatória válido — decisão consciente pela
-  simplicidade (detectar e validar cada um dos formatos possíveis não foi solicitado), mas
-  seria uma melhoria natural para reduzir erro de digitação ao cadastrar um fornecedor.
-- **Ações rápidas em lote além de remoção** (ideia registrada durante a revisão do plano da
-  feature 003): hoje a seleção múltipla nas listagens só permite remover em lote
-  (`bulk-delete.ts`). Uma extensão natural seria permitir editar um campo (ex.: valor) de
-  várias contas selecionadas de uma vez, útil por exemplo para reajustar o valor de várias
-  contas recorrentes iguais em massa, sem abrir o formulário de cada uma individualmente.
-- **Paginação nas listagens (a começar pela de contas)**: as listagens atuais carregam todos
-  os registros de uma vez, premissa aceitável enquanto o volume é de poucas dezenas (ver
-  Assumptions das features 001/002/003). A listagem de contas tende a crescer indefinidamente
-  (uma leva nova por mês, diferente de unidades/fornecedores, que têm cardinalidade
-  praticamente fixa), então deve ser a primeira a precisar de paginação. Avaliação sobre
-  reaproveitar em todas as listagens: como o projeto já tem o hábito de extrair um utilitário
-  compartilhado assim que mais de uma tela precisa da mesma capacidade
-  (`list-selection.ts`/`bulk-delete.ts`/`bulk-actions-bar`), a recomendação é construir a
-  paginação também como um utilitário reaproveitável (mesmo padrão signal-based), mas aplicar
-  de fato só na listagem de contas por enquanto — unidades e fornecedores não têm o mesmo
-  padrão de crescimento e não devem ganhar paginação só por "manter padrão" sem necessidade
-  real (YAGNI). Construir o utilitário já pensando em reuso custa pouco a mais do que uma
-  solução específica da tela, e evita ter que extrair a abstração correndo depois, quando
-  unidades/fornecedores eventualmente crescerem.
-- **Saldo líquido por Parte, não só o total agregado da tela de Contas**: o total dinâmico
-  adicionado nesta rodada (`netTotal` em `account-list`) soma ENTRADA/SAÍDA das contas
-  atualmente exibidas, não por Parte individual — uma extensão útil seria expor, na tela de
-  Partes, o saldo líquido de cada uma (quanto ela deve/tem a receber no total), no mesmo
-  espírito do saldo real já calculado por Fundo desde a feature 004.
-
+- **Validação de formato da chave PIX**: hoje `pixKey` em `Supplier` é texto livre, sem validar se é um CPF/CNPJ/e-mail/telefone/chave aleatória válido — decisão consciente pela simplicidade (detectar e validar cada um dos formatos possíveis não foi solicitado), mas seria uma melhoria natural para reduzir erro de digitação ao cadastrar um fornecedor.
+- **Ações rápidas em lote além de remoção** (ideia registrada durante a revisão do plano da feature 003): hoje a seleção múltipla nas listagens só permite remover em lote (`bulk-delete.ts`). Uma extensão natural seria permitir editar um campo (ex.: valor) de várias contas selecionadas de uma vez, útil por exemplo para reajustar o valor de várias contas recorrentes iguais em massa, sem abrir o formulário de cada uma individualmente.
+- **Paginação nas listagens (a começar pela de contas)**: as listagens atuais carregam todos os registros de uma vez, premissa aceitável enquanto o volume é de poucas dezenas (ver Assumptions das features 001/002/003). A listagem de contas tende a crescer indefinidamente (uma leva nova por mês, diferente de unidades/fornecedores, que têm cardinalidade praticamente fixa), então deve ser a primeira a precisar de paginação. Avaliação sobre reaproveitar em todas as listagens: como o projeto já tem o hábito de extrair um utilitário compartilhado assim que mais de uma tela precisa da mesma capacidade (`list-selection.ts`/`bulk-delete.ts`/`bulk-actions-bar`), a recomendação é construir a paginação também como um utilitário reaproveitável (mesmo padrão signal-based), mas aplicar de fato só na listagem de contas por enquanto — unidades e fornecedores não têm o mesmo padrão de crescimento e não devem ganhar paginação só por "manter padrão" sem necessidade real (YAGNI). Construir o utilitário já pensando em reuso custa pouco a mais do que uma solução específica da tela, e evita ter que extrair a abstração correndo depois, quando unidades/fornecedores eventualmente crescerem.
+- **Saldo líquido por Parte, não só o total agregado da tela de Contas**: o total dinâmico adicionado nesta rodada (`netTotal` em `account-list`) soma ENTRADA/SAÍDA das contas atualmente exibidas, não por Parte individual — uma extensão útil seria expor, na tela de Partes, o saldo líquido de cada uma (quanto ela deve/tem a receber no total), no mesmo espírito do saldo real já calculado por Fundo desde a feature 004.

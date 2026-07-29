@@ -2,8 +2,7 @@
 
 Base path: `/api`
 
-Formato de erro padrão (todas as respostas 4xx), mensagens em português (Convenções de API
-REST), inalterado em relação à feature 002:
+Formato de erro padrão (todas as respostas 4xx), mensagens em português (Convenções de API REST), inalterado em relação à feature 002:
 
 ```json
 {
@@ -12,8 +11,7 @@ REST), inalterado em relação à feature 002:
 }
 ```
 
-Datas (`dueDate`, `paymentDate`) trafegam em ISO-8601 (`yyyy-MM-dd`), sem `@JsonFormat`
-customizada — mesma regra da feature 002.
+Datas (`dueDate`, `paymentDate`) trafegam em ISO-8601 (`yyyy-MM-dd`), sem `@JsonFormat` customizada — mesma regra da feature 002.
 
 ## Contas — `/api/accounts` (substitui `/api/receivables` da feature 002)
 
@@ -24,8 +22,7 @@ Lista contas, a pagar e a receber (FR-010). Aceita filtros opcionais, combináve
 **Query params** (todos opcionais):
 - `type` (`RECEIVABLE`/`PAYABLE`): retorna só contas do tipo informado (FR-012).
 - `unitId`: retorna só contas cuja unidade é a informada (aplica-se a contas `RECEIVABLE`).
-- `supplierId`: retorna só contas cujo fornecedor é o informado (aplica-se a contas
-  `PAYABLE`).
+- `supplierId`: retorna só contas cujo fornecedor é o informado (aplica-se a contas `PAYABLE`).
 - `paid` (`true`/`false`): pago/pendente — herdado de 002.
 - `overdue` (`true`): pendente com `dueDate` no passado — herdado de 002.
 - `dueYearMonth` (`yyyy-MM`): herdado de 002.
@@ -64,14 +61,11 @@ Sem filtros, retorna todas as contas cadastradas (a pagar e a receber juntas).
   }
 ]
 ```
-Lista vazia (`[]`) quando não há contas, ou nenhuma corresponde aos filtros informados. Uma
-conta sempre tem exatamente um de `unit`/`supplier` preenchido, nunca os dois nem nenhum.
+Lista vazia (`[]`) quando não há contas, ou nenhuma corresponde aos filtros informados. Uma conta sempre tem exatamente um de `unit`/`supplier` preenchido, nunca os dois nem nenhum.
 
 **Erros**:
-- `404` — `unitId` ou `supplierId` informado no filtro não corresponde a um registro
-  cadastrado.
-- `400` — `type`, `paid`/`overdue` fora dos valores aceitos, ou `dueYearMonth`/
-  `paymentYearMonth` fora do formato `yyyy-MM`.
+- `404` — `unitId` ou `supplierId` informado no filtro não corresponde a um registro cadastrado.
+- `400` — `type`, `paid`/`overdue` fora dos valores aceitos, ou `dueYearMonth`/ `paymentYearMonth` fora do formato `yyyy-MM`.
 
 ### `GET /api/accounts/{id}`
 
@@ -81,8 +75,7 @@ conta sempre tem exatamente um de `unit`/`supplier` preenchido, nunca os dois ne
 
 ### `POST /api/accounts`
 
-Lança uma conta individual, a pagar ou a receber (FR-001 do spec para fornecedor + FR-002 da
-feature 002 para unidade).
+Lança uma conta individual, a pagar ou a receber (FR-001 do spec para fornecedor + FR-002 da feature 002 para unidade).
 
 **Request (conta a receber)**:
 ```json
@@ -116,24 +109,17 @@ feature 002 para unidade).
 }
 ```
 
-`paymentDate` e `observations` são opcionais em ambos os casos. `unitId` é obrigatório quando
-`type = RECEIVABLE` (e `supplierId` deve ser omitido/nulo); `supplierId` é obrigatório quando
-`type = PAYABLE` (e `unitId` deve ser omitido/nulo).
+`paymentDate` e `observations` são opcionais em ambos os casos. `unitId` é obrigatório quando `type = RECEIVABLE` (e `supplierId` deve ser omitido/nulo); `supplierId` é obrigatório quando `type = PAYABLE` (e `unitId` deve ser omitido/nulo).
 
 **Response 201**: conta criada, no mesmo formato do `GET`.
 
 **Erros**:
-- `400` — `amount` ausente ou negativo (FR-008 — zero é aceito); `dueDate`, `description`, `fund`, `type`
-  ausentes; `fund` fora do conjunto fixo; contraparte ausente ou incompatível com `type`
-  (ex.: `type = RECEIVABLE` com `supplierId` preenchido, ou sem `unitId`) — FR-007.
-- `404` — `unitId`/`supplierId` informado não corresponde a um registro cadastrado (orienta a
-  cadastrar a unidade/fornecedor primeiro — FR-021, mesmo padrão de 002).
+- `400` — `amount` ausente ou negativo (FR-008 — zero é aceito); `dueDate`, `description`, `fund`, `type` ausentes; `fund` fora do conjunto fixo; contraparte ausente ou incompatível com `type` (ex.: `type = RECEIVABLE` com `supplierId` preenchido, ou sem `unitId`) — FR-007.
+- `404` — `unitId`/`supplierId` informado não corresponde a um registro cadastrado (orienta a cadastrar a unidade/fornecedor primeiro — FR-021, mesmo padrão de 002).
 
 ### `POST /api/accounts/bulk`
 
-Lança a mesma conta a receber para todas as unidades cadastradas no momento da chamada —
-exclusivo de contas a receber (FR-009). Comportamento herdado de `POST
-/api/receivables/bulk` (feature 002), sem `type`/`supplierId` no corpo.
+Lança a mesma conta a receber para todas as unidades cadastradas no momento da chamada — exclusivo de contas a receber (FR-009). Comportamento herdado de `POST /api/receivables/bulk` (feature 002), sem `type`/`supplierId` no corpo.
 
 **Request**:
 ```json
@@ -150,37 +136,29 @@ exclusivo de contas a receber (FR-009). Comportamento herdado de `POST
 
 **Response 201**: array com uma conta criada por unidade (todas `type: "RECEIVABLE"`).
 
-**Erros**: mesmas do `POST /api/accounts` (exceto `unitId`, que não se aplica); `409` —
-nenhuma unidade cadastrada.
+**Erros**: mesmas do `POST /api/accounts` (exceto `unitId`, que não se aplica); `409` — nenhuma unidade cadastrada.
 
 ### `PUT /api/accounts/{id}`
 
-Edita uma conta existente (FR-015). Mesmo corpo do `POST /api/accounts`, incluindo `type` —
-que MUST ser igual ao tipo já persistido da conta; a contraparte (`unitId` ou `supplierId`,
-conforme o tipo) pode ser trocada por outra do mesmo tipo.
+Edita uma conta existente (FR-015). Mesmo corpo do `POST /api/accounts`, incluindo `type` — que MUST ser igual ao tipo já persistido da conta; a contraparte (`unitId` ou `supplierId`, conforme o tipo) pode ser trocada por outra do mesmo tipo.
 
 **Response 200**: conta atualizada.
 
 **Erros**:
-- `400` — mesmas validações do `POST /api/accounts`, mais: `type` diferente do tipo atual da
-  conta ("Não é possível alterar o tipo de uma conta já criada.").
+- `400` — mesmas validações do `POST /api/accounts`, mais: `type` diferente do tipo atual da conta ("Não é possível alterar o tipo de uma conta já criada.").
 - `404` — conta `{id}` não encontrada, ou `unitId`/`supplierId` informado não existe.
 
 ### `POST /api/accounts/{id}/pay`
 
-Registra/atualiza o pagamento de uma conta, a pagar ou a receber (FR-013). Inalterado em
-relação a `POST /api/receivables/{id}/pay` (feature 002).
+Registra/atualiza o pagamento de uma conta, a pagar ou a receber (FR-013). Inalterado em relação a `POST /api/receivables/{id}/pay` (feature 002).
 
 **Request**: `{ "paymentDate": "2026-08-15" }`
 
-**Response 200**: conta atualizada. **Erros**: `400` — `paymentDate` ausente/inválida; `404`
-— conta não encontrada.
+**Response 200**: conta atualizada. **Erros**: `400` — `paymentDate` ausente/inválida; `404` — conta não encontrada.
 
 ### `DELETE /api/accounts/{id}`
 
-Remove uma conta (FR-015). Inalterado em relação a `DELETE /api/receivables/{id}` — sem
-endpoint de remoção em lote; o frontend chama esta rota uma vez por item selecionado
-(melhor esforço, herdado de 002).
+Remove uma conta (FR-015). Inalterado em relação a `DELETE /api/receivables/{id}` — sem endpoint de remoção em lote; o frontend chama esta rota uma vez por item selecionado (melhor esforço, herdado de 002).
 
 **Response 204**: sem corpo. **Erros**: `404` — conta não encontrada.
 
@@ -211,15 +189,13 @@ Lista vazia (`[]`) quando não há fornecedores (FR-004).
 ```
 `unitId` e `pixKey` são opcionais (FR-001/FR-023).
 
-**Response 201**: fornecedor criado. **Erros**: `400` — `name` ausente/vazio; `404` —
-`unitId` informado não corresponde a uma unidade cadastrada.
+**Response 201**: fornecedor criado. **Erros**: `400` — `name` ausente/vazio; `404` — `unitId` informado não corresponde a uma unidade cadastrada.
 
 ### `PUT /api/suppliers/{id}`
 
 Edita nome, unidade vinculada e/ou chave PIX (FR-002). Mesmo corpo do `POST`.
 
-**Response 200**: fornecedor atualizado. **Erros**: mesmas do `POST`, mais `404` — fornecedor
-não encontrado.
+**Response 200**: fornecedor atualizado. **Erros**: mesmas do `POST`, mais `404` — fornecedor não encontrado.
 
 ### `DELETE /api/suppliers/{id}`
 
@@ -233,16 +209,8 @@ Remove um fornecedor, bloqueando quando houver ao menos uma conta a pagar vincul
 
 ## Impacto em `/api/units/{id}` (feature 001)
 
-`DELETE /api/units/{id}` passa a retornar `409` também quando a unidade possuir fornecedores
-vinculados (além de contas vinculadas, que já era o caso na feature 002) — e **deixa** de
-checar condôminos vinculados, já que o cadastro de condôminos é removido (FR-016/FR-017 desta
-feature). Este contrato pertence à feature 001
-(`specs/001-cadastro-condominos/contracts/api.md`) e só deve ser atualizado lá após a
-aprovação do processo de "Edição de Features Já Implementadas" (ver plan.md e research.md
-desta feature).
+`DELETE /api/units/{id}` passa a retornar `409` também quando a unidade possuir fornecedores vinculados (além de contas vinculadas, que já era o caso na feature 002) — e **deixa** de checar condôminos vinculados, já que o cadastro de condôminos é removido (FR-016/FR-017 desta feature). Este contrato pertence à feature 001 (`specs/001-cadastro-condominos/contracts/api.md`) e só deve ser atualizado lá após a aprovação do processo de "Edição de Features Já Implementadas" (ver plan.md e research.md desta feature).
 
 ## Remoção de `/api/residents` (feature 001)
 
-Toda a rota `/api/residents*` deixa de existir (FR-016). Este contrato também pertence à
-feature 001 e é removido de `specs/001-cadastro-condominos/contracts/api.md` como parte do
-mesmo processo de aprovação acima.
+Toda a rota `/api/residents*` deixa de existir (FR-016). Este contrato também pertence à feature 001 e é removido de `specs/001-cadastro-condominos/contracts/api.md` como parte do mesmo processo de aprovação acima.
