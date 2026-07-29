@@ -1,6 +1,43 @@
 <!--
 Sync Impact Report
 ==================
+Versão: 1.5.0 → 1.6.0
+
+Princípios modificados:
+- I. Arquitetura em Camadas — expandido: a preferência por `ALTER TABLE ... RENAME TO`/`RENAME
+  COLUMN` em vez de recriar tabela/coluna pressupõe que há dado real a preservar; quando o
+  projeto determina explicitamente que não há (ex.: ambiente local de desenvolvimento, sem
+  dado de produção em jogo), uma migration MAY truncar e recriar a coluna/tabela diretamente,
+  desde que a decisão seja explícita e registrada no spec da feature, não assumida por padrão.
+- VI. Convenções de API REST — expandido: o factory estático `from(Entity)` de um DTO de
+  resposta MAY aceitar um valor computado adicional como parâmetro (`from(Entity,
+  valorComputado)`) quando o campo de resposta é uma agregação sobre outra entidade, não um
+  dado persistido na própria entidade — a regra de cálculo permanece no `Service` (Princípio
+  II), e o `Controller` repassa o resultado ao factory, nunca a DTO calculando-o sozinha.
+
+Motivação: ambas as decisões emergiram do planejamento da feature 004-fund-entity-balance
+(conversão de `Fund` de enum para entidade, com saldo real calculado por agregação sobre
+`Account`) e do `/speckit.analyze` correspondente, que identificou dois desvios pontuais e já
+justificados da letra literal dos Princípios I e VI — sinal de que a constituição não cobria
+ainda esses dois casos genéricos (migração sem dado a preservar; DTO com campo derivado de
+agregação), que qualquer feature futura com necessidade semelhante teria que redecidir do
+zero. Diferente das emendas anteriores, esta é aplicada antes da implementação da feature (a
+pedido explícito da usuária, "rode a revisão da constituição agora, depois rodo novamente pós
+implementação") — a revisão pós-implementação de 004 ainda deve ocorrer normalmente, focada
+em decisões que só emergirem durante a escrita do código.
+
+Templates a verificar:
+- ✅ .specify/templates/plan-template.md — genérico, sem alterações necessárias
+- ✅ .specify/templates/spec-template.md — genérico, sem alterações necessárias
+- ✅ .specify/templates/tasks-template.md — genérico, sem alterações necessárias
+
+Itens pendentes (TODO): revisão pós-implementação de 004-fund-entity-balance ainda pendente,
+a rodar depois de `/speckit.implement`.
+-->
+
+<!--
+Sync Impact Report (histórico — emenda anterior)
+==================
 Versão: 1.4.0 → 1.5.0
 
 Princípios modificados:
@@ -240,7 +277,11 @@ migração de schema de banco MUST ser feita via Flyway, com migrations versiona
 já existente (ex.: `Receivable` → `Account`), MUST preferir `ALTER TABLE ... RENAME TO`/
 `RENAME COLUMN` a criar a tabela do zero e copiar dados via `INSERT ... SELECT` — preserva os
 `id`s e o histórico de auto-incremento já existentes, além de ser mais direto que recriar e
-migrar.
+migrar. Essa preferência pressupõe que há dado real a preservar; quando o projeto determina
+explicitamente que não há (ex.: ambiente local de desenvolvimento, sem dado de produção em
+jogo), uma migration MAY truncar e recriar a coluna/tabela diretamente em vez de renomear —
+desde que essa decisão seja explícita e registrada no spec da feature (Assumptions ou
+Clarifications), nunca assumida por padrão.
 
 Recursos compartilhados ficam em `shared/`, mas essa pasta MUST conter apenas recursos
 verdadeiramente transversais a mais de uma entidade: `GlobalExceptionHandler`, exceptions
@@ -400,8 +441,13 @@ executar a remoção diretamente quando chamado, sem etapa de confirmação pró
 DTOs de resposta MUST expor um factory estático `from(Entity)` que constrói o DTO a
 partir da entidade de domínio. Quando um DTO de resposta representa uma entidade que
 referencia outra, MUST embutir o DTO de resposta completo da entidade referenciada (ex.:
-`AccountResponse.unit: UnitResponse`), nunca apenas o identificador. No frontend, o
-interceptor HTTP MUST normalizar toda resposta de erro no formato acima em um objeto
+`AccountResponse.unit: UnitResponse`), nunca apenas o identificador. Quando um campo de
+resposta é derivado por agregação sobre outra entidade (não um dado persistido na própria
+entidade — ex.: um saldo calculado a partir de lançamentos vinculados), o factory MAY aceitar
+esse valor já calculado como parâmetro adicional (`from(Entity, valorComputado)`) — a regra de
+cálculo permanece no `Service` (Princípio II), e o `Controller` é responsável por chamar o
+`Service` e repassar o resultado ao factory, nunca a própria DTO calculando-o sozinha. No
+frontend, o interceptor HTTP MUST normalizar toda resposta de erro no formato acima em um objeto
 `ApiError` consumido pelos componentes — componentes NUNCA devem ler `HttpErrorResponse`
 bruto diretamente.
 
@@ -493,5 +539,5 @@ definidos aqui. Complexidade adicional (novas camadas, dependências, padrões) 
 justificada em relação aos princípios de simplicidade implícitos na arquitetura em camadas
 descrita no Princípio I.
 
-**Version**: 1.5.0 | **Ratified**: 2026-07-24 | **Last Amended**: 2026-07-28
+**Version**: 1.6.0 | **Ratified**: 2026-07-24 | **Last Amended**: 2026-07-29
 </content>
