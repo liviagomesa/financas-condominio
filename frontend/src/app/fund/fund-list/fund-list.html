@@ -37,7 +37,7 @@
             <input
               type="checkbox"
               [checked]="selection.isSelected(fund)"
-              (change)="selection.toggle(fund)"
+              (click)="selection.toggleWithRange(fund, funds(), $event.shiftKey)"
             />
           </td>
           <td>{{ fund.name }}</td>

@@ -36,7 +36,7 @@
             <input
               type="checkbox"
               [checked]="selection.isSelected(group)"
-              (change)="selection.toggle(group)"
+              (click)="selection.toggleWithRange(group, groups(), $event.shiftKey)"
             />
           </td>
           <td>{{ group.name }}</td>

@@ -36,7 +36,7 @@
             <input
               type="checkbox"
               [checked]="selection.isSelected(party)"
-              (change)="selection.toggle(party)"
+              (click)="selection.toggleWithRange(party, parties(), $event.shiftKey)"
             />
           </td>
           <td>{{ party.name }}</td>

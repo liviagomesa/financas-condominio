@@ -118,7 +118,7 @@
             <input
               type="checkbox"
               [checked]="selection.isSelected(account)"
-              (change)="selection.toggle(account)"
+              (click)="selection.toggleWithRange(account, accounts(), $event.shiftKey)"
             />
           </td>
           <td>
@@ -126,7 +126,25 @@
               {{ accountTypeLabels[account.type] }}
             </span>
           </td>
-          <td>{{ account.amount | number: '1.2-2' }}</td>
+          <td>
+            @if (editingAmountId() === account.id) {
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                class="form-control form-control-sm"
+                [(ngModel)]="amountDraft"
+                (keydown.enter)="confirmAmountEdit(account)"
+                (keydown.escape)="cancelAmountEdit()"
+                (blur)="confirmAmountEdit(account)"
+              />
+              @if (amountEditError()) {
+                <div class="text-danger small">{{ amountEditError() }}</div>
+              }
+            } @else {
+              <span (mousedown)="$event.preventDefault()" (click)="startAmountEdit(account)">{{ account.amount | number: '1.2-2' }}</span>
+            }
+          </td>
           <td>{{ account.dueDate | date: 'dd/MM/yyyy' }}</td>
           <td>{{ account.description }}</td>
           <td>{{ account.fund.name }}</td>
@@ -148,6 +166,7 @@
                 class="btn btn-sm btn-link p-0 ms-1"
                 title="Alterar pagamento"
                 aria-label="Alterar pagamento"
+                (mousedown)="$event.preventDefault()"
                 (click)="startPayment(account)"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" class="icon">
@@ -161,6 +180,7 @@
                 class="btn btn-sm btn-link p-0 ms-1"
                 title="Registrar pagamento"
                 aria-label="Registrar pagamento"
+                (mousedown)="$event.preventDefault()"
                 (click)="startPayment(account)"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" class="icon">

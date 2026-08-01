@@ -5,7 +5,7 @@ import { RouterLink } from '@angular/router';
 import { ApiError } from '../../core/error.interceptor';
 import { bulkDelete } from '../../shared/bulk-delete';
 import { createSelection } from '../../shared/list-selection';
-import { Account, AccountFilters, ACCOUNT_TYPE_LABELS } from '../../shared/models/account.model';
+import { Account, AccountFilters, AccountRequest, ACCOUNT_TYPE_LABELS } from '../../shared/models/account.model';
 import { Fund } from '../../shared/models/fund.model';
 import { Party } from '../../shared/models/party.model';
 import { BulkActionsBar } from '../../shared/components/bulk-actions-bar/bulk-actions-bar';
@@ -28,6 +28,8 @@ export class AccountList implements OnInit {
   protected readonly accountTypeLabels = ACCOUNT_TYPE_LABELS;
   protected readonly selection = createSelection<Account>((account) => account.id);
   protected readonly payingId = signal<number | null>(null);
+  protected readonly editingAmountId = signal<number | null>(null);
+  protected readonly amountEditError = signal<string | null>(null);
   protected readonly netTotal = computed(() =>
     this.accounts().reduce((total, a) => (a.type === 'RECEIVABLE' ? total + a.amount : total - a.amount), 0)
   );
@@ -38,6 +40,7 @@ export class AccountList implements OnInit {
   protected dueYearMonth = '';
   protected paymentYearMonth = '';
   protected paymentDateDraft = '';
+  protected amountDraft = '';
 
   constructor(
     private readonly accountService: AccountService,
@@ -53,6 +56,8 @@ export class AccountList implements OnInit {
 
   onFilterChange(): void {
     this.selection.clear();
+    this.editingAmountId.set(null);
+    this.amountEditError.set(null);
     this.load();
   }
 
@@ -71,17 +76,20 @@ export class AccountList implements OnInit {
   removeSelected(): void {
     this.errorMessage.set(null);
     const ids = Array.from(this.selection.selectedIds());
-    bulkDelete(ids, (id) => this.accountService.delete(id)).subscribe((result) => {
-      if (result.failed.length) {
-        const details = result.failed.map((f) => f.message).join('; ');
-        this.errorMessage.set(`Não foi possível remover ${result.failed.length} conta(s): ${details}`);
-      }
-      this.selection.clear();
-      this.load();
-    });
+    bulkDelete(ids, (id) => this.accountService.delete(id))
+      .subscribe((result) => {
+        if (result.failed.length) {
+          const details = result.failed.map((f) => f.message).join('; ');
+          this.errorMessage.set(`Não foi possível remover ${result.failed.length} conta(s): ${details}`);
+        }
+        this.selection.clear();
+        this.load();
+      });
   }
 
   startPayment(account: Account): void {
+    this.editingAmountId.set(null);
+    this.amountEditError.set(null);
     this.payingId.set(account.id);
     this.paymentDateDraft = account.paymentDate ?? new Date().toISOString().slice(0, 10);
   }
@@ -101,6 +109,50 @@ export class AccountList implements OnInit {
         this.load();
       },
       error: (err: ApiError) => this.errorMessage.set(err.message),
+    });
+  }
+
+  startAmountEdit(account: Account): void {
+    this.payingId.set(null);
+    this.amountDraft = String(account.amount);
+    this.amountEditError.set(null);
+    this.editingAmountId.set(account.id);
+  }
+
+  cancelAmountEdit(): void {
+    this.editingAmountId.set(null);
+    this.amountEditError.set(null);
+  }
+
+  confirmAmountEdit(account: Account): void {
+    if (this.editingAmountId() !== account.id) {
+      return;
+    }
+    const amount = Number(this.amountDraft);
+    if (this.amountDraft === '' || this.amountDraft == null || Number.isNaN(amount) || amount < 0) {
+      this.amountEditError.set('O valor é obrigatório e não pode ser negativo.');
+      return;
+    }
+
+    this.errorMessage.set(null);
+    const request: AccountRequest = {
+      type: account.type,
+      amount,
+      dueDate: account.dueDate,
+      description: account.description,
+      fundId: account.fund.id,
+      recurring: account.recurring,
+      partyId: account.party.id,
+      paymentDate: account.paymentDate,
+      observations: account.observations,
+    };
+    this.accountService.update(account.id, request).subscribe({
+      next: (updated) => {
+        this.accounts.update((list) => list.map((a) => (a.id === updated.id ? updated : a)));
+        this.editingAmountId.set(null);
+        this.amountEditError.set(null);
+      },
+      error: (err: ApiError) => this.amountEditError.set(err.message),
     });
   }
 
