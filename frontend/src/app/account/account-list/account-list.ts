@@ -26,7 +26,15 @@ export class AccountList implements OnInit {
   protected readonly funds = signal<Fund[]>([]);
   protected readonly errorMessage = signal<string | null>(null);
   protected readonly accountTypeLabels = ACCOUNT_TYPE_LABELS;
+
+  // JavaScript não funciona como outras linguagens, em que uma função tem um frame na pilha de execução
+  // que é destruído junto com suas variáveis locais assim que a função retorna.
+  //
+  // O resultado de createSelection está salvo em selection, variável do componente atualmente renderizado.
+  // Como selection inclui funções (como isSelected) que referenciam variáveis de createSelection (ids e
+  // anchorId), o JS é obrigado a mantê-las em memória, para que as funções não quebrem.
   protected readonly selection = createSelection<Account>((account) => account.id);
+
   protected readonly payingId = signal<number | null>(null);
   protected readonly editingAmountId = signal<number | null>(null);
   protected readonly amountEditError = signal<string | null>(null);
@@ -76,6 +84,7 @@ export class AccountList implements OnInit {
   removeSelected(): void {
     this.errorMessage.set(null);
     const ids = Array.from(this.selection.selectedIds());
+    // passa lista de ids a remover + a função de delete específica deste recurso
     bulkDelete(ids, (id) => this.accountService.delete(id))
       .subscribe((result) => {
         if (result.failed.length) {
