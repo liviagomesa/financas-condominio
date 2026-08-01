@@ -96,7 +96,7 @@ Utilizei o GitHub Spec Kit integrado ao Claude Code para conduzir o desenvolvime
 
 4. **Clarificação**: Em seguida, usei `/speckit.clarify` para varrer o spec e perguntar o que ficou faltando (não é preciso antecipar todas as possíveis lacunas no `/speckit.specify`).
 
-5. **Revisão da spec**: Só neste momento revisei a spec, com foco no primeiro parágrafo de cada User Story e nas seções Search Criteria e Assumptions.
+5. **Revisão da spec**: Só neste momento revisei a spec, com foco no primeiro parágrafo de cada User Story e nas seções Edge Cases, Search Criteria e Assumptions.
 
 6. **Planejamento**: usei `/speckit.plan` e `/speckit.tasks` para definir a estrutura do projeto e quebrar o trabalho em tarefas menores. Em seguida, usei `/speckit.analyze` para cruzar spec/plan/tasks contra a constitution e apontar conflito. Só então revisei os arquivos gerados, com foco no `plan.md` (da Constitution Check em diante) e no `api.md` (tudo, inclusive DTOs).
 
