@@ -111,7 +111,7 @@ Nenhuma tarefa nova nesta fase.
 
 **Purpose**: FR-012 foi generalizado para `specs/002-receivable-charges/spec.md` (FR-024) — o destaque de linha selecionada passa a ser um comportamento de toda listagem que reaproveita o trio de seleção múltipla, não específico desta feature (ver plan.md). A única mudança de código nesta feature é mover a regra CSS de transição para um arquivo global; a aplicação do destaque às demais listagens (`party-list`, `fund-list`, `group-list`) está registrada nos `tasks.md` das features que hoje possuem essas telas (004 e 005).
 
-- [ ] T020 Move a regra `table > tbody > tr > td { transition: background-color 1s ease; }` de `frontend/src/app/account/account-list/account-list.scss` para `frontend/src/styles.scss` (global), removendo-a de `account-list.scss` (depends on T016, T017)
+- [X] T020 Move a regra `table > tbody > tr > td { transition: background-color 1s ease; }` de `frontend/src/app/account/account-list/account-list.scss` para `frontend/src/styles.scss` (global), removendo-a de `account-list.scss` (depends on T016, T017)
 
 **Checkpoint**: `account-list` continua com o mesmo comportamento visual; a regra de transição deixa de ser exclusiva desta tela.
 

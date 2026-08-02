@@ -184,8 +184,8 @@ Nenhuma tarefa nova nesta fase.
 
 **Purpose**: A feature 002 generalizou o destaque visual de seleção (FR-024 de `specs/002-receivable-charges/spec.md`) para toda listagem que reaproveita o trio de seleção múltipla — `party-list` e `group-list` precisam ganhá-lo.
 
-- [ ] T059 [P] Add `[class.table-active]="selection.isSelected(party)"` ao `<tr>` de `frontend/src/app/party/party-list/party-list.html` (depends on T037)
-- [ ] T060 [P] Add `[class.table-active]="selection.isSelected(group)"` ao `<tr>` de `frontend/src/app/group/group-list/group-list.html` (depends on T037)
+- [X] T059 [P] Add `[class.table-active]="selection.isSelected(party)"` ao `<tr>` de `frontend/src/app/party/party-list/party-list.html` (depends on T037)
+- [X] T060 [P] Add `[class.table-active]="selection.isSelected(group)"` ao `<tr>` de `frontend/src/app/group/group-list/group-list.html` (depends on T037)
 
 **Checkpoint**: `party-list` e `group-list` destacam visualmente linhas selecionadas, mesmo comportamento hoje já presente em `account-list`.
 

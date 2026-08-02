@@ -134,7 +134,7 @@ Nenhuma tarefa nova nesta fase.
 
 **Purpose**: A feature 002 generalizou o destaque visual de seleção (FR-024 de `specs/002-receivable-charges/spec.md`) para toda listagem que reaproveita o trio de seleção múltipla — `fund-list` precisa ganhá-lo.
 
-- [ ] T038 Add `[class.table-active]="selection.isSelected(fund)"` ao `<tr>` de `frontend/src/app/fund/fund-list/fund-list.html` (depends on T033)
+- [X] T038 Add `[class.table-active]="selection.isSelected(fund)"` ao `<tr>` de `frontend/src/app/fund/fund-list/fund-list.html` (depends on T033)
 
 **Checkpoint**: `fund-list` destaca visualmente linhas selecionadas, mesmo comportamento hoje já presente em `account-list`.
 

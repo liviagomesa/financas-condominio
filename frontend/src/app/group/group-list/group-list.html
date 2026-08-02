@@ -31,7 +31,7 @@
     </thead>
     <tbody>
       @for (group of groups(); track group.id) {
-        <tr>
+        <tr [class.table-active]="selection.isSelected(group)">
           <td>
             <input
               type="checkbox"

@@ -31,7 +31,7 @@
     </thead>
     <tbody>
       @for (party of parties(); track party.id) {
-        <tr>
+        <tr [class.table-active]="selection.isSelected(party)">
           <td>
             <input
               type="checkbox"

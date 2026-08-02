@@ -32,7 +32,7 @@
     </thead>
     <tbody>
       @for (fund of funds(); track fund.id) {
-        <tr>
+        <tr [class.table-active]="selection.isSelected(fund)">
           <td>
             <input
               type="checkbox"
