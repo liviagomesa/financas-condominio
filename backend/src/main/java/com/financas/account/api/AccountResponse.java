@@ -14,7 +14,6 @@ public record AccountResponse(
         LocalDate dueDate,
         String description,
         FundResponse fund,
-        boolean recurring,
         LocalDate paymentDate,
         String observations,
         PartyResponse party) {
@@ -27,7 +26,6 @@ public record AccountResponse(
                 account.getDueDate(),
                 account.getDescription(),
                 fundResponse,
-                account.isRecurring(),
                 account.getPaymentDate(),
                 account.getObservations(),
                 PartyResponse.from(account.getParty()));

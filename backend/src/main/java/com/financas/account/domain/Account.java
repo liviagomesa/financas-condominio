@@ -40,9 +40,6 @@ public class Account {
     @JoinColumn(name = "fund_id", nullable = false)
     private Fund fund;
 
-    @Column(nullable = false)
-    private boolean recurring;
-
     @ManyToOne(optional = false)
     @JoinColumn(name = "party_id", nullable = false)
     private Party party;
@@ -62,7 +59,6 @@ public class Account {
             LocalDate dueDate,
             String description,
             Fund fund,
-            boolean recurring,
             Party party,
             LocalDate paymentDate,
             String observations) {
@@ -71,7 +67,6 @@ public class Account {
         this.dueDate = dueDate;
         this.description = description;
         this.fund = fund;
-        this.recurring = recurring;
         this.party = party;
         this.paymentDate = paymentDate;
         this.observations = observations;
@@ -115,14 +110,6 @@ public class Account {
 
     public void setFund(Fund fund) {
         this.fund = fund;
-    }
-
-    public boolean isRecurring() {
-        return recurring;
-    }
-
-    public void setRecurring(boolean recurring) {
-        this.recurring = recurring;
     }
 
     public Party getParty() {

@@ -9,16 +9,21 @@ import com.financas.party.domain.PartyRepository;
 import com.financas.shared.exceptions.BadRequestException;
 import com.financas.shared.exceptions.NotFoundException;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.time.format.DateTimeParseException;
 import java.util.Comparator;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class AccountService {
+
+    private static final Pattern PART_SUFFIX_PATTERN = Pattern.compile("^(.*) - parte (\\d+)$");
 
     private final AccountRepository repository;
     private final PartyRepository partyRepository;
@@ -42,7 +47,6 @@ public class AccountService {
             LocalDate dueDate,
             String description,
             Long fundId,
-            boolean recurring,
             Long partyId,
             LocalDate paymentDate,
             String observations) {
@@ -50,7 +54,7 @@ public class AccountService {
         Fund fund = findFundOrThrow(fundId);
         Party party = resolveParty(partyId);
         return repository.save(
-                new Account(type, amount, dueDate, description, fund, recurring, party, paymentDate, observations));
+                new Account(type, amount, dueDate, description, fund, party, paymentDate, observations));
     }
 
     @Transactional
@@ -60,7 +64,6 @@ public class AccountService {
             LocalDate dueDate,
             String description,
             Long fundId,
-            boolean recurring,
             Long groupId,
             LocalDate paymentDate,
             String observations) {
@@ -71,8 +74,8 @@ public class AccountService {
             throw new EmptyGroupException();
         }
         return group.getMembers().stream()
-                .map(party -> repository.save(new Account(
-                        type, amount, dueDate, description, fund, recurring, party, paymentDate, observations)))
+                .map(party -> repository.save(
+                        new Account(type, amount, dueDate, description, fund, party, paymentDate, observations)))
                 .toList();
     }
 
@@ -142,7 +145,6 @@ public class AccountService {
             LocalDate dueDate,
             String description,
             Long fundId,
-            boolean recurring,
             Long partyId,
             LocalDate paymentDate,
             String observations) {
@@ -157,16 +159,63 @@ public class AccountService {
         account.setDueDate(dueDate);
         account.setDescription(description);
         account.setFund(fund);
-        account.setRecurring(recurring);
         account.setParty(party);
         account.setPaymentDate(paymentDate);
         account.setObservations(observations);
         return repository.save(account);
     }
 
-    public Account registerPayment(Long id, LocalDate paymentDate) {
+    @Transactional
+    public Account registerPayment(Long id, LocalDate paymentDate, BigDecimal paidAmount) {
         Account account = findById(id);
+        BigDecimal amountDue = account.getAmount();
+        BigDecimal effectivePaidAmount = paidAmount == null ? amountDue : paidAmount;
+        int comparison = effectivePaidAmount.compareTo(amountDue);
+
+        if (comparison == 0) {
+            account.setPaymentDate(paymentDate);
+            return repository.save(account);
+        }
+
+        if (comparison < 0) {
+            Matcher matcher = PART_SUFFIX_PATTERN.matcher(account.getDescription());
+            String baseDescription;
+            int currentPart;
+            if (matcher.matches()) {
+                baseDescription = matcher.group(1);
+                currentPart = Integer.parseInt(matcher.group(2));
+            } else {
+                baseDescription = account.getDescription();
+                currentPart = 1;
+                account.setDescription(baseDescription + " - parte 1");
+            }
+            account.setAmount(effectivePaidAmount);
+            account.setPaymentDate(paymentDate);
+            Account paidAccount = repository.save(account);
+
+            Account remaining = new Account(
+                    paidAccount.getType(),
+                    amountDue.subtract(effectivePaidAmount),
+                    paidAccount.getDueDate(),
+                    baseDescription + " - parte " + (currentPart + 1),
+                    paidAccount.getFund(),
+                    paidAccount.getParty(),
+                    null,
+                    paidAccount.getObservations());
+            repository.save(remaining);
+            return paidAccount;
+        }
+
+        BigDecimal overpaidAmount = effectivePaidAmount.subtract(amountDue);
+        String note = "pago R$" + overpaidAmount.setScale(2, RoundingMode.HALF_UP).toString().replace('.', ',')
+                + " a mais";
+        String existingObservations = account.getObservations();
+        String updatedObservations = (existingObservations == null || existingObservations.isBlank())
+                ? note
+                : existingObservations + "\n" + note;
+        account.setAmount(effectivePaidAmount);
         account.setPaymentDate(paymentDate);
+        account.setObservations(updatedObservations);
         return repository.save(account);
     }
 
@@ -178,7 +227,6 @@ public class AccountService {
                 original.getDueDate().plusMonths(1),
                 original.getDescription(),
                 original.getFund(),
-                original.isRecurring(),
                 original.getParty(),
                 null,
                 original.getObservations()));

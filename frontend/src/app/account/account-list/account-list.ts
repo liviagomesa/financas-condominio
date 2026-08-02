@@ -52,6 +52,7 @@ export class AccountList implements OnInit {
   protected dueYearMonth = '';
   protected paymentYearMonth = '';
   protected paymentDateDraft = '';
+  protected paidAmountDraft = '';
   protected amountDraft = '';
 
   constructor(
@@ -161,6 +162,7 @@ export class AccountList implements OnInit {
     this.amountEditError.set(null);
     this.payingId.set(account.id);
     this.paymentDateDraft = account.paymentDate ?? new Date().toISOString().slice(0, 10);
+    this.paidAmountDraft = String(account.amount);
   }
 
   cancelPayment(): void {
@@ -171,14 +173,24 @@ export class AccountList implements OnInit {
     if (!this.paymentDateDraft) {
       return;
     }
+    const isFirstPayment = !account.paymentDate;
+    let paidAmount: number | undefined;
+    if (isFirstPayment) {
+      paidAmount = Number(this.paidAmountDraft);
+      if (this.paidAmountDraft === '' || Number.isNaN(paidAmount) || paidAmount <= 0) {
+        return;
+      }
+    }
     this.errorMessage.set(null);
-    this.accountService.registerPayment(account.id, { paymentDate: this.paymentDateDraft }).subscribe({
-      next: () => {
-        this.payingId.set(null);
-        this.load();
-      },
-      error: (err: ApiError) => this.errorMessage.set(err.message),
-    });
+    this.accountService
+      .registerPayment(account.id, { paymentDate: this.paymentDateDraft, ...(isFirstPayment ? { paidAmount } : {}) })
+      .subscribe({
+        next: () => {
+          this.payingId.set(null);
+          this.load();
+        },
+        error: (err: ApiError) => this.errorMessage.set(err.message),
+      });
   }
 
   startAmountEdit(account: Account): void {
@@ -210,7 +222,6 @@ export class AccountList implements OnInit {
       dueDate: account.dueDate,
       description: account.description,
       fundId: account.fund.id,
-      recurring: account.recurring,
       partyId: account.party.id,
       paymentDate: account.paymentDate,
       observations: account.observations,

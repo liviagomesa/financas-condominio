@@ -1,7 +1,12 @@
-.icon {
-  vertical-align: -0.125em;
-}
-
 table > tbody > tr > td {
   transition: background-color 1s ease;
+}
+
+.col-type {
+  width: 1%;
+  white-space: nowrap;
+}
+
+.col-payment-amount {
+  width: 5.5rem;
 }

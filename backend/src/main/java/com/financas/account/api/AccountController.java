@@ -58,7 +58,6 @@ public class AccountController {
                 request.dueDate(),
                 request.description(),
                 request.fundId(),
-                request.recurring(),
                 request.partyId(),
                 request.paymentDate(),
                 request.observations());
@@ -74,7 +73,6 @@ public class AccountController {
                         request.dueDate(),
                         request.description(),
                         request.fundId(),
-                        request.recurring(),
                         request.groupId(),
                         request.paymentDate(),
                         request.observations())
@@ -93,7 +91,6 @@ public class AccountController {
                 request.dueDate(),
                 request.description(),
                 request.fundId(),
-                request.recurring(),
                 request.partyId(),
                 request.paymentDate(),
                 request.observations());
@@ -102,7 +99,7 @@ public class AccountController {
 
     @PostMapping("/{id}/pay")
     public AccountResponse pay(@PathVariable Long id, @Valid @RequestBody AccountPaymentRequest request) {
-        Account account = service.registerPayment(id, request.paymentDate());
+        Account account = service.registerPayment(id, request.paymentDate(), request.paidAmount());
         return toResponse(account);
     }
 

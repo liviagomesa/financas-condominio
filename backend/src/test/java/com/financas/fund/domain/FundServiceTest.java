@@ -137,7 +137,7 @@ class FundServiceTest {
     }
 
     private Account account(AccountType type, BigDecimal amount, LocalDate paymentDate) {
-        return new Account(type, amount, LocalDate.now(), "Descrição", null, false, null, paymentDate, null);
+        return new Account(type, amount, LocalDate.now(), "Descrição", null, null, paymentDate, null);
     }
 
     private Fund withId(Fund fund, Long id) {

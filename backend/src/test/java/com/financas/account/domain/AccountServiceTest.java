@@ -61,7 +61,6 @@ class AccountServiceTest {
                 LocalDate.of(2026, 8, 10),
                 "Taxa condominial - Agosto/2026",
                 1L,
-                true,
                 1L,
                 null,
                 null);
@@ -85,7 +84,6 @@ class AccountServiceTest {
                 LocalDate.of(2026, 8, 5),
                 "Reembolso",
                 1L,
-                false,
                 1L,
                 null,
                 "Disse que vai pagar mês que vem");
@@ -103,7 +101,7 @@ class AccountServiceTest {
         when(repository.save(any(Account.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         Account created = service.create(
-                AccountType.RECEIVABLE, BigDecimal.ZERO, LocalDate.now(), "Taxa", 1L, true, 1L, null, null);
+                AccountType.RECEIVABLE, BigDecimal.ZERO, LocalDate.now(), "Taxa", 1L, 1L, null, null);
 
         assertThat(created.getAmount()).isEqualByComparingTo(BigDecimal.ZERO);
     }
@@ -116,7 +114,6 @@ class AccountServiceTest {
                         LocalDate.now(),
                         "Taxa",
                         1L,
-                        true,
                         1L,
                         null,
                         null))
@@ -135,7 +132,6 @@ class AccountServiceTest {
                         LocalDate.now(),
                         "Taxa",
                         999L,
-                        true,
                         1L,
                         null,
                         null))
@@ -149,8 +145,8 @@ class AccountServiceTest {
         stubFund(1L);
 
         assertThatThrownBy(() -> service.create(
-                        AccountType.RECEIVABLE, new BigDecimal("350.00"), LocalDate.now(), "Taxa", 1L, true, null,
-                        null, null))
+                        AccountType.RECEIVABLE, new BigDecimal("350.00"), LocalDate.now(), "Taxa", 1L, null, null,
+                        null))
                 .isInstanceOf(com.financas.shared.exceptions.BadRequestException.class);
     }
 
@@ -167,7 +163,6 @@ class AccountServiceTest {
                         LocalDate.now(),
                         "Taxa",
                         1L,
-                        true,
                         1L,
                         null,
                         null))
@@ -184,7 +179,7 @@ class AccountServiceTest {
         when(repository.save(any(Account.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         List<Account> created = service.createForGroup(
-                AccountType.RECEIVABLE, new BigDecimal("350.00"), LocalDate.of(2026, 8, 10), "Taxa", 1L, true, 1L,
+                AccountType.RECEIVABLE, new BigDecimal("350.00"), LocalDate.of(2026, 8, 10), "Taxa", 1L, 1L,
                 null, null);
 
         assertThat(created).hasSize(2);
@@ -199,7 +194,7 @@ class AccountServiceTest {
         when(groupRepository.findById(1L)).thenReturn(Optional.of(group));
 
         assertThatThrownBy(() -> service.createForGroup(
-                        AccountType.RECEIVABLE, new BigDecimal("350.00"), LocalDate.now(), "Taxa", 1L, true, 1L, null,
+                        AccountType.RECEIVABLE, new BigDecimal("350.00"), LocalDate.now(), "Taxa", 1L, 1L, null,
                         null))
                 .isInstanceOf(EmptyGroupException.class);
 
@@ -267,7 +262,6 @@ class AccountServiceTest {
                         LocalDate.of(2026, 8, 20),
                         "Zebra",
                         testFund(),
-                        true,
                         party,
                         null,
                         null),
@@ -279,7 +273,6 @@ class AccountServiceTest {
                         LocalDate.of(2026, 8, 10),
                         "Alpha",
                         testFund(),
-                        true,
                         party,
                         null,
                         null),
@@ -291,7 +284,6 @@ class AccountServiceTest {
                         LocalDate.of(2026, 8, 10),
                         "Alpha",
                         testFund(),
-                        true,
                         party,
                         null,
                         null),
@@ -303,7 +295,6 @@ class AccountServiceTest {
                         LocalDate.of(2026, 8, 10),
                         "Bravo",
                         testFund(),
-                        true,
                         party,
                         null,
                         null),
@@ -338,7 +329,6 @@ class AccountServiceTest {
                         LocalDate.now(),
                         "Taxa",
                         1L,
-                        true,
                         1L,
                         null,
                         null))
@@ -353,10 +343,132 @@ class AccountServiceTest {
         when(repository.findById(10L)).thenReturn(Optional.of(existing));
         when(repository.save(any(Account.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        Account paid = service.registerPayment(10L, LocalDate.of(2026, 8, 15));
+        Account paid = service.registerPayment(10L, LocalDate.of(2026, 8, 15), null);
 
         assertThat(paid.isPaid()).isTrue();
         assertThat(paid.getPaymentDate()).isEqualTo(LocalDate.of(2026, 8, 15));
+        assertThat(paid.getAmount()).isEqualByComparingTo("400.00");
+        assertThat(paid.getDescription()).isEqualTo("Limpeza");
+        assertThat(paid.getObservations()).isNull();
+        verify(repository, org.mockito.Mockito.times(1)).save(any(Account.class));
+    }
+
+    @Test
+    void registerPaymentWithPaidAmountEqualToAmountDueBehavesLikeFullPayment() {
+        Party party = withId(new Party("Fornecedor", null), 1L);
+        Account existing = withId(payable(party, new BigDecimal("400.00"), LocalDate.now()), 10L);
+        when(repository.findById(10L)).thenReturn(Optional.of(existing));
+        when(repository.save(any(Account.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        Account paid = service.registerPayment(10L, LocalDate.of(2026, 8, 15), new BigDecimal("400.00"));
+
+        assertThat(paid.isPaid()).isTrue();
+        assertThat(paid.getPaymentDate()).isEqualTo(LocalDate.of(2026, 8, 15));
+        assertThat(paid.getAmount()).isEqualByComparingTo("400.00");
+        assertThat(paid.getDescription()).isEqualTo("Limpeza");
+        verify(repository, org.mockito.Mockito.times(1)).save(any(Account.class));
+    }
+
+    @Test
+    void registerPaymentWithSmallerPaidAmountSplitsAccountWithoutPreviousSuffix() {
+        Party party = withId(new Party("Bloco A - 101", null), 1L);
+        Account existing = withId(
+                new Account(
+                        AccountType.RECEIVABLE,
+                        new BigDecimal("100.00"),
+                        LocalDate.of(2026, 7, 10),
+                        "Taxa condominial",
+                        testFund(),
+                        party,
+                        null,
+                        null),
+                10L);
+        when(repository.findById(10L)).thenReturn(Optional.of(existing));
+        when(repository.save(any(Account.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        Account paid = service.registerPayment(10L, LocalDate.of(2026, 7, 15), new BigDecimal("70.00"));
+
+        assertThat(paid.getDescription()).isEqualTo("Taxa condominial - parte 1");
+        assertThat(paid.getAmount()).isEqualByComparingTo("70.00");
+        assertThat(paid.getPaymentDate()).isEqualTo(LocalDate.of(2026, 7, 15));
+
+        org.mockito.ArgumentCaptor<Account> captor = org.mockito.ArgumentCaptor.forClass(Account.class);
+        verify(repository, org.mockito.Mockito.times(2)).save(captor.capture());
+        Account remaining = captor.getAllValues().get(1);
+        assertThat(remaining.getDescription()).isEqualTo("Taxa condominial - parte 2");
+        assertThat(remaining.getAmount()).isEqualByComparingTo("30.00");
+        assertThat(remaining.getDueDate()).isEqualTo(LocalDate.of(2026, 7, 10));
+        assertThat(remaining.getPaymentDate()).isNull();
+        assertThat(remaining.getFund()).isEqualTo(existing.getFund());
+        assertThat(remaining.getParty()).isEqualTo(party);
+        assertThat(remaining.getObservations()).isNull();
+    }
+
+    @Test
+    void registerPaymentWithSmallerPaidAmountSplitsAccountKeepingExistingSuffix() {
+        Party party = withId(new Party("Bloco A - 101", null), 1L);
+        Account existing = withId(
+                new Account(
+                        AccountType.RECEIVABLE,
+                        new BigDecimal("30.00"),
+                        LocalDate.of(2026, 7, 10),
+                        "Taxa condominial - parte 2",
+                        testFund(),
+                        party,
+                        null,
+                        null),
+                11L);
+        when(repository.findById(11L)).thenReturn(Optional.of(existing));
+        when(repository.save(any(Account.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        Account paid = service.registerPayment(11L, LocalDate.of(2026, 7, 20), new BigDecimal("20.00"));
+
+        assertThat(paid.getDescription()).isEqualTo("Taxa condominial - parte 2");
+        assertThat(paid.getAmount()).isEqualByComparingTo("20.00");
+
+        org.mockito.ArgumentCaptor<Account> captor = org.mockito.ArgumentCaptor.forClass(Account.class);
+        verify(repository, org.mockito.Mockito.times(2)).save(captor.capture());
+        Account remaining = captor.getAllValues().get(1);
+        assertThat(remaining.getDescription()).isEqualTo("Taxa condominial - parte 3");
+        assertThat(remaining.getAmount()).isEqualByComparingTo("10.00");
+        assertThat(remaining.getDueDate()).isEqualTo(LocalDate.of(2026, 7, 10));
+    }
+
+    @Test
+    void registerPaymentWithGreaterPaidAmountAdjustsAmountAndSetsObservationsWhenEmpty() {
+        Party party = withId(new Party("Bloco A - 101", null), 1L);
+        Account existing = withId(receivable(party, new BigDecimal("500.00"), LocalDate.now()), 10L);
+        when(repository.findById(10L)).thenReturn(Optional.of(existing));
+        when(repository.save(any(Account.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        Account paid = service.registerPayment(10L, LocalDate.of(2026, 7, 15), new BigDecimal("501.00"));
+
+        assertThat(paid.getAmount()).isEqualByComparingTo("501.00");
+        assertThat(paid.isPaid()).isTrue();
+        assertThat(paid.getObservations()).isEqualTo("pago R$1,00 a mais");
+        verify(repository, org.mockito.Mockito.times(1)).save(any(Account.class));
+    }
+
+    @Test
+    void registerPaymentWithGreaterPaidAmountAppendsNoteToExistingObservations() {
+        Party party = withId(new Party("Bloco A - 101", null), 1L);
+        Account existing = withId(
+                new Account(
+                        AccountType.RECEIVABLE,
+                        new BigDecimal("500.00"),
+                        LocalDate.now(),
+                        "Taxa",
+                        testFund(),
+                        party,
+                        null,
+                        "Combinado com a síndica"),
+                10L);
+        when(repository.findById(10L)).thenReturn(Optional.of(existing));
+        when(repository.save(any(Account.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        Account paid = service.registerPayment(10L, LocalDate.of(2026, 7, 15), new BigDecimal("550.00"));
+
+        assertThat(paid.getObservations()).isEqualTo("Combinado com a síndica\npago R$50,00 a mais");
     }
 
     @Test
@@ -381,7 +493,6 @@ class AccountServiceTest {
                         LocalDate.of(2026, 3, 10),
                         "Taxa condominial",
                         testFund(),
-                        true,
                         party,
                         LocalDate.of(2026, 3, 5),
                         "Observação"),
@@ -394,7 +505,6 @@ class AccountServiceTest {
         assertThat(copy.getType()).isEqualTo(original.getType());
         assertThat(copy.getDescription()).isEqualTo(original.getDescription());
         assertThat(copy.getFund()).isEqualTo(original.getFund());
-        assertThat(copy.isRecurring()).isEqualTo(original.isRecurring());
         assertThat(copy.getParty()).isEqualTo(original.getParty());
         assertThat(copy.getObservations()).isEqualTo(original.getObservations());
         assertThat(copy.getDueDate()).isEqualTo(LocalDate.of(2026, 4, 10));
@@ -465,25 +575,23 @@ class AccountServiceTest {
     }
 
     private Account receivable(Party party, BigDecimal amount, LocalDate dueDate) {
-        return new Account(AccountType.RECEIVABLE, amount, dueDate, "Taxa", testFund(), true, party, null, null);
+        return new Account(AccountType.RECEIVABLE, amount, dueDate, "Taxa", testFund(), party, null, null);
     }
 
     private Account receivableWithFund(Party party, Fund fund, BigDecimal amount) {
-        return new Account(AccountType.RECEIVABLE, amount, LocalDate.now(), "Taxa", fund, true, party, null, null);
+        return new Account(AccountType.RECEIVABLE, amount, LocalDate.now(), "Taxa", fund, party, null, null);
     }
 
     private Account receivableWithPayment(Party party, BigDecimal amount, LocalDate dueDate, LocalDate paymentDate) {
-        return new Account(
-                AccountType.RECEIVABLE, amount, dueDate, "Taxa", testFund(), true, party, paymentDate, null);
+        return new Account(AccountType.RECEIVABLE, amount, dueDate, "Taxa", testFund(), party, paymentDate, null);
     }
 
     private Account payable(Party party, BigDecimal amount, LocalDate dueDate) {
-        return new Account(AccountType.PAYABLE, amount, dueDate, "Limpeza", testFund(), false, party, null, null);
+        return new Account(AccountType.PAYABLE, amount, dueDate, "Limpeza", testFund(), party, null, null);
     }
 
     private Account payableWithPayment(Party party, BigDecimal amount, LocalDate dueDate, LocalDate paymentDate) {
-        return new Account(
-                AccountType.PAYABLE, amount, dueDate, "Limpeza", testFund(), false, party, paymentDate, null);
+        return new Account(AccountType.PAYABLE, amount, dueDate, "Limpeza", testFund(), party, paymentDate, null);
     }
 
     private Fund testFund() {

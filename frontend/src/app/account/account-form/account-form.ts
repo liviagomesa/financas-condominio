@@ -43,7 +43,6 @@ export class AccountForm implements OnInit {
     }),
     description: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
     fundId: new FormControl<number | null>(null, { validators: [Validators.required] }),
-    recurring: new FormControl(false, { nonNullable: true }),
     partyId: new FormControl<number | null>(null, { validators: [Validators.required] }),
     groupId: new FormControl<number | null>(null),
     paymentDate: new FormControl('', { nonNullable: true }),
@@ -75,7 +74,6 @@ export class AccountForm implements OnInit {
           dueDate: account.dueDate,
           description: account.description,
           fundId: account.fund.id,
-          recurring: account.recurring,
           partyId: account.party.id,
           groupId: null,
           paymentDate: account.paymentDate ?? '',
@@ -116,7 +114,6 @@ export class AccountForm implements OnInit {
       dueDate: raw.dueDate,
       description: raw.description,
       fundId: raw.fundId as number,
-      recurring: raw.recurring,
       paymentDate: raw.paymentDate || null,
       observations: raw.observations || null,
     };

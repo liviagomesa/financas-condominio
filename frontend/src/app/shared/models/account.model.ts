@@ -15,7 +15,6 @@ export interface Account {
   dueDate: string;
   description: string;
   fund: Fund;
-  recurring: boolean;
   paymentDate: string | null;
   observations: string | null;
   party: Party;
@@ -27,7 +26,6 @@ export interface AccountRequest {
   dueDate: string;
   description: string;
   fundId: number;
-  recurring: boolean;
   partyId: number;
   paymentDate: string | null;
   observations: string | null;
@@ -39,7 +37,6 @@ export interface AccountBulkRequest {
   dueDate: string;
   description: string;
   fundId: number;
-  recurring: boolean;
   groupId: number;
   paymentDate: string | null;
   observations: string | null;
@@ -47,6 +44,7 @@ export interface AccountBulkRequest {
 
 export interface AccountPaymentRequest {
   paymentDate: string;
+  paidAmount?: number;
 }
 
 export interface AccountDuplicateRequest {
