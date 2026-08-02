@@ -235,6 +235,10 @@ A tarefa de bloquear a remoção de unidade quando houver lançamentos vinculado
 
 A tarefa de aplicar seleção múltipla + remoção em lote a `unit-list`/`resident-list` está registrada em `specs/001-cadastro-condominos/tasks.md`, Phase 12, por alterar telas já implementadas pela feature 001 reaproveitando componentes compartilhados criados em T056-T058 desta feature (Phase 8).
 
+### Impacto cruzado — destaque de linha selecionada generalizado (FR-024, sessão 2026-08-02)
+
+A tarefa de mover a regra CSS de transição de cor de `account-list.scss` para `frontend/src/styles.scss` (global) está registrada em `specs/007-duplicate-account-next-month/tasks.md`, Phase 7 — `account-list` já aplica o destaque `table-active`, criado por aquela feature, sem alteração de comportamento. As tarefas de aplicar `[class.table-active]="selection.isSelected(item)"` a `fund-list` estão registradas em `specs/004-fund-entity-balance/tasks.md`, Phase 6, e a `party-list`/`group-list` em `specs/005-counterparty-groups/tasks.md`, Phase 8 — por alterarem telas já implementadas por essas features reaproveitando o trio de seleção desta feature (FR-024).
+
 ### Notas de dependência entre stories
 
 Assim como na feature 001, as user stories aqui não são 100% independentes entre si: US2 reaproveita o `ReceivableService`/`ReceivableService` (frontend) de US1 para o lançamento em lote; US3 reaproveita a listagem básica de US1; US4 reaproveita o formulário e a listagem de US1/US3 para adicionar edição/remoção. Isso reflete a ordem P1 → P1 → P2 → P3 já definida no spec.

@@ -19,6 +19,10 @@
 - Q: O total dinâmico da tabela de Contas deve ser uma soma aritmética simples ou um valor líquido? → A: Valor líquido — soma das contas do tipo ENTRADA menos a soma das contas do tipo SAÍDA, podendo resultar em valor negativo (mesmo princípio já usado no saldo real de um Fundo).
 - Q: Contas, Partes ou vínculos cadastrados antes desta feature precisam ser preservados na migração? → A: Não é necessário preservar; o ambiente é de testes e os dados MAY ser recriados do zero.
 
+### Sessão de correção 2026-08-02 (impacto cruzado com a feature 002)
+
+- A feature 002 (`specs/002-receivable-charges/spec.md`, FR-024) generalizou o destaque visual de linha selecionada para toda listagem que reaproveita o trio de seleção múltipla (`list-selection.ts`/`bulk-delete.ts`/`bulk-actions-bar`), hoje já aplicado a `party-list` e `group-list`. Ambas as listagens desta feature passam a exibir esse destaque também — ver tasks.md, Phase 9.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Lançar entradas e saídas para qualquer Parte (Priority: P1)

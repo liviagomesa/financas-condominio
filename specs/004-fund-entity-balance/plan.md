@@ -41,6 +41,10 @@ Transformar `Fund` de enum fixo (`POOL`, `POOL_GARDEN`, `SIDE_GARDEN`) em uma en
 
 Nenhuma violação da constituição identificada — Complexity Tracking não se aplica.
 
+## Impacto cruzado (sessão 2026-08-02 — destaque de linha selecionada, feature 002 FR-024)
+
+A feature 002 generalizou o destaque visual de linha selecionada (`[class.table-active]="selection.isSelected(item)"`) para toda listagem que reaproveita o trio de seleção múltipla — hoje já aplicado a `fund-list` (T033). `fund-list` ganha esse binding em `fund-list.html`, sem alteração de `FundService`/`FundController` nem de `list-selection.ts` em si (ver tasks.md, Phase 7). Constitution Check: sem alteração em nenhum princípio — mudança de template de uma linha, reaproveitando `Selection.isSelected()` já existente.
+
 ## Project Structure
 
 ### Documentation (this feature)

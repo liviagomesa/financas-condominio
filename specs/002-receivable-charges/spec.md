@@ -32,6 +32,10 @@
 - Q: É preciso criar o lançamento e só depois registrar o pagamento em uma ação separada? → A: Não — a criação (individual ou em lote) e a edição MUST aceitar informar a data de pagamento diretamente, opcionalmente, no mesmo formulário/chamada. A ação dedicada `POST /{id}/pay` continua existindo para o caso de marcar como pago depois de já criado, sem precisar reenviar o lançamento inteiro.
 - Q: A conversão de data ISO ⇄ DD/MM/AAAA no frontend precisa de um utilitário próprio? → A: Não — `<input type="date">` já envia/recebe o valor em ISO-8601 nativamente, e o `DatePipe` (`| date:'dd/MM/yyyy'`) do Angular já formata a exibição sem custom code. A constituição (Princípio IV) foi ajustada para não exigir mais um utilitário dedicado.
 
+### Sessão de correção 2026-08-02 (destaque de linha selecionada)
+
+- A feature 007 (`specs/007-duplicate-account-next-month/`) introduziu um destaque visual (classe `table-active` do Bootstrap) para linhas selecionadas, mas implementou-o apenas em `account-list`, como se fosse um comportamento específico daquela tela. A usuária identificou que esse destaque está associado à seleção múltipla em si — o trio `list-selection.ts`/`bulk-delete.ts`/`bulk-actions-bar` definido nesta feature (FR-019, Assumptions) — e por isso MUST ser um comportamento consistente de toda listagem que reaproveita esse trio, não uma escolha isolada de uma tela. Ver FR-024 abaixo e nota de impacto cruzado em plan.md.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Lançar conta a receber para uma unidade (Priority: P1)
@@ -161,6 +165,7 @@ Como responsável pela gestão do condomínio, quero registrar que um lançament
 - **FR-021**: O sistema MUST permitir filtrar a listagem de lançamentos por vencidos — um lançamento é considerado vencido quando está pendente (sem data de pagamento) e sua data de vencimento é anterior à data atual; um lançamento pago não é considerado vencido, mesmo que o pagamento tenha ocorrido depois do vencimento.
 - **FR-022**: O sistema MUST permitir filtrar a listagem de lançamentos por mês e ano de vencimento.
 - **FR-023**: O sistema MUST permitir filtrar a listagem de lançamentos por mês e ano de pagamento (aplicável apenas a lançamentos pagos).
+- **FR-024**: Toda listagem que reaproveita o trio de seleção múltipla desta feature (`list-selection.ts`/`bulk-delete.ts`/`bulk-actions-bar`, ver FR-019) MUST destacar visualmente cada linha selecionada, de forma consistente entre todas elas — não um comportamento específico de uma listagem isolada. Requisito adicionado retroativamente nesta feature (dona do trio) a partir de um destaque equivalente introduzido apenas em `account-list` pela feature 007; a aplicação retroativa às demais listagens (`unit-list`/`resident-list` históricos, hoje `party-list`, `fund-list`, `group-list`) está registrada como impacto cruzado nos `tasks.md` das features que hoje possuem cada uma dessas telas (ver plan.md).
 
 ### Key Entities
 

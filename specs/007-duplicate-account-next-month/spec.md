@@ -18,6 +18,10 @@
 
 - Durante a revisão da entrega implementada, a usuária identificou falta de feedback visual: nenhum destaque diferenciava as linhas selecionadas das demais, e depois de duplicar não havia como saber se a operação deu certo nem onde a cópia foi parar. Adicionados FR-012 a FR-014 para cobrir esse feedback (destaque de seleção, destaque temporário + scroll até a cópia, e mensagem de sucesso com a contagem).
 
+### Session 2026-08-02, parte 2 (generalização do destaque de seleção)
+
+- A usuária revisou o FR-012 e apontou que o destaque de linha selecionada não é um comportamento específico desta feature — está associado à seleção múltipla em si, um mecanismo compartilhado por todas as listagens (`list-selection.ts`/`bulk-delete.ts`/`bulk-actions-bar`, definido na feature 002). **FR-012 é superseded**: a regra passa a viver em `specs/002-receivable-charges/spec.md` (FR-024), como propriedade do trio de seleção compartilhado, aplicável a toda listagem que o reaproveita. A implementação já existente em `account-list` (feature 007) permanece válida e não muda de comportamento — apenas a regra CSS de transição de cor associada migra para um arquivo global (ver plan.md e tasks.md, Phase 7). FR-013 e FR-014 (destaque temporário de cópia recém-criada e mensagem de sucesso) permanecem específicos desta feature, sem alteração.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Duplicar lançamento mantendo o valor (Priority: P1)
@@ -79,7 +83,7 @@ Como responsável pela gestão do condomínio, quero duplicar um lançamento par
 - **FR-009**: Além do botão na barra de ações em lote, o sistema MUST oferecer um atalho de teclado equivalente à ação "Duplicar para o mês seguinte" (valor mantido): pressionar Ctrl+C com um ou mais lançamentos selecionados MUST memorizar essa seleção, e pressionar Ctrl+V em seguida MUST duplicar os lançamentos memorizados no momento do Ctrl+C, mesmo que a seleção na tela tenha mudado entre um comando e outro.
 - **FR-010**: O atalho de teclado da FR-009 MUST se aplicar apenas à variante "valor mantido"; a variante "valor zerado" fica disponível somente pelo botão dedicado na barra de ações em lote, já que a usuária não indicou um atalho equivalente para ela.
 - **FR-011**: O atalho de teclado da FR-009 MUST ser ignorado enquanto o foco estiver em um campo de edição da própria tela (ex.: edição inline de valor), para não interferir com o copiar/colar nativo de texto desse campo.
-- **FR-012**: O sistema MUST destacar visualmente cada linha selecionada na listagem, para diferenciá-la das demais enquanto a seleção estiver ativa.
+- **FR-012**: ~~O sistema MUST destacar visualmente cada linha selecionada na listagem, para diferenciá-la das demais enquanto a seleção estiver ativa.~~ **Superseded** (sessão 2026-08-02, parte 2) — requisito generalizado para `specs/002-receivable-charges/spec.md` FR-024, por ser um comportamento do trio de seleção compartilhado, não específico desta feature. Número mantido (não reutilizado) para preservar a numeração de FR-013/FR-014.
 - **FR-013**: Ao concluir uma duplicação com pelo menos uma cópia criada com sucesso, o sistema MUST destacar visualmente, por alguns segundos, cada linha recém-criada que estiver visível na listagem sob o filtro atual, e rolar a tela até a primeira delas.
 - **FR-014**: Ao concluir uma operação de duplicação com pelo menos uma cópia criada com sucesso, o sistema MUST exibir uma mensagem informando quantas cópias foram criadas — mesmo quando nenhuma delas estiver visível na listagem sob o filtro atual (FR-008), garantindo que a usuária saiba que a operação funcionou independentemente do destaque visual da FR-013.
 

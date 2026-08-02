@@ -58,6 +58,19 @@ Rodada de correções solicitada após a implementação inicial desta feature, 
 
 Nenhuma violação da constituição identificada nesta rodada de correção — Complexity Tracking não se aplica.
 
+### Atualização (correção pós-implementação 2026-08-02 — destaque de linha selecionada generalizado, FR-024)
+
+A usuária identificou que o destaque visual de linha selecionada, introduzido pela feature 007 apenas em `account-list`, é na verdade um comportamento do trio de seleção múltipla desta feature — MUST se aplicar de forma consistente a toda listagem que o reaproveita (FR-024), não só à listagem que o introduziu primeiro. Confirmação princípio a princípio:
+
+- **I. Arquitetura em Camadas**: SEM ALTERAÇÃO NECESSÁRIA. O destaque não vira um novo componente/serviço em `shared/` — é uma convenção de binding de template (`[class.table-active]="selection.isSelected(item)"` no `<tr>` de cada listagem), no mesmo espírito da convenção já registrada na constituição para o binding de checkbox (`(click)="selection.toggleWithRange(...)"`) — reutiliza o `Selection.isSelected()` já exposto pelo trio, sem API nova.
+- **II. Separação Controller → Service → Repository**: SEM ALTERAÇÃO NECESSÁRIA — mudança inteiramente de frontend/template.
+- **III. Stack Técnica Definida**: SEM ALTERAÇÃO NECESSÁRIA — nenhuma dependência nova; destaque de seleção é apresentação, não regra de negócio testável (mesma linha já usada para o destaque de duplicação da feature 007), sem exigir teste automatizado novo.
+- **IV. Convenções de Código e Formatação**: SEM ALTERAÇÃO NECESSÁRIA no princípio em si — a regra CSS de transição de cor (`table > tbody > tr > td { transition: background-color 1s ease; }`), hoje só em `account-list.scss` (feature 007), passa a ser global em `frontend/src/styles.scss`, mesmo padrão já usado para `.icon` (constituição, Princípio I) — evita duplicar a regra por componente conforme esse padrão já exige.
+- **V. Idioma por Tipo de Conteúdo**: SEM ALTERAÇÃO NECESSÁRIA.
+- **VI. Convenções de API REST**: SEM ALTERAÇÃO NECESSÁRIA — nenhum contrato de API é tocado.
+
+**Impacto cruzado com features já implementadas**: `account-list` (feature 007) já aplica o destaque — nenhuma mudança de comportamento lá, só a regra CSS de transição migra de `account-list.scss` para `frontend/src/styles.scss` (tarefa registrada em `specs/007-duplicate-account-next-month/tasks.md`). As demais listagens que reaproveitam o trio desta feature — `party-list` (hoje na feature 005) e `group-list` (feature 005), `fund-list` (feature 004) — ainda não têm o destaque e precisam ganhá-lo; cada tarefa correspondente está registrada no `tasks.md` da respectiva feature (mesmo padrão já usado para o impacto cruzado do FR-012 com a feature 001, ver acima), por alterar telas já implementadas por elas.
+
 Nenhuma violação da constituição identificada dentro do escopo da feature 002 — Complexity Tracking não se aplica.
 
 ## Project Structure

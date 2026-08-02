@@ -130,6 +130,16 @@ Nenhuma tarefa nova nesta fase.
 
 ---
 
+## Phase 7: Destaque de linha selecionada (impacto cruzado com a feature 002, sessão 2026-08-02)
+
+**Purpose**: A feature 002 generalizou o destaque visual de seleção (FR-024 de `specs/002-receivable-charges/spec.md`) para toda listagem que reaproveita o trio de seleção múltipla — `fund-list` precisa ganhá-lo.
+
+- [ ] T038 Add `[class.table-active]="selection.isSelected(fund)"` ao `<tr>` de `frontend/src/app/fund/fund-list/fund-list.html` (depends on T033)
+
+**Checkpoint**: `fund-list` destaca visualmente linhas selecionadas, mesmo comportamento hoje já presente em `account-list`.
+
+---
+
 ## Dependencies & Execution Order
 
 ### Phase Dependencies

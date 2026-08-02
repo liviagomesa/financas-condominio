@@ -43,6 +43,10 @@ Nenhuma violação da constituição identificada — Complexity Tracking não s
 
 **Re-check pós-Phase 1**: PASS. `research.md`/`data-model.md`/`contracts/api.md` (Phase 0/1) não introduziram nenhuma decisão de design que contradiga a avaliação acima — as únicas observações que emergiram do design detalhado (nome físico da tabela `party_group` para evitar a palavra reservada `GROUP`; `Party.delete` ganhando exception dedicada em vez do `ConflictException` genérico que `Supplier` usava) são simplificações/correções pontuais consistentes com os princípios já avaliados, não violações novas.
 
+## Impacto cruzado (sessão 2026-08-02 — destaque de linha selecionada, feature 002 FR-024)
+
+A feature 002 generalizou o destaque visual de linha selecionada (`[class.table-active]="selection.isSelected(item)"`) para toda listagem que reaproveita o trio de seleção múltipla — hoje já aplicado a `party-list` e `group-list`. Ambas ganham esse binding em seus respectivos templates, sem alteração de `PartyService`/`GroupService`/`Controller`s nem de `list-selection.ts` em si (ver tasks.md, Phase 9). Constitution Check: sem alteração em nenhum princípio — mudança de template de uma linha por tela, reaproveitando `Selection.isSelected()` já existente.
+
 ## Project Structure
 
 ### Documentation (this feature)
@@ -144,10 +148,12 @@ frontend/
 │       ├── bulk-delete.ts              # inalterado (reaproveitado)
 │       ├── components/bulk-actions-bar/ # inalterado (reaproveitado)
 │       └── components/row-actions/     # novo (pós-implementação) — editar/remover por linha,
-│                                        # ícones SVG inline; reaproveitado por account-list/
-│                                        # fund-list/party-list/group-list (fund-list fora do
-│                                        # escopo original desta feature, ajustado por
-│                                        # consistência numa revisão da usuária)
+│                                        # ícones do pacote bootstrap-icons (originalmente SVG
+│                                        # inline, migrado na feature 008-partial-payment-split);
+│                                        # reaproveitado por account-list/fund-list/party-list/
+│                                        # group-list (fund-list fora do escopo original desta
+│                                        # feature, ajustado por consistência numa revisão da
+│                                        # usuária)
 └── package.json                   # inalterado (sem novas dependências)
 ```
 

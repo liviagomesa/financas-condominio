@@ -26,6 +26,12 @@ Re-confirmação da Constitution Check, princípio por princípio, à luz dessa 
 
 Nenhuma violação da constituição identificada.
 
+## Revisão pós-implementação (sessão 2026-08-02, parte 2 — generalização do destaque de seleção)
+
+A usuária apontou que o destaque de linha selecionada (FR-012) não deveria ser específico de `account-list` — é um comportamento do mecanismo de seleção múltipla em si, compartilhado por toda listagem que o reaproveita. FR-012 foi marcado como superseded em spec.md; o requisito equivalente agora vive em `specs/002-receivable-charges/spec.md` (FR-024, feature dona do trio `list-selection.ts`/`bulk-delete.ts`/`bulk-actions-bar`). Nesta feature, o binding `[class.table-active]="selection.isSelected(account)"` em `account-list.html` permanece exatamente como está — já está correto, só deixa de ser tratado como exclusivo desta tela. A única mudança de código associada a esta feature é mover a regra CSS de transição de cor (`table > tbody > tr > td { transition: background-color 1s ease; }`), hoje em `account-list.scss`, para `frontend/src/styles.scss` (global), já que ela deixa de ser exclusiva de `account-list` — mesmo padrão já usado para `.icon` (constituição, Princípio I).
+
+Confirmação princípio a princípio: **I** (SEM ALTERAÇÃO — a regra CSS só muda de arquivo, sem novo componente), **II**/**III** (SEM ALTERAÇÃO — nenhum backend ou dependência nova), **IV** (SEM ALTERAÇÃO — a convenção de não duplicar CSS por componente já existe e está sendo seguida), **V**/**VI** (SEM ALTERAÇÃO). Nenhuma violação identificada.
+
 ## Technical Context
 
 **Language/Version**: Java 21 (backend) + TypeScript 6.0.2 (frontend) — reuso das versões já adotadas nas features 001–006 (Constituição, Princípio III); nenhuma mudança de versão.

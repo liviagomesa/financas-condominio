@@ -15,6 +15,10 @@
 - Q: Quando um pagamento (conta a pagar) seria registrado como pago e isso deixaria o saldo real do fundo negativo, o que o sistema deve fazer? → A: Apenas informativo — o sistema não impede nada, apenas exibe o saldo real (podendo ficar negativo) na visualização; nenhuma validação nova é adicionada ao registrar pagamentos/recebimentos.
 - Q: Os três fundos hoje fixos (Piscina, Jardim Piscina, Jardim Lateral) precisam ser preservados/recriados via migration ao converter Fundo para cadastro? → A: Não. O banco é apenas de desenvolvimento — não há dado real a preservar. Um ambiente novo passa a existir sem nenhum fundo cadastrado; a usuária cadastra os nomes que desejar.
 
+### Sessão de correção 2026-08-02 (impacto cruzado com a feature 002)
+
+- A feature 002 (`specs/002-receivable-charges/spec.md`, FR-024) generalizou o destaque visual de linha selecionada para toda listagem que reaproveita o trio de seleção múltipla (`list-selection.ts`/`bulk-delete.ts`/`bulk-actions-bar`), hoje já aplicado a `fund-list` (T033). `fund-list` passa a exibir esse destaque também — ver tasks.md, Phase 7.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Visualizar o saldo real de cada fundo (Priority: P1)

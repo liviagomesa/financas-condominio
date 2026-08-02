@@ -98,12 +98,22 @@ Nenhuma tarefa nova nesta fase.
 
 **Purpose**: Feedback direto da usuária sobre a entrega das Phases 2-5, formalizado como FR-012 a FR-014 em spec.md (ver "Revisão pós-implementação" em plan.md e data-model.md para o estado efêmero novo).
 
-- [X] T016 [P] Add destaque visual de linha selecionada (classe `table-active` do Bootstrap, `[class.table-active]="selection.isSelected(account)"`) em `frontend/src/app/account/account-list/account-list.html` (FR-012)
+- [X] T016 [P] Add destaque visual de linha selecionada (classe `table-active` do Bootstrap, `[class.table-active]="selection.isSelected(account)"`) em `frontend/src/app/account/account-list/account-list.html` (FR-012 — **generalizado na sessão 2026-08-02, parte 2**: o binding em si permanece sem alteração, ver T020 abaixo para a parte de CSS que muda de arquivo)
 - [X] T017 Add `recentlyDuplicatedIds = signal<ReadonlySet<number>>(new Set())` e método privado `highlightDuplicated(ids)` em `account-list.ts`: aplica a classe `table-success` às linhas recém-duplicadas por ~2,5s e rola a tela até a primeira via `scrollIntoView`, usando `[attr.data-account-id]="account.id"` no `<tr>` de `account-list.html` como seletor; transição de cor suave adicionada em `account-list.scss` (FR-013, depends on T010)
 - [X] T018 [P] Add `successMessage = signal<string | null>(null)` em `account-list.ts`, populado em `performDuplicate` com a contagem de `result.succeeded`, exibido em `account-list.html` como `alert-success`, e limpo no início de qualquer outra ação da tela (filtro, remoção, nova duplicação) (FR-014, depends on T010)
 - [X] T019 [P] Run roteiro de validação manual do cenário 11 de `quickstart.md` (Playwright) cobrindo os três itens acima
 
 **Checkpoint**: FR-012 a FR-014 implementados e validados.
+
+---
+
+## Phase 7: Generalização do destaque de seleção (impacto cruzado com a feature 002, sessão 2026-08-02)
+
+**Purpose**: FR-012 foi generalizado para `specs/002-receivable-charges/spec.md` (FR-024) — o destaque de linha selecionada passa a ser um comportamento de toda listagem que reaproveita o trio de seleção múltipla, não específico desta feature (ver plan.md). A única mudança de código nesta feature é mover a regra CSS de transição para um arquivo global; a aplicação do destaque às demais listagens (`party-list`, `fund-list`, `group-list`) está registrada nos `tasks.md` das features que hoje possuem essas telas (004 e 005).
+
+- [ ] T020 Move a regra `table > tbody > tr > td { transition: background-color 1s ease; }` de `frontend/src/app/account/account-list/account-list.scss` para `frontend/src/styles.scss` (global), removendo-a de `account-list.scss` (depends on T016, T017)
+
+**Checkpoint**: `account-list` continua com o mesmo comportamento visual; a regra de transição deixa de ser exclusiva desta tela.
 
 ---
 
