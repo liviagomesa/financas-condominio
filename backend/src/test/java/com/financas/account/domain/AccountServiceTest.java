@@ -258,6 +258,66 @@ class AccountServiceTest {
     }
 
     @Test
+    void findAllOrdersByDueDateDescendingThenDescriptionThenId() {
+        Party party = withId(new Party("Bloco A - 101", null), 1L);
+        Account mostFutureDueDate = withId(
+                new Account(
+                        AccountType.RECEIVABLE,
+                        BigDecimal.TEN,
+                        LocalDate.of(2026, 8, 20),
+                        "Zebra",
+                        testFund(),
+                        true,
+                        party,
+                        null,
+                        null),
+                1L);
+        Account sameDueDateAlphaHigherId = withId(
+                new Account(
+                        AccountType.RECEIVABLE,
+                        BigDecimal.TEN,
+                        LocalDate.of(2026, 8, 10),
+                        "Alpha",
+                        testFund(),
+                        true,
+                        party,
+                        null,
+                        null),
+                5L);
+        Account sameDueDateAlphaLowerId = withId(
+                new Account(
+                        AccountType.RECEIVABLE,
+                        BigDecimal.TEN,
+                        LocalDate.of(2026, 8, 10),
+                        "Alpha",
+                        testFund(),
+                        true,
+                        party,
+                        null,
+                        null),
+                3L);
+        Account sameDueDateBravo = withId(
+                new Account(
+                        AccountType.RECEIVABLE,
+                        BigDecimal.TEN,
+                        LocalDate.of(2026, 8, 10),
+                        "Bravo",
+                        testFund(),
+                        true,
+                        party,
+                        null,
+                        null),
+                2L);
+        when(repository.findAll())
+                .thenReturn(List.of(
+                        sameDueDateBravo, mostFutureDueDate, sameDueDateAlphaLowerId, sameDueDateAlphaHigherId));
+
+        assertThat(service.findAll(null, null, null, null, null, null, null))
+                .containsExactly(
+                        mostFutureDueDate, sameDueDateAlphaHigherId, sameDueDateAlphaLowerId, sameDueDateBravo);
+    }
+
+    @Test
     void findAllThrowsWhenPartyIdFilterDoesNotExist() {
         when(partyRepository.findById(999L)).thenReturn(Optional.empty());
 

@@ -17,7 +17,7 @@ Datas (`dueDate`, `paymentDate`) trafegam em ISO-8601 (`yyyy-MM-dd`), sem `@Json
 
 ### `GET /api/accounts`
 
-Lista contas, a pagar e a receber (FR-010). Aceita filtros opcionais, combináveis (E lógico).
+Lista contas, a pagar e a receber (FR-010), ordenadas por `dueDate` decrescente por padrão — vencimento mais distante/futuro primeiro, mais antigo por último; empate em `dueDate` é desempatado por `description` em ordem alfabética crescente e, se ainda empatado, por `id` decrescente (FR-024). Aceita filtros opcionais, combináveis (E lógico).
 
 **Query params** (todos opcionais):
 - `type` (`RECEIVABLE`/`PAYABLE`): retorna só contas do tipo informado (FR-012).

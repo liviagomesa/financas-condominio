@@ -260,3 +260,12 @@ Task: "Create AccountTypeChangeNotAllowedException em backend/src/main/java/com/
 
 - [X] T051 Rename `ACCOUNT_TYPE_LABELS` em `frontend/src/app/shared/models/account.model.ts` (`RECEIVABLE: 'A receber'` → `'Entrada'`; `PAYABLE: 'A pagar'` → `'Saída'`) — usado automaticamente pelo badge de `account-list` e pelo seletor de tipo de `account-form`, sem mudança de código adicional nesses dois componentes
 - [X] T052 [P] Rename os `<option>` do `<select>` de filtro por tipo em `frontend/src/app/account/account-list/account-list.html` ("A receber"/"A pagar" → "Entrada"/"Saída", hardcoded no template, não derivado de `ACCOUNT_TYPE_LABELS`)
+
+---
+
+## Phase 11: Ordenação padrão da listagem de contas (pedido direto da usuária, 2026-08-02)
+
+**Purpose**: a listagem de contas não tinha nenhum critério de ordenação definido (ordem incidental de retorno do banco); adicionar ordenação por `dueDate` decrescente, desempatada por `description` alfabética crescente e, por último, `id` decrescente — ver spec.md, Clarifications, sessão de correção 2026-08-02, e FR-024.
+
+- [X] T053 Add ordenação por `dueDate` decrescente, com desempate por `description` (alfabética crescente) e depois `id` decrescente, ao final de `AccountService.findAll`, aplicada sobre a lista já filtrada em memória (mesma abordagem já usada pelos demais filtros do método) em `backend/src/main/java/com/financas/account/domain/AccountService.java` (FR-024)
+- [X] T054 [P] Add caso a `AccountServiceTest` cobrindo FR-024: contas com `dueDate` diferentes retornam na ordem decrescente esperada; contas com o mesmo `dueDate` são desempatadas por `description` alfabética crescente; contas com `dueDate` e `description` iguais são desempatadas por `id` decrescente — em `backend/src/test/java/com/financas/account/domain/AccountServiceTest.java` (depends on T053)

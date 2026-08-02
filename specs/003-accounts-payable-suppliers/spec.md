@@ -31,6 +31,11 @@
 
 - Q: Os rótulos textuais do tipo de conta, exibidos como "A receber"/"A pagar" (badge da listagem, seletor do formulário, filtro), devem continuar com esse texto? → A: Não — renomear para "Entrada" (tipo `RECEIVABLE`) e "Saída" (tipo `PAYABLE`). A mudança é só de rótulo exibido à usuária; os valores internos do enum (`RECEIVABLE`/`PAYABLE`), as rotas, os nomes de campo e toda a prova/regra de negócio que descreve o conceito de "conta a receber"/"conta a pagar" permanecem sem alteração — apenas o texto mostrado na UI (badge, `<select>` de filtro, seletor de tipo do formulário) muda para "Entrada"/"Saída".
 
+### Sessão de correção 2026-08-02 (ordenação da listagem)
+
+- Q: A listagem unificada de contas (FR-010) não define nenhum critério de ordenação hoje — na prática, a ordem observada é incidental (reflexo da ordem física de retorno do banco, que muda conforme updates), sem nenhum `ORDER BY` explícito. Qual deve ser o critério de ordenação padrão? → A: Ordenar por data de vencimento (`dueDate`) decrescente — vencimentos mais distantes/futuros no topo, contas mais antigas no final da lista (ver FR-024).
+- Q: Quando duas ou mais contas tiverem exatamente a mesma `dueDate`, qual critério desempata a ordem entre elas? → A: Descrição (`description`) em ordem alfabética crescente; só se a descrição também empatar (mesmo `dueDate` e mesma `description`), desempatar por `id` decrescente, como último critério (ver FR-024).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Cadastrar fornecedor (Priority: P1)
@@ -84,6 +89,7 @@ Como responsável pela gestão do condomínio, quero visualizar, na mesma tela, 
 2. **Given** contas de ambos os tipos cadastradas, **When** a usuária aplica o filtro "somente a pagar" (ou "somente a receber"), **Then** apenas as contas do tipo selecionado aparecem na listagem.
 3. **Given** contas de ambos os tipos cadastradas, **When** a usuária combina o filtro de tipo com outro filtro já existente (ex.: status de pagamento, vencidos, mês de vencimento ou de pagamento), **Then** o sistema aplica todos os filtros informados em conjunto (E lógico).
 4. **Given** nenhuma conta cadastrada, **When** a usuária acessa a listagem, **Then** o sistema exibe uma indicação de que não há contas cadastradas.
+5. **Given** contas com datas de vencimento diferentes cadastradas (independentemente do tipo ou status de pagamento), **When** a usuária acessa a listagem sem nenhum filtro adicional, **Then** as contas aparecem ordenadas por data de vencimento decrescente — a de vencimento mais distante/futuro no topo, a mais antiga no final (ver FR-024).
 
 ---
 
@@ -132,6 +138,7 @@ Como responsável pela gestão do condomínio, quero editar ou remover uma conta
 - O que acontece com as contas a receber já lançadas antes desta feature (feature 002)? Todas continuam existindo, agora como contas do tipo "a receber" dentro do conceito unificado de "conta", sem perda de dados.
 - O que acontece com o cadastro de condôminos (feature 001) e seus dados já existentes? O cadastro de condôminos deixa de existir como funcionalidade do produto — telas, rotas e regras de negócio relacionadas são removidas por completo (ver FR-016).
 - O que acontece com a regra que hoje bloqueia a remoção de uma unidade com condôminos vinculados (feature 001, FR-006)? Como o conceito de condômino deixa de existir, essa parte da regra é removida; a remoção de unidade passa a ser bloqueada apenas por contas ou fornecedores vinculados (ver FR-017).
+- O que acontece se duas ou mais contas tiverem exatamente a mesma data de vencimento? A ordem entre elas é desempatada por `description` em ordem alfabética crescente e, se a descrição também empatar, por `id` decrescente, mantendo a listagem determinística (ver FR-024).
 
 ## Requirements *(mandatory)*
 
@@ -160,6 +167,7 @@ Como responsável pela gestão do condomínio, quero editar ou remover uma conta
 - **FR-021**: O sistema MUST orientar a usuária a cadastrar um fornecedor antes de permitir lançar uma conta a pagar, quando nenhum fornecedor estiver cadastrado.
 - **FR-022**: O sistema MUST manter o campo "fundo" (renomeado nesta feature a partir de "conta destino", feature 002 FR-013 — lista fixa "Piscina", "Jardim Piscina", "Jardim Lateral") como obrigatório em toda conta, independentemente do tipo — indicando de/para qual fundo o valor entra ou sai —, rejeitando o lançamento (a pagar ou a receber) se nenhum for selecionado.
 - **FR-023**: O sistema MUST permitir informar uma chave PIX (opcional, nullable) no cadastro de um fornecedor, como texto livre (ex.: CPF/CNPJ, e-mail, telefone ou chave aleatória, sem validação de formato específica), exibida e editável junto aos demais campos do fornecedor, para facilitar o pagamento a ele.
+- **FR-024**: O sistema MUST ordenar a listagem unificada de contas (FR-010) por data de vencimento (`dueDate`) decrescente por padrão — vencimentos mais distantes/futuros primeiro, contas mais antigas por último —, independentemente do tipo (a pagar/a receber) ou status de pagamento de cada conta, e permanecendo válida em conjunto com qualquer filtro combinado (FR-012, FR-020 a FR-023 da feature 002); contas com `dueDate` igual MUST ser desempatadas por `description` em ordem alfabética crescente e, se ainda empatadas, por `id` decrescente.
 
 ### Key Entities
 

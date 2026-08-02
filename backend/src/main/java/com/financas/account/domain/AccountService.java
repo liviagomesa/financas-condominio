@@ -12,6 +12,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.time.format.DateTimeParseException;
+import java.util.Comparator;
 import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -123,7 +124,11 @@ public class AccountService {
                     .filter(a -> a.isPaid() && YearMonth.from(a.getPaymentDate()).equals(month))
                     .toList();
         }
-        return accounts;
+        return accounts.stream()
+                .sorted(Comparator.comparing(Account::getDueDate, Comparator.reverseOrder())
+                        .thenComparing(Account::getDescription)
+                        .thenComparing(Account::getId, Comparator.reverseOrder()))
+                .toList();
     }
 
     public Account findById(Long id) {

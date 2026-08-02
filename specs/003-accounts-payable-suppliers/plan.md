@@ -47,6 +47,14 @@ Generalizar `Receivable` (feature 002) em uma entidade única `Account`, com um 
 - **V. Idioma por Tipo de Conteúdo**: PASS, sem alteração.
 - **VI. Convenções de API REST**: PASS, sem alteração — mudança não toca contrato de API.
 
+**Atualização (2026-08-02 — ordenação padrão da listagem de contas, FR-024)**: `AccountService.findAll` (`backend/src/main/java/com/financas/account/domain/AccountService.java`) já filtra em memória (comentário existente no código: "Dado o volume pequeno de registros... a filtragem é feita em memória"); a ordenação por `dueDate` decrescente, com desempate por `description` alfabética crescente e, por último, `id` decrescente, é adicionada como um `.sorted(...)` (comparator composto com `thenComparing`) sobre a lista já filtrada, imediatamente antes do retorno — sem introduzir `ORDER BY`/`Sort` na camada de `Repository`, consistente com a abordagem em memória já adotada para os filtros. Confirmação princípio a princípio:
+- **I. Arquitetura em Camadas**: PASS, sem alteração — mudança restrita a um método já existente do `Service` (`com.financas.account.domain`), sem tocar `Controller`/`Repository`/estrutura de pastas.
+- **II. Separação Controller → Service → Repository**: PASS, sem alteração — a ordenação é responsabilidade do `Service`, como os demais filtros de `findAll`; o `Controller` continua repassando o resultado já pronto.
+- **III. Stack Técnica Definida**: PASS, sem alteração — nenhuma dependência nova; cobertura de teste adicionada em `AccountServiceTest` (regra de negócio verificável, conforme Princípio III).
+- **IV. Convenções de Código e Formatação**: PASS, sem alteração — nenhuma convenção de nomenclatura/formatação nova.
+- **V. Idioma por Tipo de Conteúdo**: PASS, sem alteração.
+- **VI. Convenções de API REST**: PASS — `GET /api/accounts` não ganha novo query param (a ordenação é sempre aplicada, não opcional); `contracts/api.md` atualizado apenas para documentar a ordem de retorno da resposta existente.
+
 **Impacto cruzado com features já implementadas (001 e 002)** — sinalizado, não uma violação desta feature:
 
 1. **Feature 001** (`specs/001-cadastro-condominos/`): o FR-017 desta feature ("bloquear remoção de unidade com conta ou fornecedor vinculado, sem mais considerar condôminos") estende/substitui a regra hoje implementada em `UnitService.delete()` (feature 001, FR-006), que atualmente considera condôminos e lançamentos de conta a receber vinculados. Pela constituição (seção "Edição de Features Já Implementadas"), essa mudança exige atualizar `specs/001-cadastro-condominos/spec.md` (FR-006, User Stories 5/6, Key Entities), `plan.md` (confirmação princípio a princípio) e `tasks.md` (sem regenerar nem alterar tarefas já concluídas) — com resumo apresentado à usuária para aprovação explícita antes de qualquer edição desses arquivos ou do código.
