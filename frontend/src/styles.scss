@@ -1,10 +1,2 @@
 @import "bootstrap/scss/bootstrap";
-
-// Ícones SVG inline (16x16) usados em botões de ação: compensa o alinhamento padrão
-// (vertical-align: baseline) do elemento <svg>, que deixa o ícone visualmente alto
-// dentro de um botão sem texto ao lado. Classe global porque toda tela que usa ícone
-// SVG inline em botão precisa dela — mantê-la centralizada evita duplicar a regra
-// (e o risco de esquecê-la) a cada novo componente.
-.icon {
-  vertical-align: -0.125em;
-}
+@import "bootstrap-icons/font/bootstrap-icons.css";
