@@ -25,5 +25,8 @@ npm-debug.log*
 .DS_Store
 Thumbs.db
 
+# Notas de estudo pessoais (não fazem parte do projeto)
+NOTES-estudo.md
+
 # Logs
 *.log
