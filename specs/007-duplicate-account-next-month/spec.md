@@ -14,6 +14,10 @@
 
 - Q: Sobre o atalho de teclado Ctrl+C/Ctrl+V (FR-009 a FR-011): mantemos como especificado, ou removemos da spec e deixamos só os dois botões na barra de ações em lote? → A: Manter o atalho como especificado (FR-009 a FR-011 permanecem sem alteração).
 
+### Session 2026-08-02 (revisão pós-implementação)
+
+- Durante a revisão da entrega implementada, a usuária identificou falta de feedback visual: nenhum destaque diferenciava as linhas selecionadas das demais, e depois de duplicar não havia como saber se a operação deu certo nem onde a cópia foi parar. Adicionados FR-012 a FR-014 para cobrir esse feedback (destaque de seleção, destaque temporário + scroll até a cópia, e mensagem de sucesso com a contagem).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Duplicar lançamento mantendo o valor (Priority: P1)
@@ -30,6 +34,7 @@ Como responsável pela gestão do condomínio, depois de lançar uma conta a pag
 2. **Given** dois lançamentos selecionados simultaneamente, com vencimentos em meses diferentes, **When** a usuária aciona "Duplicar para o mês seguinte", **Then** cada cópia é criada com vencimento um mês após o vencimento do seu respectivo lançamento original.
 3. **Given** uma duplicação concluída, **When** a usuária verifica o lançamento original, **Then** ele permanece exatamente como estava antes (mesmo valor, mesmo vencimento, mesmo status de pagamento).
 4. **Given** um ou mais lançamentos selecionados, **When** a usuária pressiona Ctrl+C e, em seguida, Ctrl+V, **Then** o mesmo resultado do botão "Duplicar para o mês seguinte" ocorre para os lançamentos que estavam selecionados no momento do Ctrl+C.
+5. **Given** uma duplicação concluída com sucesso, **When** a nova conta está visível na listagem sob o filtro atual, **Then** a usuária vê a linha da cópia destacada visualmente por alguns segundos e a tela rola até ela; em qualquer caso (visível ou não), a usuária vê uma mensagem informando quantas cópias foram criadas.
 
 ---
 
@@ -57,6 +62,7 @@ Como responsável pela gestão do condomínio, quero duplicar um lançamento par
 - Lançamentos já pagos podem ser duplicados normalmente: a cópia sempre nasce pendente, independentemente do status de pagamento do original.
 - Pressionar Ctrl+V sem ter pressionado Ctrl+C antes (ou sem nenhum lançamento selecionado no momento do Ctrl+C) não tem efeito nenhum.
 - Pressionar Ctrl+C novamente sobre uma nova seleção substitui a memorização anterior — só a seleção do Ctrl+C mais recente é usada no próximo Ctrl+V.
+- Quando a cópia cai fora do filtro atualmente exibido (edge case acima), o destaque visual e a rolagem automática da FR-013 não têm efeito (não há linha visível para destacar) — a mensagem de sucesso da FR-014 permanece a única confirmação nesse caso.
 
 ## Requirements *(mandatory)*
 
@@ -73,6 +79,9 @@ Como responsável pela gestão do condomínio, quero duplicar um lançamento par
 - **FR-009**: Além do botão na barra de ações em lote, o sistema MUST oferecer um atalho de teclado equivalente à ação "Duplicar para o mês seguinte" (valor mantido): pressionar Ctrl+C com um ou mais lançamentos selecionados MUST memorizar essa seleção, e pressionar Ctrl+V em seguida MUST duplicar os lançamentos memorizados no momento do Ctrl+C, mesmo que a seleção na tela tenha mudado entre um comando e outro.
 - **FR-010**: O atalho de teclado da FR-009 MUST se aplicar apenas à variante "valor mantido"; a variante "valor zerado" fica disponível somente pelo botão dedicado na barra de ações em lote, já que a usuária não indicou um atalho equivalente para ela.
 - **FR-011**: O atalho de teclado da FR-009 MUST ser ignorado enquanto o foco estiver em um campo de edição da própria tela (ex.: edição inline de valor), para não interferir com o copiar/colar nativo de texto desse campo.
+- **FR-012**: O sistema MUST destacar visualmente cada linha selecionada na listagem, para diferenciá-la das demais enquanto a seleção estiver ativa.
+- **FR-013**: Ao concluir uma duplicação com pelo menos uma cópia criada com sucesso, o sistema MUST destacar visualmente, por alguns segundos, cada linha recém-criada que estiver visível na listagem sob o filtro atual, e rolar a tela até a primeira delas.
+- **FR-014**: Ao concluir uma operação de duplicação com pelo menos uma cópia criada com sucesso, o sistema MUST exibir uma mensagem informando quantas cópias foram criadas — mesmo quando nenhuma delas estiver visível na listagem sob o filtro atual (FR-008), garantindo que a usuária saiba que a operação funcionou independentemente do destaque visual da FR-013.
 
 ### Key Entities
 

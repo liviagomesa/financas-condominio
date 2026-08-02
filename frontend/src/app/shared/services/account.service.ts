@@ -5,6 +5,7 @@ import { environment } from '../../../environments/environment';
 import {
   Account,
   AccountBulkRequest,
+  AccountDuplicateRequest,
   AccountFilters,
   AccountPaymentRequest,
   AccountRequest,
@@ -46,6 +47,10 @@ export class AccountService {
 
   registerPayment(id: number, request: AccountPaymentRequest): Observable<Account> {
     return this.http.post<Account>(`${this.baseUrl}/${id}/pay`, request);
+  }
+
+  duplicate(id: number, request: AccountDuplicateRequest): Observable<Account> {
+    return this.http.post<Account>(`${this.baseUrl}/${id}/duplicate`, request);
   }
 
   delete(id: number): Observable<void> {

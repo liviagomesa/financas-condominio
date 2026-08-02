@@ -12,6 +12,20 @@ Na listagem de contas (`/accounts`), ao selecionar um ou mais lançamentos, a us
 
 Ver [spec.md § Clarifications](./spec.md#clarifications) — decisão de manter o atalho de teclado Ctrl+C/Ctrl+V como especificado (sessão 2026-08-01), já refletida em FR-009 a FR-011 e neste plano.
 
+## Revisão pós-implementação (sessão 2026-08-02)
+
+Depois da implementação inicial (Foundational + US1 + US2), a usuária revisou a entrega e pediu três melhorias de feedback visual, formalizadas como FR-012 a FR-014 (ver spec.md): destaque de linha selecionada, destaque temporário + scroll até a cópia recém-criada, e mensagem de sucesso com a contagem de cópias. Mudança inteiramente de frontend, restrita a `account/account-list/` (novos signals `recentlyDuplicatedIds`/`successMessage`, ver data-model.md) e a `account-list.scss` (transição de cor nas células, para o destaque temporário não aparecer/desaparecer abruptamente) — nenhum endpoint, DTO ou componente compartilhado (`BulkActionsBar`) é afetado.
+
+Re-confirmação da Constitution Check, princípio por princípio, à luz dessa mudança:
+- **I. Arquitetura em Camadas**: PASS, sem alteração necessária. Os signals novos ficam em `account-list.ts`, mesmo nível dos demais signals efêmeros já existentes na tela (`payingId`, `editingAmountId`); nenhum novo componente ou pacote.
+- **II. Separação Controller → Service → Repository**: PASS, sem alteração necessária — nenhuma mudança de backend.
+- **III. Stack Técnica Definida**: PASS, sem alteração necessária — nenhuma dependência nova; a nova regra de negócio (persistência do `Account`) não muda, então nenhum caso de teste automatizado novo é exigido pelo Princípio III. O feedback visual em si é orquestração de componente (destaque/scroll/mensagem), não regra de negócio testável isoladamente — mesma linha divisória já registrada no research.md desta feature, validado via Playwright (ver quickstart.md).
+- **IV. Convenções de Código e Formatação**: PASS, sem alteração necessária.
+- **V. Idioma por Tipo de Conteúdo**: PASS — mensagem de sucesso exibida à usuária em português ("N conta(s) duplicada(s) com sucesso.").
+- **VI. Convenções de API REST**: PASS, sem alteração necessária — nenhum contrato de API é tocado por esta mudança.
+
+Nenhuma violação da constituição identificada.
+
 ## Technical Context
 
 **Language/Version**: Java 21 (backend) + TypeScript 6.0.2 (frontend) — reuso das versões já adotadas nas features 001–006 (Constituição, Princípio III); nenhuma mudança de versão.

@@ -311,6 +311,99 @@ class AccountServiceTest {
         assertThat(service.findAll(null, null, null, null, true, null, null)).containsExactly(overduePending);
     }
 
+    @Test
+    void duplicateCopiesFieldsAndAdvancesDueDateByOneMonth() {
+        Party party = withId(new Party("Bloco A - 101", null), 1L);
+        Account original = withId(
+                new Account(
+                        AccountType.RECEIVABLE,
+                        new BigDecimal("350.00"),
+                        LocalDate.of(2026, 3, 10),
+                        "Taxa condominial",
+                        testFund(),
+                        true,
+                        party,
+                        LocalDate.of(2026, 3, 5),
+                        "Observação"),
+                10L);
+        when(repository.findById(10L)).thenReturn(Optional.of(original));
+        when(repository.save(any(Account.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        Account copy = service.duplicate(10L, false);
+
+        assertThat(copy.getType()).isEqualTo(original.getType());
+        assertThat(copy.getDescription()).isEqualTo(original.getDescription());
+        assertThat(copy.getFund()).isEqualTo(original.getFund());
+        assertThat(copy.isRecurring()).isEqualTo(original.isRecurring());
+        assertThat(copy.getParty()).isEqualTo(original.getParty());
+        assertThat(copy.getObservations()).isEqualTo(original.getObservations());
+        assertThat(copy.getDueDate()).isEqualTo(LocalDate.of(2026, 4, 10));
+        assertThat(copy.getAmount()).isEqualByComparingTo("350.00");
+        assertThat(copy.getPaymentDate()).isNull();
+        assertThat(original.getDueDate()).isEqualTo(LocalDate.of(2026, 3, 10));
+        assertThat(original.getPaymentDate()).isEqualTo(LocalDate.of(2026, 3, 5));
+    }
+
+    @Test
+    void duplicateHandlesShortMonthOverflow() {
+        Party party = withId(new Party("Bloco A - 101", null), 1L);
+        Account original =
+                withId(receivable(party, new BigDecimal("350.00"), LocalDate.of(2026, 1, 31)), 10L);
+        when(repository.findById(10L)).thenReturn(Optional.of(original));
+        when(repository.save(any(Account.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        Account copy = service.duplicate(10L, false);
+
+        assertThat(copy.getDueDate()).isEqualTo(LocalDate.of(2026, 2, 28));
+    }
+
+    @Test
+    void duplicateAlwaysClearsPaymentDateEvenWhenOriginalIsPaid() {
+        Party party = withId(new Party("Fornecedor", null), 1L);
+        Account original = withId(
+                payableWithPayment(party, new BigDecimal("400.00"), LocalDate.now(), LocalDate.now()), 10L);
+        when(repository.findById(10L)).thenReturn(Optional.of(original));
+        when(repository.save(any(Account.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        Account copy = service.duplicate(10L, false);
+
+        assertThat(copy.getPaymentDate()).isNull();
+        assertThat(copy.isPaid()).isFalse();
+    }
+
+    @Test
+    void duplicateWithZeroAmountTrueZeroesTheAmount() {
+        Party party = withId(new Party("Bloco A - 101", null), 1L);
+        Account original = withId(receivable(party, new BigDecimal("350.00"), LocalDate.now()), 10L);
+        when(repository.findById(10L)).thenReturn(Optional.of(original));
+        when(repository.save(any(Account.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        Account copy = service.duplicate(10L, true);
+
+        assertThat(copy.getAmount()).isEqualByComparingTo(BigDecimal.ZERO);
+    }
+
+    @Test
+    void duplicateWithZeroAmountFalseKeepsOriginalAmount() {
+        Party party = withId(new Party("Bloco A - 101", null), 1L);
+        Account original = withId(receivable(party, new BigDecimal("350.00"), LocalDate.now()), 10L);
+        when(repository.findById(10L)).thenReturn(Optional.of(original));
+        when(repository.save(any(Account.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        Account copy = service.duplicate(10L, false);
+
+        assertThat(copy.getAmount()).isEqualByComparingTo("350.00");
+    }
+
+    @Test
+    void duplicateThrowsWhenAccountDoesNotExist() {
+        when(repository.findById(999L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.duplicate(999L, false)).isInstanceOf(NotFoundException.class);
+
+        verify(repository, never()).save(any());
+    }
+
     private Account receivable(Party party, BigDecimal amount, LocalDate dueDate) {
         return new Account(AccountType.RECEIVABLE, amount, dueDate, "Taxa", testFund(), true, party, null, null);
     }

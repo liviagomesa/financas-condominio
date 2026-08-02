@@ -106,6 +106,13 @@ public class AccountController {
         return toResponse(account);
     }
 
+    @PostMapping("/{id}/duplicate")
+    public ResponseEntity<AccountResponse> duplicate(
+            @PathVariable Long id, @Valid @RequestBody AccountDuplicateRequest request) {
+        Account account = service.duplicate(id, request.zeroAmount());
+        return ResponseEntity.status(HttpStatus.CREATED).body(toResponse(account));
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         service.delete(id);

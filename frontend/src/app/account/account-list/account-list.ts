@@ -1,9 +1,10 @@
 import { DatePipe, DecimalPipe } from '@angular/common';
-import { Component, OnInit, computed, signal } from '@angular/core';
+import { Component, HostListener, OnInit, computed, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { ApiError } from '../../core/error.interceptor';
 import { bulkDelete } from '../../shared/bulk-delete';
+import { bulkDuplicate } from '../../shared/bulk-duplicate';
 import { createSelection } from '../../shared/list-selection';
 import { Account, AccountFilters, AccountRequest, ACCOUNT_TYPE_LABELS } from '../../shared/models/account.model';
 import { Fund } from '../../shared/models/fund.model';
@@ -25,6 +26,7 @@ export class AccountList implements OnInit {
   protected readonly parties = signal<Party[]>([]);
   protected readonly funds = signal<Fund[]>([]);
   protected readonly errorMessage = signal<string | null>(null);
+  protected readonly successMessage = signal<string | null>(null);
   protected readonly accountTypeLabels = ACCOUNT_TYPE_LABELS;
 
   // JavaScript não funciona como outras linguagens, em que uma função tem um frame na pilha de execução
@@ -35,6 +37,8 @@ export class AccountList implements OnInit {
   // anchorId), o JS é obrigado a mantê-las em memória, para que as funções não quebrem.
   protected readonly selection = createSelection<Account>((account) => account.id);
 
+  protected readonly copiedIds = signal<number[]>([]);
+  protected readonly recentlyDuplicatedIds = signal<ReadonlySet<number>>(new Set());
   protected readonly payingId = signal<number | null>(null);
   protected readonly editingAmountId = signal<number | null>(null);
   protected readonly amountEditError = signal<string | null>(null);
@@ -66,6 +70,7 @@ export class AccountList implements OnInit {
     this.selection.clear();
     this.editingAmountId.set(null);
     this.amountEditError.set(null);
+    this.successMessage.set(null);
     this.load();
   }
 
@@ -75,6 +80,7 @@ export class AccountList implements OnInit {
       return;
     }
     this.errorMessage.set(null);
+    this.successMessage.set(null);
     this.accountService.delete(account.id).subscribe({
       next: () => this.load(),
       error: (err: ApiError) => this.errorMessage.set(err.message),
@@ -83,6 +89,7 @@ export class AccountList implements OnInit {
 
   removeSelected(): void {
     this.errorMessage.set(null);
+    this.successMessage.set(null);
     const ids = Array.from(this.selection.selectedIds());
     // passa lista de ids a remover + a função de delete específica deste recurso
     bulkDelete(ids, (id) => this.accountService.delete(id))
@@ -94,6 +101,59 @@ export class AccountList implements OnInit {
         this.selection.clear();
         this.load();
       });
+  }
+
+  @HostListener('document:keydown', ['$event'])
+  onKeydown(event: KeyboardEvent): void {
+    const target = document.activeElement as HTMLInputElement | null;
+    const isEditableInput =
+      target?.tagName === 'INPUT' && !['checkbox', 'radio'].includes(target.type);
+    if (target && (isEditableInput || target.tagName === 'TEXTAREA' || target.isContentEditable)) {
+      return;
+    }
+
+    const key = event.key.toLowerCase();
+    if (event.ctrlKey && key === 'c' && this.selection.selectedIds().size > 0) {
+      this.copiedIds.set(Array.from(this.selection.selectedIds()));
+    } else if (event.ctrlKey && key === 'v' && this.copiedIds().length > 0) {
+      event.preventDefault();
+      this.performDuplicate(this.copiedIds(), false);
+    }
+  }
+
+  duplicateSelected(zeroAmount: boolean): void {
+    this.performDuplicate(Array.from(this.selection.selectedIds()), zeroAmount);
+  }
+
+  private performDuplicate(ids: number[], zeroAmount: boolean): void {
+    this.errorMessage.set(null);
+    this.successMessage.set(null);
+    bulkDuplicate(ids, (id) => this.accountService.duplicate(id, { zeroAmount })).subscribe((result) => {
+      if (result.failed.length) {
+        const details = result.failed.map((f) => f.message).join('; ');
+        this.errorMessage.set(`Não foi possível duplicar ${result.failed.length} conta(s): ${details}`);
+      }
+      if (result.succeeded.length) {
+        this.successMessage.set(`${result.succeeded.length} conta(s) duplicada(s) com sucesso.`);
+      }
+      this.selection.clear();
+      const succeededIds = result.succeeded.map((a) => a.id);
+      this.load(() => this.highlightDuplicated(succeededIds));
+    });
+  }
+
+  private highlightDuplicated(ids: number[]): void {
+    if (ids.length === 0) {
+      return;
+    }
+    this.recentlyDuplicatedIds.set(new Set(ids));
+    setTimeout(() => {
+      document.querySelector(`tr[data-account-id="${ids[0]}"]`)?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+      });
+    });
+    setTimeout(() => this.recentlyDuplicatedIds.set(new Set()), 2500);
   }
 
   startPayment(account: Account): void {
@@ -165,7 +225,7 @@ export class AccountList implements OnInit {
     });
   }
 
-  private load(): void {
+  private load(onSuccess?: () => void): void {
     const filters: AccountFilters = {};
     if (this.selectedPartyId != null) filters.partyId = this.selectedPartyId;
     if (this.selectedFundId != null) filters.fundId = this.selectedFundId;
@@ -176,7 +236,10 @@ export class AccountList implements OnInit {
     if (this.paymentYearMonth) filters.paymentYearMonth = this.paymentYearMonth;
 
     this.accountService.findAll(filters).subscribe({
-      next: (accounts) => this.accounts.set(accounts),
+      next: (accounts) => {
+        this.accounts.set(accounts);
+        onSuccess?.();
+      },
       error: (err: ApiError) => this.errorMessage.set(err.message),
     });
   }

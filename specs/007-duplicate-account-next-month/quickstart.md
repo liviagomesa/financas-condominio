@@ -62,6 +62,7 @@ Os cenários abaixo espelham os Acceptance Scenarios do [spec.md](./spec.md).
 8. **Colar sem copiar antes** (Edge Case): recarregue a página e pressione Ctrl+V sem ter pressionado Ctrl+C antes. Confirme que nada acontece.
 9. **Falha parcial em lote** (FR-007): com dois lançamentos selecionados, remova o fundo de um deles diretamente no banco (ou torne inválido de outra forma) antes de duplicar, e confirme que o outro é duplicado normalmente e a usuária é avisada de qual falhou e por quê.
 10. **Ambos os tipos de lançamento** (Assumptions): repita o passo 1 com uma conta a receber e uma conta a pagar, confirmando que o comportamento é idêntico para os dois tipos.
+11. **Feedback visual de seleção e duplicação** (FR-012 a FR-014, adicionados na revisão pós-implementação de 2026-08-02): selecione um lançamento e confirme que a linha fica visualmente destacada enquanto selecionada. Duplique-o com o filtro de mês de vencimento ajustado para que a cópia apareça na tela — confirme que a linha da cópia recebe um destaque temporário (alguns segundos) e que a tela rola até ela. Repita sem ajustar o filtro (cópia fora da tela) e confirme que, mesmo sem destaque visível, uma mensagem indica quantas cópias foram criadas.
 
 ## Referências
 

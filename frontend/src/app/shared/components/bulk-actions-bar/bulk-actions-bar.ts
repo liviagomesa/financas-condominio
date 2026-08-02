@@ -9,7 +9,10 @@ import { Component, input, output } from '@angular/core';
 export class BulkActionsBar {
   readonly selectedCount = input.required<number>();
   readonly entityLabelPlural = input.required<string>();
+  readonly showDuplicateActions = input<boolean>(false);
   readonly remove = output<void>();
+  readonly duplicate = output<void>();
+  readonly duplicateZeroed = output<void>();
 
   confirmAndRemove(): void {
     const confirmed = confirm(

@@ -165,6 +165,20 @@ public class AccountService {
         return repository.save(account);
     }
 
+    public Account duplicate(Long id, boolean zeroAmount) {
+        Account original = findById(id);
+        return repository.save(new Account(
+                original.getType(),
+                zeroAmount ? BigDecimal.ZERO : original.getAmount(),
+                original.getDueDate().plusMonths(1),
+                original.getDescription(),
+                original.getFund(),
+                original.isRecurring(),
+                original.getParty(),
+                null,
+                original.getObservations()));
+    }
+
     public void delete(Long id) {
         if (!repository.existsById(id)) {
             throw new NotFoundException("Conta não encontrada.");

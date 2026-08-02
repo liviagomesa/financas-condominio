@@ -89,8 +89,21 @@ Nenhuma tarefa nova nesta fase.
 
 **Purpose**: Validação final e documentação
 
-- [ ] T014 [P] Run roteiro de validação manual de `quickstart.md` de ponta a ponta (navegador, Playwright já configurado como devDependency), cobrindo os 10 cenários (botões de duplicação, atalho de teclado, virada de mês curto, falha parcial, ambos os tipos de lançamento)
-- [ ] T015 [P] Update `README.md` com as decisões técnicas desta feature (novo endpoint `POST /api/accounts/{id}/duplicate`; extensão aditiva de `BulkActionsBar`; atalho de teclado Ctrl+C/Ctrl+V via `HostListener` de `document`), conforme Checkpoints da Rodada de Trabalho da constituição
+- [X] T014 [P] Run roteiro de validação manual de `quickstart.md` de ponta a ponta (navegador, Playwright já configurado como devDependency), cobrindo os 10 cenários (botões de duplicação, atalho de teclado, virada de mês curto, falha parcial, ambos os tipos de lançamento)
+- [X] T015 [P] Update `README.md` com as decisões técnicas desta feature (novo endpoint `POST /api/accounts/{id}/duplicate`; extensão aditiva de `BulkActionsBar`; atalho de teclado Ctrl+C/Ctrl+V via `HostListener` de `document`), conforme Checkpoints da Rodada de Trabalho da constituição
+
+---
+
+## Phase 6: Revisão de UX pós-implementação (sessão 2026-08-02)
+
+**Purpose**: Feedback direto da usuária sobre a entrega das Phases 2-5, formalizado como FR-012 a FR-014 em spec.md (ver "Revisão pós-implementação" em plan.md e data-model.md para o estado efêmero novo).
+
+- [X] T016 [P] Add destaque visual de linha selecionada (classe `table-active` do Bootstrap, `[class.table-active]="selection.isSelected(account)"`) em `frontend/src/app/account/account-list/account-list.html` (FR-012)
+- [X] T017 Add `recentlyDuplicatedIds = signal<ReadonlySet<number>>(new Set())` e método privado `highlightDuplicated(ids)` em `account-list.ts`: aplica a classe `table-success` às linhas recém-duplicadas por ~2,5s e rola a tela até a primeira via `scrollIntoView`, usando `[attr.data-account-id]="account.id"` no `<tr>` de `account-list.html` como seletor; transição de cor suave adicionada em `account-list.scss` (FR-013, depends on T010)
+- [X] T018 [P] Add `successMessage = signal<string | null>(null)` em `account-list.ts`, populado em `performDuplicate` com a contagem de `result.succeeded`, exibido em `account-list.html` como `alert-success`, e limpo no início de qualquer outra ação da tela (filtro, remoção, nova duplicação) (FR-014, depends on T010)
+- [X] T019 [P] Run roteiro de validação manual do cenário 11 de `quickstart.md` (Playwright) cobrindo os três itens acima
+
+**Checkpoint**: FR-012 a FR-014 implementados e validados.
 
 ---
 

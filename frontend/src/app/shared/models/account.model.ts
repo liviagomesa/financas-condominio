@@ -49,6 +49,10 @@ export interface AccountPaymentRequest {
   paymentDate: string;
 }
 
+export interface AccountDuplicateRequest {
+  zeroAmount: boolean;
+}
+
 export interface AccountFilters {
   partyId?: number;
   fundId?: number;

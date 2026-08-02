@@ -83,10 +83,17 @@
   <div class="alert alert-danger">{{ errorMessage() }}</div>
 }
 
+@if (successMessage()) {
+  <div class="alert alert-success">{{ successMessage() }}</div>
+}
+
 <app-bulk-actions-bar
   [selectedCount]="selection.selectedCount()"
   entityLabelPlural="contas"
+  [showDuplicateActions]="true"
   (remove)="removeSelected()"
+  (duplicate)="duplicateSelected(false)"
+  (duplicateZeroed)="duplicateSelected(true)"
 />
 
 @if (accounts().length) {
@@ -113,7 +120,11 @@
     </thead>
     <tbody>
       @for (account of accounts(); track account.id) {
-        <tr>
+        <tr
+          [attr.data-account-id]="account.id"
+          [class.table-active]="selection.isSelected(account)"
+          [class.table-success]="recentlyDuplicatedIds().has(account.id)"
+        >
           <td>
             <input
               type="checkbox"
