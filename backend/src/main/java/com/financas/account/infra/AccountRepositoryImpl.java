@@ -2,6 +2,7 @@ package com.financas.account.infra;
 
 import com.financas.account.domain.Account;
 import com.financas.account.domain.AccountRepository;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.stereotype.Repository;
@@ -58,5 +59,10 @@ public class AccountRepositoryImpl implements AccountRepository {
     @Override
     public boolean existsByFundId(Long fundId) {
         return jpaRepository.existsByFundId(fundId);
+    }
+
+    @Override
+    public boolean existsByRecurringChargeIdAndDueDateBetween(Long recurringChargeId, LocalDate start, LocalDate end) {
+        return jpaRepository.existsByRecurringChargeIdAndDueDateBetween(recurringChargeId, start, end);
     }
 }

@@ -1,6 +1,7 @@
 package com.financas.account.infra;
 
 import com.financas.account.domain.Account;
+import java.time.LocalDate;
 import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -13,4 +14,6 @@ public interface AccountJpaRepository extends JpaRepository<Account, Long> {
     boolean existsByPartyId(Long partyId);
 
     boolean existsByFundId(Long fundId);
+
+    boolean existsByRecurringChargeIdAndDueDateBetween(Long recurringChargeId, LocalDate start, LocalDate end);
 }

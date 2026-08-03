@@ -7,6 +7,8 @@ import { AccountList } from './account/account-list/account-list';
 import { AccountForm } from './account/account-form/account-form';
 import { FundList } from './fund/fund-list/fund-list';
 import { FundForm } from './fund/fund-form/fund-form';
+import { RecurringChargeForm } from './recurring-charge/recurring-charge-form/recurring-charge-form';
+import { RecurringChargeList } from './recurring-charge/recurring-charge-list/recurring-charge-list';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'parties', pathMatch: 'full' },
@@ -22,4 +24,7 @@ export const routes: Routes = [
   { path: 'funds', component: FundList },
   { path: 'funds/new', component: FundForm },
   { path: 'funds/:id/edit', component: FundForm },
+  { path: 'recurring-charges', component: RecurringChargeList },
+  { path: 'recurring-charges/new', component: RecurringChargeForm },
+  { path: 'recurring-charges/:id/edit', component: RecurringChargeForm },
 ];

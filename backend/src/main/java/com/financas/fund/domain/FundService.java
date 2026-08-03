@@ -3,6 +3,7 @@ package com.financas.fund.domain;
 import com.financas.account.domain.Account;
 import com.financas.account.domain.AccountRepository;
 import com.financas.account.domain.AccountType;
+import com.financas.recurringcharge.domain.RecurringChargeRepository;
 import com.financas.shared.exceptions.NotFoundException;
 import java.math.BigDecimal;
 import java.util.List;
@@ -14,10 +15,15 @@ public class FundService {
 
     private final FundRepository repository;
     private final AccountRepository accountRepository;
+    private final RecurringChargeRepository recurringChargeRepository;
 
-    public FundService(FundRepository repository, AccountRepository accountRepository) {
+    public FundService(
+            FundRepository repository,
+            AccountRepository accountRepository,
+            RecurringChargeRepository recurringChargeRepository) {
         this.repository = repository;
         this.accountRepository = accountRepository;
+        this.recurringChargeRepository = recurringChargeRepository;
     }
 
     public Fund create(String name, BigDecimal initialBalance) {
@@ -45,6 +51,9 @@ public class FundService {
         findById(id);
         if (accountRepository.existsByFundId(id)) {
             throw new FundHasAccountsException();
+        }
+        if (recurringChargeRepository.existsByFundIdAndDeactivatedAtIsNull(id)) {
+            throw new FundHasActiveRecurringChargesException();
         }
         repository.deleteById(id);
     }

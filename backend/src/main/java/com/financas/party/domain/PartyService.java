@@ -1,6 +1,7 @@
 package com.financas.party.domain;
 
 import com.financas.account.domain.AccountRepository;
+import com.financas.recurringcharge.domain.RecurringChargeRepository;
 import com.financas.shared.exceptions.NotFoundException;
 import java.util.List;
 import java.util.Objects;
@@ -11,10 +12,15 @@ public class PartyService {
 
     private final PartyRepository repository;
     private final AccountRepository accountRepository;
+    private final RecurringChargeRepository recurringChargeRepository;
 
-    public PartyService(PartyRepository repository, AccountRepository accountRepository) {
+    public PartyService(
+            PartyRepository repository,
+            AccountRepository accountRepository,
+            RecurringChargeRepository recurringChargeRepository) {
         this.repository = repository;
         this.accountRepository = accountRepository;
+        this.recurringChargeRepository = recurringChargeRepository;
     }
 
     public Party create(String name, String pixKey) {
@@ -42,6 +48,9 @@ public class PartyService {
         findById(id);
         if (accountRepository.existsByPartyId(id)) {
             throw new PartyHasAccountsException();
+        }
+        if (recurringChargeRepository.existsByPartyIdAndDeactivatedAtIsNull(id)) {
+            throw new PartyHasActiveRecurringChargesException();
         }
         repository.deleteById(id);
     }

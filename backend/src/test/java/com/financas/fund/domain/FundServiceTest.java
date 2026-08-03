@@ -10,6 +10,7 @@ import static org.mockito.Mockito.when;
 import com.financas.account.domain.Account;
 import com.financas.account.domain.AccountRepository;
 import com.financas.account.domain.AccountType;
+import com.financas.recurringcharge.domain.RecurringChargeRepository;
 import com.financas.shared.exceptions.NotFoundException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -31,11 +32,14 @@ class FundServiceTest {
     @Mock
     private AccountRepository accountRepository;
 
+    @Mock
+    private RecurringChargeRepository recurringChargeRepository;
+
     private FundService service;
 
     @BeforeEach
     void setUp() {
-        service = new FundService(repository, accountRepository);
+        service = new FundService(repository, accountRepository, recurringChargeRepository);
     }
 
     @Test
@@ -106,6 +110,19 @@ class FundServiceTest {
         when(accountRepository.existsByFundId(1L)).thenReturn(true);
 
         assertThatThrownBy(() -> service.delete(1L)).isInstanceOf(FundHasAccountsException.class);
+
+        verify(repository, never()).deleteById(any());
+    }
+
+    @Test
+    void deleteRejectsFundWithActiveRecurringChargesLinked() {
+        Fund existing = withId(new Fund("Piscina", BigDecimal.ZERO), 1L);
+        when(repository.findById(1L)).thenReturn(Optional.of(existing));
+        when(accountRepository.existsByFundId(1L)).thenReturn(false);
+        when(recurringChargeRepository.existsByFundIdAndDeactivatedAtIsNull(1L)).thenReturn(true);
+
+        assertThatThrownBy(() -> service.delete(1L))
+                .isInstanceOf(FundHasActiveRecurringChargesException.class);
 
         verify(repository, never()).deleteById(any());
     }

@@ -1,8 +1,8 @@
-package com.financas.account.domain;
+package com.financas.recurringcharge.domain;
 
+import com.financas.account.domain.AccountType;
 import com.financas.fund.domain.Fund;
 import com.financas.party.domain.Party;
-import com.financas.recurringcharge.domain.RecurringCharge;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -17,8 +17,8 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Entity
-@Table(name = "account")
-public class Account {
+@Table(name = "recurring_charge")
+public class RecurringCharge {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -31,8 +31,8 @@ public class Account {
     @Column(nullable = false)
     private BigDecimal amount;
 
-    @Column(name = "due_date", nullable = false)
-    private LocalDate dueDate;
+    @Column(name = "due_day", nullable = false)
+    private Integer dueDay;
 
     @Column(nullable = false)
     private String description;
@@ -45,36 +45,34 @@ public class Account {
     @JoinColumn(name = "party_id", nullable = false)
     private Party party;
 
-    @Column(name = "payment_date")
-    private LocalDate paymentDate;
-
     @Column(name = "observations", columnDefinition = "TEXT")
     private String observations;
 
-    @ManyToOne
-    @JoinColumn(name = "recurring_charge_id", nullable = true)
-    private RecurringCharge recurringCharge;
+    @Column(name = "deactivated_at")
+    private LocalDate deactivatedAt;
 
-    protected Account() {
+    @Column(name = "last_generation_failed", nullable = false)
+    private boolean lastGenerationFailed;
+
+    protected RecurringCharge() {
     }
 
-    public Account(
+    public RecurringCharge(
             AccountType type,
             BigDecimal amount,
-            LocalDate dueDate,
+            Integer dueDay,
             String description,
             Fund fund,
             Party party,
-            LocalDate paymentDate,
             String observations) {
         this.type = type;
         this.amount = amount;
-        this.dueDate = dueDate;
+        this.dueDay = dueDay;
         this.description = description;
         this.fund = fund;
         this.party = party;
-        this.paymentDate = paymentDate;
         this.observations = observations;
+        this.lastGenerationFailed = false;
     }
 
     public Long getId() {
@@ -89,67 +87,43 @@ public class Account {
         return amount;
     }
 
-    public void setAmount(BigDecimal amount) {
-        this.amount = amount;
-    }
-
-    public LocalDate getDueDate() {
-        return dueDate;
-    }
-
-    public void setDueDate(LocalDate dueDate) {
-        this.dueDate = dueDate;
+    public Integer getDueDay() {
+        return dueDay;
     }
 
     public String getDescription() {
         return description;
     }
 
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
     public Fund getFund() {
         return fund;
-    }
-
-    public void setFund(Fund fund) {
-        this.fund = fund;
     }
 
     public Party getParty() {
         return party;
     }
 
-    public void setParty(Party party) {
-        this.party = party;
-    }
-
-    public LocalDate getPaymentDate() {
-        return paymentDate;
-    }
-
-    public void setPaymentDate(LocalDate paymentDate) {
-        this.paymentDate = paymentDate;
-    }
-
     public String getObservations() {
         return observations;
     }
 
-    public void setObservations(String observations) {
-        this.observations = observations;
+    public LocalDate getDeactivatedAt() {
+        return deactivatedAt;
     }
 
-    public boolean isPaid() {
-        return paymentDate != null;
+    public void setDeactivatedAt(LocalDate deactivatedAt) {
+        this.deactivatedAt = deactivatedAt;
     }
 
-    public RecurringCharge getRecurringCharge() {
-        return recurringCharge;
+    public boolean isLastGenerationFailed() {
+        return lastGenerationFailed;
     }
 
-    public void setRecurringCharge(RecurringCharge recurringCharge) {
-        this.recurringCharge = recurringCharge;
+    public void setLastGenerationFailed(boolean lastGenerationFailed) {
+        this.lastGenerationFailed = lastGenerationFailed;
+    }
+
+    public boolean isActive() {
+        return deactivatedAt == null;
     }
 }

@@ -8,6 +8,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.financas.account.domain.AccountRepository;
+import com.financas.recurringcharge.domain.RecurringChargeRepository;
 import com.financas.shared.exceptions.NotFoundException;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -26,11 +27,14 @@ class PartyServiceTest {
     @Mock
     private AccountRepository accountRepository;
 
+    @Mock
+    private RecurringChargeRepository recurringChargeRepository;
+
     private PartyService service;
 
     @BeforeEach
     void setUp() {
-        service = new PartyService(repository, accountRepository);
+        service = new PartyService(repository, accountRepository, recurringChargeRepository);
     }
 
     @Test
@@ -101,6 +105,19 @@ class PartyServiceTest {
         when(accountRepository.existsByPartyId(1L)).thenReturn(true);
 
         assertThatThrownBy(() -> service.delete(1L)).isInstanceOf(PartyHasAccountsException.class);
+
+        verify(repository, never()).deleteById(any());
+    }
+
+    @Test
+    void deleteRejectsPartyWithActiveRecurringChargesLinked() {
+        Party existing = withId(new Party("Bloco A - 101", null), 1L);
+        when(repository.findById(1L)).thenReturn(Optional.of(existing));
+        when(accountRepository.existsByPartyId(1L)).thenReturn(false);
+        when(recurringChargeRepository.existsByPartyIdAndDeactivatedAtIsNull(1L)).thenReturn(true);
+
+        assertThatThrownBy(() -> service.delete(1L))
+                .isInstanceOf(PartyHasActiveRecurringChargesException.class);
 
         verify(repository, never()).deleteById(any());
     }

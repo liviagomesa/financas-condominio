@@ -1,0 +1,134 @@
+import { Component, OnInit, signal } from '@angular/core';
+import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ApiError } from '../../core/error.interceptor';
+import { AccountType, ACCOUNT_TYPE_LABELS } from '../../shared/models/account.model';
+import { Fund } from '../../shared/models/fund.model';
+import { Group } from '../../shared/models/group.model';
+import { Party } from '../../shared/models/party.model';
+import { FundService } from '../../shared/services/fund.service';
+import { GroupService } from '../../shared/services/group.service';
+import { PartyService } from '../../shared/services/party.service';
+import { RecurringChargeService } from '../../shared/services/recurring-charge.service';
+
+@Component({
+  selector: 'app-recurring-charge-form',
+  imports: [ReactiveFormsModule, RouterLink],
+  templateUrl: './recurring-charge-form.html',
+  styleUrl: './recurring-charge-form.scss',
+})
+export class RecurringChargeForm implements OnInit {
+  protected readonly parties = signal<Party[]>([]);
+  protected readonly groups = signal<Group[]>([]);
+  protected readonly funds = signal<Fund[]>([]);
+  protected readonly errorMessage = signal<string | null>(null);
+  protected readonly bulkMode = signal(false);
+  protected readonly accountTypeOptions: { value: AccountType; label: string }[] = (
+    Object.entries(ACCOUNT_TYPE_LABELS) as [AccountType, string][]
+  ).map(([value, label]) => ({ value, label }));
+  protected isEditMode = false;
+  private recurringChargeId: number | null = null;
+
+  protected readonly form = new FormGroup({
+    type: new FormControl<AccountType>('RECEIVABLE', {
+      nonNullable: true,
+      validators: [Validators.required],
+    }),
+    amount: new FormControl<number | null>(null, {
+      validators: [Validators.required, Validators.min(0)],
+    }),
+    dueDay: new FormControl<number | null>(null, {
+      validators: [Validators.required, Validators.min(1), Validators.max(31)],
+    }),
+    description: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
+    fundId: new FormControl<number | null>(null, { validators: [Validators.required] }),
+    partyId: new FormControl<number | null>(null, { validators: [Validators.required] }),
+    groupId: new FormControl<number | null>(null),
+    observations: new FormControl('', { nonNullable: true }),
+  });
+
+  constructor(
+    private readonly partyService: PartyService,
+    private readonly groupService: GroupService,
+    private readonly fundService: FundService,
+    private readonly recurringChargeService: RecurringChargeService,
+    private readonly router: Router,
+    private readonly route: ActivatedRoute
+  ) {}
+
+  ngOnInit(): void {
+    this.partyService.findAll().subscribe((parties) => this.parties.set(parties));
+    this.groupService.findAll().subscribe((groups) => this.groups.set(groups));
+    this.fundService.findAll().subscribe((funds) => this.funds.set(funds));
+
+    const idParam = this.route.snapshot.paramMap.get('id');
+    if (idParam) {
+      this.recurringChargeId = Number(idParam);
+      this.isEditMode = true;
+      this.recurringChargeService.findById(this.recurringChargeId).subscribe((recurringCharge) => {
+        this.form.setValue({
+          type: recurringCharge.type,
+          amount: recurringCharge.amount,
+          dueDay: recurringCharge.dueDay,
+          description: recurringCharge.description,
+          fundId: recurringCharge.fund.id,
+          partyId: recurringCharge.party.id,
+          groupId: null,
+          observations: recurringCharge.observations ?? '',
+        });
+        this.form.controls.type.disable();
+      });
+    }
+  }
+
+  setBulkMode(bulk: boolean): void {
+    this.bulkMode.set(bulk);
+    const partyIdControl = this.form.controls.partyId;
+    const groupIdControl = this.form.controls.groupId;
+    if (bulk) {
+      partyIdControl.clearValidators();
+      partyIdControl.setValue(null);
+      groupIdControl.setValidators([Validators.required]);
+    } else {
+      groupIdControl.clearValidators();
+      groupIdControl.setValue(null);
+      partyIdControl.setValidators([Validators.required]);
+    }
+    partyIdControl.updateValueAndValidity();
+    groupIdControl.updateValueAndValidity();
+  }
+
+  submit(): void {
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
+      return;
+    }
+
+    this.errorMessage.set(null);
+    const raw = this.form.getRawValue();
+    const shared = {
+      amount: raw.amount as number,
+      dueDay: raw.dueDay as number,
+      description: raw.description,
+      fundId: raw.fundId as number,
+      observations: raw.observations || null,
+    };
+
+    const onSuccess = () => this.router.navigateByUrl('/recurring-charges');
+    const onError = (err: ApiError) => this.errorMessage.set(err.message);
+
+    if (this.bulkMode()) {
+      this.recurringChargeService
+        .createBulk({ ...shared, type: raw.type, groupId: raw.groupId as number })
+        .subscribe({ next: onSuccess, error: onError });
+    } else if (this.recurringChargeId) {
+      this.recurringChargeService
+        .update(this.recurringChargeId, { ...shared, type: raw.type, partyId: raw.partyId as number })
+        .subscribe({ next: onSuccess, error: onError });
+    } else {
+      this.recurringChargeService
+        .create({ ...shared, type: raw.type, partyId: raw.partyId as number })
+        .subscribe({ next: onSuccess, error: onError });
+    }
+  }
+}

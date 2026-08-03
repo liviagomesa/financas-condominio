@@ -1,5 +1,6 @@
 package com.financas.account.domain;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -22,4 +23,6 @@ public interface AccountRepository {
     boolean existsByPartyId(Long partyId);
 
     boolean existsByFundId(Long fundId);
+
+    boolean existsByRecurringChargeIdAndDueDateBetween(Long recurringChargeId, LocalDate start, LocalDate end);
 }
