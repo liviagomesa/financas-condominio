@@ -11,6 +11,7 @@ Sistema de gestão de recebimentos e pagamentos de um condomínio. Composto por 
     - [2. Backend (API)](#2-backend-api)
     - [3. Testes automatizados do backend](#3-testes-automatizados-do-backend)
     - [4. Frontend](#4-frontend)
+    - [Autenticação](#autenticação)
   - [Decisões técnicas e premissas](#decisões-técnicas-e-premissas)
     - [Transações e lazy loading (`open-in-view: false`)](#transações-e-lazy-loading-open-in-view-false)
     - [Duplicação de código](#duplicação-de-código)
@@ -43,12 +44,19 @@ Sobe um único container com o PostgreSQL, exposto na porta `5434` do host.
 
 ### 2. Backend (API)
 
+A aplicação exige três variáveis de ambiente para subir.
+
 ```powershell
 cd backend
+$env:ADMIN_USERNAME = "sindica"
+$env:ADMIN_PASSWORD = "uma-senha-de-sua-escolha"
+$env:JWT_SECRET = & { $b = New-Object byte[] 32; [System.Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($b); [Convert]::ToBase64String($b) }
 mvn spring-boot:run
 ```
 
-A API sobe em `http://localhost:8082/api`.
+`JWT_SECRET` precisa ser uma sequência aleatória de pelo menos 32 caracteres. No comando acima, uso uma ferramenta de aleatoriedade do PowerShell para gerá-lo, mas isso não é obrigatório.
+
+Sobe em `http://localhost:8082/api`.
 
 ### 3. Testes automatizados do backend
 
@@ -56,6 +64,8 @@ A API sobe em `http://localhost:8082/api`.
 cd backend
 mvn test
 ```
+
+Não é preciso definir as variáveis de ambiente acima para rodar os testes — `backend/src/test/resources/application.yml` já fornece valores padrão só para o classpath de teste.
 
 ### 4. Frontend
 
@@ -65,7 +75,20 @@ npm install
 npm start
 ```
 
-Acesse `http://localhost:4202`.
+Acesse `http://localhost:4202` e faça login com o usuário/senha definidos em `ADMIN_USERNAME`/`ADMIN_PASSWORD` no passo 2.
+
+### Autenticação
+
+No boot, o backend calcula o hash BCrypt da senha (fornecida via `ADMIN_PASSWORD`) e faz upsert de uma linha na tabela `admin_user`. O sistema tem um único usuário, sem tela de cadastro.
+
+No login, busca o usuário no banco por `username` e compara a senha informada contra o `password_hash`. Se bater, gera um token JWT válido por 7 dias, assina com `JWT_SECRET` e retorna para o cliente. A presença desse JWT é exigida no header `Authorization: Bearer` em todas as requisições subsequentes.
+
+Uma requisição é autorizada pelo backend se:
+- Houver token JWT no header
+- O token não está expirado
+- A assinatura é válida contra `JWT_SECRET`
+
+Ou seja, é possível reiniciar o backend sem quebrar a sessão — basta manter o mesmo `JWT_SECRET` (até usuário e senha podem mudar).
 
 ## Decisões técnicas e premissas
 
