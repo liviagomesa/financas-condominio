@@ -2,6 +2,8 @@
 
 Sistema de gestão de recebimentos e pagamentos de um condomínio. Composto por API REST em Java, banco de dados PostgreSQL (container Docker) e frontend em Angular.
 
+![Tela de listagem de contas](docs/screenshots/accounts.png)
+
 ## Sumário
 - [Sistema de Gerenciamento de Condomínio](#sistema-de-gerenciamento-de-condomínio)
   - [Sumário](#sumário)
