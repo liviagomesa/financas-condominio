@@ -15,7 +15,7 @@ Lista as cobranças recorrentes **ativas** (linhas removidas ou substituídas po
     "amount": 350.00,
     "dueDay": 10,
     "description": "Taxa condominial",
-    "fund": { "...": "FundResponse já existente" },
+    "fund": { "...": "FundSummaryResponse já existente (revisado 2026-08-05 — ver specs/004-fund-entity-balance/plan.md)" },
     "party": { "...": "PartyResponse já existente" },
     "observations": null,
     "lastGenerationFailed": false

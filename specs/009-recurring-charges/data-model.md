@@ -100,7 +100,7 @@ Ver [contracts/api.md](./contracts/api.md) para o formato completo de request/re
 |---|---|
 | `RecurringChargeRequest` | `type`, `amount`, `dueDay`, `description`, `fundId`, `partyId`, `observations` — usado em `POST`/`PUT` |
 | `RecurringChargeBulkRequest` | Igual, exceto `groupId` no lugar de `partyId` — usado em `POST /bulk` |
-| `RecurringChargeResponse` | `id`, `type`, `amount`, `dueDay`, `description`, `fund` (`FundResponse`), `party` (`PartyResponse`), `observations`, `lastGenerationFailed` |
+| `RecurringChargeResponse` | `id`, `type`, `amount`, `dueDay`, `description`, `fund` (`FundSummaryResponse` — revisado na sessão 2026-08-05, era `FundResponse`, ver plan.md), `party` (`PartyResponse`), `observations`, `lastGenerationFailed` |
 
 ## Estado efêmero de interface (`recurring-charge/recurring-charge-form/recurring-charge-form.ts`)
 

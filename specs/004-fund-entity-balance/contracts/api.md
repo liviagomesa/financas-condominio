@@ -71,7 +71,7 @@ Remove um fundo, bloqueando quando houver ao menos uma conta (a receber ou a pag
 
 ### `GET /api/accounts` / `GET /api/accounts/{id}`
 
-O campo `fund` da resposta passa de string de enum para o objeto completo do fundo (mesmo princípio já aplicado a `unit`/`supplier`):
+O campo `fund` da resposta passa de string de enum para um objeto referenciando o fundo (mesmo princípio já aplicado a `unit`/`supplier`) — **revisado na sessão 2026-08-05** (ver plan.md, "Revisão pós-implementação"): o objeto embutido é um resumo (`FundSummaryResponse`: `id`, `name`, `initialBalance`), sem o campo computado `realBalance`, que permanece exclusivo de `GET /api/funds`/`GET /api/funds/{id}`:
 
 ```json
 {
@@ -80,7 +80,7 @@ O campo `fund` da resposta passa de string de enum para o objeto completo do fun
   "amount": 350.00,
   "dueDate": "2026-08-10",
   "description": "Taxa condominial - Agosto/2026",
-  "fund": { "id": 1, "name": "Piscina", "initialBalance": 500.00, "realBalance": 800.00 },
+  "fund": { "id": 1, "name": "Piscina", "initialBalance": 500.00 },
   "recurring": true,
   "paymentDate": null,
   "observations": null,
