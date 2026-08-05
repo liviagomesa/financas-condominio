@@ -73,6 +73,21 @@ A usuária identificou que o destaque visual de linha selecionada, introduzido p
 
 Nenhuma violação da constituição identificada dentro do escopo da feature 002 — Complexity Tracking não se aplica.
 
+### Atualização (correção pós-implementação 2026-08-05 — aprimoramento visual do checkbox de seleção, FR-025)
+
+A usuária identificou que o checkbox de seleção múltipla (linha e "selecionar todos") de toda listagem que reaproveita o trio desta feature está hoje sem tratamento visual dedicado — `<input type="checkbox">` puro, nem a classe `form-check-input` do Bootstrap já usada em outros checkboxes do projeto. Mesmo critério do FR-024: MUST ser centralizado, refletindo em todas as listagens de uma vez. Confirmação princípio a princípio:
+
+- **I. Arquitetura em Camadas**: SEM ALTERAÇÃO NECESSÁRIA. Não é um componente/serviço novo em `shared/` — é a classe `form-check-input` (Bootstrap, já disponível globalmente) somada a uma classe própria `row-select-checkbox` (área clicável maior, mesmo espírito de convenção de template já registrado na constituição para o binding do checkbox — `(click)="selection.toggleWithRange(...)"` — e para o destaque de linha, FR-024), com a regra CSS dessa classe nova centralizada em `frontend/src/styles.scss`, mesmo arquivo que já concentra a transição de `table-active` (FR-024).
+- **II. Separação Controller → Service → Repository**: SEM ALTERAÇÃO NECESSÁRIA — mudança inteiramente de frontend/template.
+- **III. Stack Técnica Definida**: SEM ALTERAÇÃO NECESSÁRIA — nenhuma dependência nova; a classe `form-check-input` já vem do Bootstrap (já em uso no projeto) e já inclui a transição de marcar/desmarcar nativamente. Apresentação, não regra de negócio testável — sem exigir teste automatizado novo (mesmo critério do FR-024).
+- **IV. Convenções de Código e Formatação**: SEM ALTERAÇÃO NECESSÁRIA.
+- **V. Idioma por Tipo de Conteúdo**: SEM ALTERAÇÃO NECESSÁRIA.
+- **VI. Convenções de API REST**: SEM ALTERAÇÃO NECESSÁRIA — nenhum contrato de API é tocado.
+
+**Impacto cruzado com features já implementadas**: `account-list` (feature 003/007), `party-list`/`group-list` (feature 005), `fund-list` (feature 004) e `recurring-charge-list` (feature 009) — as cinco listagens que hoje reaproveitam o trio de seleção múltipla — precisam da classe `form-check-input row-select-checkbox` nos checkboxes de linha e "selecionar todos". Cada tarefa correspondente está registrada no `tasks.md` da respectiva feature (mesmo padrão já usado para o impacto cruzado do FR-024, ver acima), por alterar telas já implementadas por elas; a regra CSS centralizada em `frontend/src/styles.scss` é tarefa desta própria feature (dona do trio), ver Project Structure.
+
+Nenhuma violação da constituição identificada dentro do escopo da feature 002 — Complexity Tracking não se aplica.
+
 ## Project Structure
 
 ### Documentation (this feature)

@@ -20,6 +20,7 @@
         <th>
           <input
             type="checkbox"
+            class="form-check-input row-select-checkbox"
             [checked]="selection.isAllSelected(parties())"
             (change)="selection.toggleAll(parties())"
           />
@@ -35,6 +36,7 @@
           <td>
             <input
               type="checkbox"
+              class="form-check-input row-select-checkbox"
               [checked]="selection.isSelected(party)"
               (click)="selection.toggleWithRange(party, parties(), $event.shiftKey)"
             />

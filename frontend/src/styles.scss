@@ -4,3 +4,9 @@
 table > tbody > tr > td {
   transition: background-color 1s ease;
 }
+
+.row-select-checkbox {
+  width: 1.15em;
+  height: 1.15em;
+  cursor: pointer;
+}

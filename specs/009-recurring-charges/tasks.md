@@ -171,6 +171,16 @@ Nenhuma tarefa nova nesta fase.
 
 ---
 
+## Phase 9: Aprimoramento visual do checkbox de seleção (impacto cruzado com a feature 002, sessão 2026-08-05)
+
+**Purpose**: `specs/002-receivable-charges/spec.md` (FR-025) passou a exigir tratamento visual dedicado para o checkbox de seleção (linha e "selecionar todos") de toda listagem que reaproveita o trio de seleção múltipla, via a classe `row-select-checkbox` centralizada em `frontend/src/styles.scss` — `recurring-charge-list` precisa ganhá-lo (depends on `specs/002-receivable-charges/tasks.md` T073). Esta feature foi construída depois da generalização do destaque de linha (FR-024) e já nasceu com `table-active`, mas antes do FR-025, então o checkbox nasceu sem o tratamento visual.
+
+- [X] T054 Add `class="form-check-input row-select-checkbox"` aos checkboxes de linha e "selecionar todos" de `frontend/src/app/recurring-charge/recurring-charge-list/recurring-charge-list.html` (FR-025)
+
+**Checkpoint**: checkbox de seleção de `recurring-charge-list` com o mesmo tratamento visual das demais listagens.
+
+---
+
 ## Dependencies & Execution Order
 
 ### Phase Dependencies

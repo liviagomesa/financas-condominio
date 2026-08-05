@@ -103,6 +103,7 @@
         <th>
           <input
             type="checkbox"
+            class="form-check-input row-select-checkbox"
             [checked]="selection.isAllSelected(accounts())"
             (change)="selection.toggleAll(accounts())"
           />
@@ -128,6 +129,7 @@
           <td>
             <input
               type="checkbox"
+              class="form-check-input row-select-checkbox"
               [checked]="selection.isSelected(account)"
               (click)="selection.toggleWithRange(account, accounts(), $event.shiftKey)"
             />

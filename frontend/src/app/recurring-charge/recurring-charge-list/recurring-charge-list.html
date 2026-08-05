@@ -20,6 +20,7 @@
         <th>
           <input
             type="checkbox"
+            class="form-check-input row-select-checkbox"
             [checked]="selection.isAllSelected(recurringCharges())"
             (change)="selection.toggleAll(recurringCharges())"
           />
@@ -40,6 +41,7 @@
           <td>
             <input
               type="checkbox"
+              class="form-check-input row-select-checkbox"
               [checked]="selection.isSelected(recurringCharge)"
               (click)="selection.toggleWithRange(recurringCharge, recurringCharges(), $event.shiftKey)"
             />

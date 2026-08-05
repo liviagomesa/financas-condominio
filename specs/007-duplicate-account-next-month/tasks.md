@@ -117,6 +117,16 @@ Nenhuma tarefa nova nesta fase.
 
 ---
 
+## Phase 8: Aprimoramento visual do checkbox de seleção (impacto cruzado com a feature 002, sessão 2026-08-05)
+
+**Purpose**: `specs/002-receivable-charges/spec.md` (FR-025) passou a exigir tratamento visual dedicado para o checkbox de seleção (linha e "selecionar todos") de toda listagem que reaproveita o trio de seleção múltipla, aplicado de forma centralizada via a classe `row-select-checkbox` criada em `frontend/src/styles.scss` (depends on `specs/002-receivable-charges/tasks.md` T073).
+
+- [X] T021 Add `class="form-check-input row-select-checkbox"` aos checkboxes de linha e "selecionar todos" de `frontend/src/app/account/account-list/account-list.html` (FR-025)
+
+**Checkpoint**: checkbox de seleção de `account-list` com o mesmo tratamento visual das demais listagens.
+
+---
+
 ## Dependencies & Execution Order
 
 ### Phase Dependencies

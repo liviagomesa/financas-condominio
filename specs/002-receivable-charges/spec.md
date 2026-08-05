@@ -36,6 +36,10 @@
 
 - A feature 007 (`specs/007-duplicate-account-next-month/`) introduziu um destaque visual (classe `table-active` do Bootstrap) para linhas selecionadas, mas implementou-o apenas em `account-list`, como se fosse um comportamento específico daquela tela. A usuária identificou que esse destaque está associado à seleção múltipla em si — o trio `list-selection.ts`/`bulk-delete.ts`/`bulk-actions-bar` definido nesta feature (FR-019, Assumptions) — e por isso MUST ser um comportamento consistente de toda listagem que reaproveita esse trio, não uma escolha isolada de uma tela. Ver FR-024 abaixo e nota de impacto cruzado em plan.md.
 
+### Sessão de correção 2026-08-05 (aprimoramento visual do checkbox de seleção)
+
+- A usuária identificou que o checkbox de seleção múltipla (linha e "selecionar todos") de toda listagem que reaproveita o trio desta feature está hoje sem nenhum tratamento visual dedicado — é um `<input type="checkbox">` puro, sem sequer a classe `form-check-input` do Bootstrap já usada em outros checkboxes do projeto (ex.: filtro "somente vencidos" de `account-list`). O pedido é aumentar a área clicável, aplicar uma transição sutil ao marcar/desmarcar e alinhar o visual ao restante da UI — assim como o destaque de linha (FR-024), MUST ser aplicado de forma centralizada, refletindo em todas as listagens que reaproveitam o trio de uma vez, sem ajuste tela a tela. Ver FR-025 abaixo e nota de impacto cruzado em plan.md.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Lançar conta a receber para uma unidade (Priority: P1)
@@ -166,6 +170,7 @@ Como responsável pela gestão do condomínio, quero registrar que um lançament
 - **FR-022**: O sistema MUST permitir filtrar a listagem de lançamentos por mês e ano de vencimento.
 - **FR-023**: O sistema MUST permitir filtrar a listagem de lançamentos por mês e ano de pagamento (aplicável apenas a lançamentos pagos).
 - **FR-024**: Toda listagem que reaproveita o trio de seleção múltipla desta feature (`list-selection.ts`/`bulk-delete.ts`/`bulk-actions-bar`, ver FR-019) MUST destacar visualmente cada linha selecionada, de forma consistente entre todas elas — não um comportamento específico de uma listagem isolada. Requisito adicionado retroativamente nesta feature (dona do trio) a partir de um destaque equivalente introduzido apenas em `account-list` pela feature 007; a aplicação retroativa às demais listagens (`unit-list`/`resident-list` históricos, hoje `party-list`, `fund-list`, `group-list`) está registrada como impacto cruzado nos `tasks.md` das features que hoje possuem cada uma dessas telas (ver plan.md).
+- **FR-025**: O checkbox de seleção (linha e "selecionar todos") de toda listagem que reaproveita o trio de seleção múltipla desta feature (ver FR-019/FR-024) MUST ter tratamento visual dedicado — área clicável maior que o checkbox nativo do navegador, transição sutil ao marcar/desmarcar e alinhamento ao restante da UI (Bootstrap) — aplicado de forma centralizada, de modo consistente em todas as listagens que reaproveitam o trio, não uma escolha isolada de uma tela. Requisito adicionado retroativamente nesta feature (dona do trio), mesmo critério já aplicado ao FR-024; a aplicação está registrada como impacto cruzado nos `tasks.md` das features que hoje possuem cada listagem (ver plan.md).
 
 ### Key Entities
 

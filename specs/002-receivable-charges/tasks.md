@@ -217,6 +217,18 @@ Nenhuma tarefa nova nesta fase.
 
 ---
 
+## Phase 10: Aprimoramento visual do checkbox de seleção (FR-025, sessão 2026-08-05)
+
+**Motivo**: a usuária identificou que o checkbox de seleção múltipla (linha e "selecionar todos") de toda listagem que reaproveita o trio desta feature está sem tratamento visual dedicado (`<input type="checkbox">` puro, sem nem a classe `form-check-input` do Bootstrap) — ver Clarifications ("Sessão de correção 2026-08-05") e FR-025 em spec.md.
+
+- [X] T073 [P] Create regra CSS da classe `row-select-checkbox` (área clicável maior que o checkbox nativo, ex. `width`/`height: 1.15em`, `cursor: pointer`) em `frontend/src/styles.scss`, complementando a classe `form-check-input` do Bootstrap — que já traz transição nativa ao marcar/desmarcar, sem exigir regra própria — mesmo arquivo que já concentra a transição de `table-active` (FR-024) (FR-025)
+
+**Impacto cruzado**: aplicar `class="form-check-input row-select-checkbox"` aos checkboxes de linha e "selecionar todos" está registrado nos `tasks.md` das features que hoje possuem cada listagem que reaproveita o trio — `account-list` (feature 007), `fund-list` (feature 004), `party-list`/`group-list` (feature 005) e `recurring-charge-list` (feature 009) — cada uma depende de T073 já estar implementada.
+
+**Checkpoint**: checkbox de seleção com tratamento visual dedicado em `frontend/src/styles.scss`, pronto para ser aplicado pelas demais listagens.
+
+---
+
 ## Dependencies & Execution Order
 
 ### Phase Dependencies
@@ -238,6 +250,10 @@ A tarefa de aplicar seleção múltipla + remoção em lote a `unit-list`/`resid
 ### Impacto cruzado — destaque de linha selecionada generalizado (FR-024, sessão 2026-08-02)
 
 A tarefa de mover a regra CSS de transição de cor de `account-list.scss` para `frontend/src/styles.scss` (global) está registrada em `specs/007-duplicate-account-next-month/tasks.md`, Phase 7 — `account-list` já aplica o destaque `table-active`, criado por aquela feature, sem alteração de comportamento. As tarefas de aplicar `[class.table-active]="selection.isSelected(item)"` a `fund-list` estão registradas em `specs/004-fund-entity-balance/tasks.md`, Phase 6, e a `party-list`/`group-list` em `specs/005-counterparty-groups/tasks.md`, Phase 8 — por alterarem telas já implementadas por essas features reaproveitando o trio de seleção desta feature (FR-024).
+
+### Impacto cruzado — aprimoramento visual do checkbox de seleção (FR-025, sessão 2026-08-05)
+
+Depende de T073 (Phase 10) desta feature. A tarefa de aplicar `class="form-check-input row-select-checkbox"` aos checkboxes de linha e "selecionar todos" está registrada em `specs/007-duplicate-account-next-month/tasks.md` (`account-list`), `specs/004-fund-entity-balance/tasks.md` (`fund-list`), `specs/005-counterparty-groups/tasks.md` (`party-list`/`group-list`) e `specs/009-recurring-charges/tasks.md` (`recurring-charge-list`) — por alterarem telas já implementadas por essas features reaproveitando o trio de seleção desta feature (FR-025).
 
 ### Notas de dependência entre stories
 
