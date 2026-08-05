@@ -1,0 +1,37 @@
+<h1 class="h3 mb-3">Entrar</h1>
+
+<form [formGroup]="form" (ngSubmit)="submit()" class="col-md-4">
+  <div class="mb-3">
+    <label for="username" class="form-label">Usuário</label>
+    <input
+      id="username"
+      type="text"
+      class="form-control"
+      formControlName="username"
+      autocomplete="username"
+    />
+    @if (form.controls.username.invalid && form.controls.username.touched) {
+      <div class="text-danger small mt-1">O usuário é obrigatório.</div>
+    }
+  </div>
+
+  <div class="mb-3">
+    <label for="password" class="form-label">Senha</label>
+    <input
+      id="password"
+      type="password"
+      class="form-control"
+      formControlName="password"
+      autocomplete="current-password"
+    />
+    @if (form.controls.password.invalid && form.controls.password.touched) {
+      <div class="text-danger small mt-1">A senha é obrigatória.</div>
+    }
+  </div>
+
+  @if (errorMessage()) {
+    <div class="alert alert-danger">{{ errorMessage() }}</div>
+  }
+
+  <button type="submit" class="btn btn-primary">Entrar</button>
+</form>

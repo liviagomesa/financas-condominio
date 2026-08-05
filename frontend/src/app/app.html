@@ -8,6 +8,9 @@
       <a class="nav-link" routerLink="/funds" routerLinkActive="active">Fundos</a>
       <a class="nav-link" routerLink="/recurring-charges" routerLinkActive="active">Cobranças Recorrentes</a>
     </div>
+    @if (authService.isAuthenticated()) {
+      <button type="button" class="btn btn-outline-light btn-sm ms-auto" (click)="logout()">Sair</button>
+    }
   </div>
 </nav>
 

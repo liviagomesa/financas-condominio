@@ -1,4 +1,6 @@
 import { Routes } from '@angular/router';
+import { authGuard } from './core/auth.guard';
+import { Login } from './auth/login/login';
 import { PartyList } from './party/party-list/party-list';
 import { PartyForm } from './party/party-form/party-form';
 import { GroupList } from './group/group-list/group-list';
@@ -11,20 +13,27 @@ import { RecurringChargeForm } from './recurring-charge/recurring-charge-form/re
 import { RecurringChargeList } from './recurring-charge/recurring-charge-list/recurring-charge-list';
 
 export const routes: Routes = [
-  { path: '', redirectTo: 'parties', pathMatch: 'full' },
-  { path: 'parties', component: PartyList },
-  { path: 'parties/new', component: PartyForm },
-  { path: 'parties/:id/edit', component: PartyForm },
-  { path: 'groups', component: GroupList },
-  { path: 'groups/new', component: GroupForm },
-  { path: 'groups/:id/edit', component: GroupForm },
-  { path: 'accounts', component: AccountList },
-  { path: 'accounts/new', component: AccountForm },
-  { path: 'accounts/:id/edit', component: AccountForm },
-  { path: 'funds', component: FundList },
-  { path: 'funds/new', component: FundForm },
-  { path: 'funds/:id/edit', component: FundForm },
-  { path: 'recurring-charges', component: RecurringChargeList },
-  { path: 'recurring-charges/new', component: RecurringChargeForm },
-  { path: 'recurring-charges/:id/edit', component: RecurringChargeForm },
+  { path: 'login', component: Login },
+  {
+    path: '',
+    canActivate: [authGuard],
+    children: [
+      { path: '', redirectTo: 'parties', pathMatch: 'full' },
+      { path: 'parties', component: PartyList },
+      { path: 'parties/new', component: PartyForm },
+      { path: 'parties/:id/edit', component: PartyForm },
+      { path: 'groups', component: GroupList },
+      { path: 'groups/new', component: GroupForm },
+      { path: 'groups/:id/edit', component: GroupForm },
+      { path: 'accounts', component: AccountList },
+      { path: 'accounts/new', component: AccountForm },
+      { path: 'accounts/:id/edit', component: AccountForm },
+      { path: 'funds', component: FundList },
+      { path: 'funds/new', component: FundForm },
+      { path: 'funds/:id/edit', component: FundForm },
+      { path: 'recurring-charges', component: RecurringChargeList },
+      { path: 'recurring-charges/new', component: RecurringChargeForm },
+      { path: 'recurring-charges/:id/edit', component: RecurringChargeForm },
+    ],
+  },
 ];

@@ -24,8 +24,8 @@ Projeto Web já existente: `backend/src/main/java/com/financas/`, `backend/src/t
 
 **Purpose**: Preparar dependências e schema de banco antes de qualquer código novo.
 
-- [ ] T001 Adicionar `spring-boot-starter-security` e `io.jsonwebtoken:jjwt-api`/`jjwt-impl`/`jjwt-jackson` (versão `0.12.6`, `jjwt-impl`/`jjwt-jackson` em `<scope>runtime</scope>`) a `backend/pom.xml`
-- [ ] T002 [P] Criar migration `backend/src/main/resources/db/migration/V17__create_admin_user_table.sql` criando a tabela `admin_user` (`id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY`, `username VARCHAR(255) NOT NULL UNIQUE`, `password_hash VARCHAR(255) NOT NULL`), conforme [data-model.md](./data-model.md)
+- [X] T001 Adicionar `spring-boot-starter-security` e `io.jsonwebtoken:jjwt-api`/`jjwt-impl`/`jjwt-jackson` (versão `0.12.6`, `jjwt-impl`/`jjwt-jackson` em `<scope>runtime</scope>`) a `backend/pom.xml`
+- [X] T002 [P] Criar migration `backend/src/main/resources/db/migration/V17__create_admin_user_table.sql` criando a tabela `admin_user` (`id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY`, `username VARCHAR(255) NOT NULL UNIQUE`, `password_hash VARCHAR(255) NOT NULL`), conforme [data-model.md](./data-model.md)
 
 **Checkpoint**: dependências resolvidas, schema pronto para a entidade `User`.
 
@@ -37,17 +37,17 @@ Projeto Web já existente: `backend/src/main/java/com/financas/`, `backend/src/t
 
 **⚠️ CRITICAL**: Nenhuma user story pode ser considerada iniciada antes desta fase estar completa.
 
-- [ ] T003 [P] Criar `UnauthorizedException` em `backend/src/main/java/com/financas/shared/exceptions/UnauthorizedException.java` (mesmo padrão de `BadRequestException`/`ConflictException`/`NotFoundException`) e mapear para 401 em `backend/src/main/java/com/financas/shared/GlobalExceptionHandler.java` (`@ExceptionHandler` retornando `ErrorResponse` com `status = 401`)
-- [ ] T004 [P] Criar entidade `User` em `backend/src/main/java/com/financas/auth/domain/User.java` (`@Table(name = "admin_user")`, campos `id`, `username`, `passwordHash`, conforme [data-model.md](./data-model.md))
-- [ ] T005 Criar interface `UserRepository` em `backend/src/main/java/com/financas/auth/domain/UserRepository.java` (`findByUsername(String)`, `save(User)`) — depende de T004
-- [ ] T006 Criar `UserJpaRepository` (`backend/src/main/java/com/financas/auth/infra/UserJpaRepository.java`) e `UserRepositoryImpl` (`backend/src/main/java/com/financas/auth/infra/UserRepositoryImpl.java`), mesmo padrão de `PartyRepositoryImpl` — depende de T005
-- [ ] T007 [P] Criar `JwtService` em `backend/src/main/java/com/financas/auth/infra/JwtService.java` (gera token HS256 com `sub`=username e expiração de 7 dias, lê a chave de `JWT_SECRET` via `@Value`/`Environment` — nunca `System.getenv()` direto, para permitir override em teste; expõe `generate(String username)` e `validate(String token)` retornando o username ou lançando exceção se inválido/expirado; mensagens de erro de validação do token ficam em inglês — Princípio V da constitution, exceção interna nunca exposta diretamente via API) — decisões em [research.md](./research.md)
-- [ ] T008 Criar `JwtAuthenticationFilter` em `backend/src/main/java/com/financas/auth/infra/JwtAuthenticationFilter.java` (`OncePerRequestFilter`; lê `Authorization: Bearer`, valida via `JwtService`, popula `SecurityContextHolder` sem consultar `UserRepository` — usuário único, sem papel, per FR-010) — depende de T007
-- [ ] T009 [P] Criar `RestAuthenticationEntryPoint` em `backend/src/main/java/com/financas/auth/infra/RestAuthenticationEntryPoint.java` (escreve JSON no formato `ErrorResponse` — `{"message": "Não autenticado.", "status": 401}` — para falhas de token capturadas pelo filtro, fora do alcance do `GlobalExceptionHandler`)
-- [ ] T010 Criar `SecurityConfig` em `backend/src/main/java/com/financas/auth/infra/SecurityConfig.java` (`@Bean PasswordEncoder` com `BCryptPasswordEncoder`; `SecurityFilterChain` com sessão stateless (`SessionCreationPolicy.STATELESS`), CSRF desabilitado (`csrf(csrf -> csrf.disable())` — API stateless com Bearer token, sem cookie, não há CSRF token a validar), `cors(Customizer.withDefaults())` reaproveitando `WebConfig` existente, `requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()` (evita que o preflight CORS seja barrado pela autorização antes do `CorsFilter`), `permitAll` em `POST /api/auth/login`, autenticação obrigatória no restante de `/api/**`, `addFilterBefore(JwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)`, `exceptionHandling().authenticationEntryPoint(RestAuthenticationEntryPoint)`) — depende de T008, T009
-- [ ] T011 Criar `UserProvisioningService` em `backend/src/main/java/com/financas/auth/domain/UserProvisioningService.java` (`implements ApplicationRunner`; lê `ADMIN_USERNAME`/`ADMIN_PASSWORD`/`JWT_SECRET`, lança `IllegalStateException` com mensagem clara em inglês (Princípio V — exceção interna de boot, nunca exposta via API) se alguma estiver ausente/em branco ou se `JWT_SECRET` tiver menos de 32 caracteres — FR-006; faz upsert do `User` via `UserRepository`, com hash BCrypt de `ADMIN_PASSWORD` via `PasswordEncoder` — FR-005) — depende de T006, T010
-- [ ] T012 [P] Escrever `JwtServiceTest` em `backend/src/test/java/com/financas/auth/infra/JwtServiceTest.java` (token gerado tem `sub` correto e expira em 7 dias a partir da emissão; `validate` aceita token válido; `validate` rejeita token expirado e token com assinatura inválida; um token gerado por uma instância de `JwtService` é validado por uma segunda instância criada com o mesmo `JWT_SECRET` — simula sobrevivência a reinício, SC-005) — depende de T007
-- [ ] T013 [P] Escrever `UserProvisioningServiceTest` em `backend/src/test/java/com/financas/auth/domain/UserProvisioningServiceTest.java` (cria usuário quando `username` não existe; atualiza `passwordHash` quando já existe; lança `IllegalStateException` quando `ADMIN_USERNAME`/`ADMIN_PASSWORD`/`JWT_SECRET` ausentes; lança quando `JWT_SECRET` é mais curto que o mínimo exigido) — depende de T011
+- [X] T003 [P] Criar `UnauthorizedException` em `backend/src/main/java/com/financas/shared/exceptions/UnauthorizedException.java` (mesmo padrão de `BadRequestException`/`ConflictException`/`NotFoundException`) e mapear para 401 em `backend/src/main/java/com/financas/shared/GlobalExceptionHandler.java` (`@ExceptionHandler` retornando `ErrorResponse` com `status = 401`)
+- [X] T004 [P] Criar entidade `User` em `backend/src/main/java/com/financas/auth/domain/User.java` (`@Table(name = "admin_user")`, campos `id`, `username`, `passwordHash`, conforme [data-model.md](./data-model.md))
+- [X] T005 Criar interface `UserRepository` em `backend/src/main/java/com/financas/auth/domain/UserRepository.java` (`findByUsername(String)`, `save(User)`) — depende de T004
+- [X] T006 Criar `UserJpaRepository` (`backend/src/main/java/com/financas/auth/infra/UserJpaRepository.java`) e `UserRepositoryImpl` (`backend/src/main/java/com/financas/auth/infra/UserRepositoryImpl.java`), mesmo padrão de `PartyRepositoryImpl` — depende de T005
+- [X] T007 [P] Criar `JwtService` em `backend/src/main/java/com/financas/auth/infra/JwtService.java` (gera token HS256 com `sub`=username e expiração de 7 dias, lê a chave de `JWT_SECRET` via `@Value`/`Environment` — nunca `System.getenv()` direto, para permitir override em teste; expõe `generate(String username)` e `validate(String token)` retornando o username ou lançando exceção se inválido/expirado; mensagens de erro de validação do token ficam em inglês — Princípio V da constitution, exceção interna nunca exposta diretamente via API) — decisões em [research.md](./research.md)
+- [X] T008 Criar `JwtAuthenticationFilter` em `backend/src/main/java/com/financas/auth/infra/JwtAuthenticationFilter.java` (`OncePerRequestFilter`; lê `Authorization: Bearer`, valida via `JwtService`, popula `SecurityContextHolder` sem consultar `UserRepository` — usuário único, sem papel, per FR-010) — depende de T007
+- [X] T009 [P] Criar `RestAuthenticationEntryPoint` em `backend/src/main/java/com/financas/auth/infra/RestAuthenticationEntryPoint.java` (escreve JSON no formato `ErrorResponse` — `{"message": "Não autenticado.", "status": 401}` — para falhas de token capturadas pelo filtro, fora do alcance do `GlobalExceptionHandler`)
+- [X] T010 Criar `SecurityConfig` em `backend/src/main/java/com/financas/auth/infra/SecurityConfig.java` (`@Bean PasswordEncoder` com `BCryptPasswordEncoder`; `SecurityFilterChain` com sessão stateless (`SessionCreationPolicy.STATELESS`), CSRF desabilitado (`csrf(csrf -> csrf.disable())` — API stateless com Bearer token, sem cookie, não há CSRF token a validar), `cors(Customizer.withDefaults())` reaproveitando `WebConfig` existente, `requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()` (evita que o preflight CORS seja barrado pela autorização antes do `CorsFilter`), `permitAll` em `POST /api/auth/login`, autenticação obrigatória no restante de `/api/**`, `addFilterBefore(JwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)`, `exceptionHandling().authenticationEntryPoint(RestAuthenticationEntryPoint)`) — depende de T008, T009
+- [X] T011 Criar `UserProvisioningService` em `backend/src/main/java/com/financas/auth/domain/UserProvisioningService.java` (`implements ApplicationRunner`; lê `ADMIN_USERNAME`/`ADMIN_PASSWORD`/`JWT_SECRET`, lança `IllegalStateException` com mensagem clara em inglês (Princípio V — exceção interna de boot, nunca exposta via API) se alguma estiver ausente/em branco ou se `JWT_SECRET` tiver menos de 32 caracteres — FR-006; faz upsert do `User` via `UserRepository`, com hash BCrypt de `ADMIN_PASSWORD` via `PasswordEncoder` — FR-005) — depende de T006, T010
+- [X] T012 [P] Escrever `JwtServiceTest` em `backend/src/test/java/com/financas/auth/infra/JwtServiceTest.java` (token gerado tem `sub` correto e expira em 7 dias a partir da emissão; `validate` aceita token válido; `validate` rejeita token expirado e token com assinatura inválida; um token gerado por uma instância de `JwtService` é validado por uma segunda instância criada com o mesmo `JWT_SECRET` — simula sobrevivência a reinício, SC-005) — depende de T007
+- [X] T013 [P] Escrever `UserProvisioningServiceTest` em `backend/src/test/java/com/financas/auth/domain/UserProvisioningServiceTest.java` (cria usuário quando `username` não existe; atualiza `passwordHash` quando já existe; lança `IllegalStateException` quando `ADMIN_USERNAME`/`ADMIN_PASSWORD`/`JWT_SECRET` ausentes; lança quando `JWT_SECRET` é mais curto que o mínimo exigido) — depende de T011
 
 **Checkpoint**: toda rota `/api/**` já exige token válido (exceto login, que ainda não existe); a aplicação já falha o boot sem as três variáveis de ambiente. Nenhuma tela/endpoint de negócio existente (parties, accounts etc.) é mais acessível sem token a partir daqui.
 
@@ -63,16 +63,16 @@ Projeto Web já existente: `backend/src/main/java/com/financas/`, `backend/src/t
 
 ### Implementation for User Story 1
 
-- [ ] T014 [P] [US1] Criar `LoginRequest` em `backend/src/main/java/com/financas/auth/api/LoginRequest.java` (record `username`/`password`, `@NotBlank` com mensagens em português — mesmo padrão de `PartyRequest`; textos exatos em [contracts/api.md](./contracts/api.md))
-- [ ] T015 [P] [US1] Criar `LoginResponse` em `backend/src/main/java/com/financas/auth/api/LoginResponse.java` (record `token`)
-- [ ] T016 [US1] Criar `AuthService` em `backend/src/main/java/com/financas/auth/domain/AuthService.java` (`login(username, password)`: busca `User` por `username`, compara senha via `PasswordEncoder.matches`, emite token via `JwtService.generate` se válido, lança `UnauthorizedException("Usuário ou senha inválidos.")` — mesma mensagem tanto para usuário inexistente quanto para senha incorreta, FR-004) — depende de T006, T007, T010
-- [ ] T017 [US1] Criar `AuthController` em `backend/src/main/java/com/financas/auth/api/AuthController.java` (`POST /api/auth/login`, `@Valid @RequestBody LoginRequest`, delega a `AuthService`, retorna `LoginResponse`) — depende de T014, T015, T016
-- [ ] T018 [P] [US1] Escrever `AuthServiceTest` em `backend/src/test/java/com/financas/auth/domain/AuthServiceTest.java` (credenciais corretas emitem token; usuário inexistente lança `UnauthorizedException`; senha incorreta lança `UnauthorizedException`; a mensagem é idêntica nos dois casos de falha) — depende de T016
-- [ ] T019 [P] [US1] Criar `frontend/src/app/shared/models/auth.model.ts` (interfaces `LoginRequest`, `LoginResponse`, mesmo padrão de `party.model.ts`)
-- [ ] T020 [US1] Criar `frontend/src/app/shared/services/auth.service.ts` (`login(username, password): Observable<void>` chamando `POST /api/auth/login` e armazenando o token em `localStorage`; `getToken(): string | null`; `isAuthenticated` como `signal<boolean>` derivado da presença do token) — depende de T019
-- [ ] T021 [P] [US1] Escrever `frontend/src/app/shared/services/auth.service.spec.ts` (`login()` armazena o token em `localStorage` em caso de sucesso; `getToken()`/`isAuthenticated()` refletem o estado armazenado) — depende de T020
-- [ ] T022 [US1] Criar componente de login em `frontend/src/app/auth/login/login.ts`/`login.html`/`login.scss` (formulário usuário/senha, chama `AuthService.login()`, navega para `/` em sucesso, exibe `ApiError.message` em falha) — depende de T020
-- [ ] T023 [US1] Adicionar rota `/login` (sem guarda) em `frontend/src/app/app.routes.ts` — depende de T022
+- [X] T014 [P] [US1] Criar `LoginRequest` em `backend/src/main/java/com/financas/auth/api/LoginRequest.java` (record `username`/`password`, `@NotBlank` com mensagens em português — mesmo padrão de `PartyRequest`; textos exatos em [contracts/api.md](./contracts/api.md))
+- [X] T015 [P] [US1] Criar `LoginResponse` em `backend/src/main/java/com/financas/auth/api/LoginResponse.java` (record `token`)
+- [X] T016 [US1] Criar `AuthService` em `backend/src/main/java/com/financas/auth/domain/AuthService.java` (`login(username, password)`: busca `User` por `username`, compara senha via `PasswordEncoder.matches`, emite token via `JwtService.generate` se válido, lança `UnauthorizedException("Usuário ou senha inválidos.")` — mesma mensagem tanto para usuário inexistente quanto para senha incorreta, FR-004) — depende de T006, T007, T010
+- [X] T017 [US1] Criar `AuthController` em `backend/src/main/java/com/financas/auth/api/AuthController.java` (`POST /api/auth/login`, `@Valid @RequestBody LoginRequest`, delega a `AuthService`, retorna `LoginResponse`) — depende de T014, T015, T016
+- [X] T018 [P] [US1] Escrever `AuthServiceTest` em `backend/src/test/java/com/financas/auth/domain/AuthServiceTest.java` (credenciais corretas emitem token; usuário inexistente lança `UnauthorizedException`; senha incorreta lança `UnauthorizedException`; a mensagem é idêntica nos dois casos de falha) — depende de T016
+- [X] T019 [P] [US1] Criar `frontend/src/app/shared/models/auth.model.ts` (interfaces `LoginRequest`, `LoginResponse`, mesmo padrão de `party.model.ts`)
+- [X] T020 [US1] Criar `frontend/src/app/shared/services/auth.service.ts` (`login(username, password): Observable<void>` chamando `POST /api/auth/login` e armazenando o token em `localStorage`; `getToken(): string | null`; `isAuthenticated` como `signal<boolean>` derivado da presença do token) — depende de T019
+- [X] T021 [P] [US1] Escrever `frontend/src/app/shared/services/auth.service.spec.ts` (`login()` armazena o token em `localStorage` em caso de sucesso; `getToken()`/`isAuthenticated()` refletem o estado armazenado) — depende de T020
+- [X] T022 [US1] Criar componente de login em `frontend/src/app/auth/login/login.ts`/`login.html`/`login.scss` (formulário usuário/senha, chama `AuthService.login()`, navega para `/` em sucesso, exibe `ApiError.message` em falha) — depende de T020
+- [X] T023 [US1] Adicionar rota `/login` (sem guarda) em `frontend/src/app/app.routes.ts` — depende de T022
 
 **Checkpoint**: login funcional de ponta a ponta no backend (via curl) e tela de login funcional no frontend, armazenando o token.
 
@@ -86,16 +86,16 @@ Projeto Web já existente: `backend/src/main/java/com/financas/`, `backend/src/t
 
 ### Tests for User Story 2
 
-- [ ] T024 [US2] Escrever `AuthenticationFilterIT` em `backend/src/test/java/com/financas/auth/AuthenticationFilterIT.java` (`@SpringBootTest` + `@AutoConfigureMockMvc`, configurando `ADMIN_USERNAME`/`ADMIN_PASSWORD`/`JWT_SECRET` via `@DynamicPropertySource`/`@TestPropertySource`: `GET /api/parties` sem token → 401 no formato `{message, status}`; com token obtido via `POST /api/auth/login` → 200; `POST /api/auth/login` acessível sem token; `POST /api/auth/login` com `Authorization: Bearer <token válido>` presente ainda retorna 200 (edge case do spec.md); rota inexistente sob `/api/**` sem token → 401 (não 404); rota inexistente com token válido → 404) — depende de T010 (Foundational) e T017 (login precisa existir para obter um token real)
+- [X] T024 [US2] Escrever `AuthenticationFilterIT` em `backend/src/test/java/com/financas/auth/AuthenticationFilterIT.java` (`@SpringBootTest` + `@AutoConfigureMockMvc`, configurando `ADMIN_USERNAME`/`ADMIN_PASSWORD`/`JWT_SECRET` via `@DynamicPropertySource`/`@TestPropertySource`: `GET /api/parties` sem token → 401 no formato `{message, status}`; com token obtido via `POST /api/auth/login` → 200; `POST /api/auth/login` acessível sem token; `POST /api/auth/login` com `Authorization: Bearer <token válido>` presente ainda retorna 200 (edge case do spec.md); rota inexistente sob `/api/**` sem token → 401 (não 404); rota inexistente com token válido → 404) — depende de T010 (Foundational) e T017 (login precisa existir para obter um token real)
 
 ### Implementation for User Story 2
 
-- [ ] T025 [P] [US2] Criar `frontend/src/app/core/auth.guard.ts` (`CanActivateFn` usando `AuthService.isAuthenticated()`; retorna `UrlTree` para `/login` quando não autenticado) — depende de T020
-- [ ] T026 [US2] Criar `frontend/src/app/core/auth.interceptor.ts` (`HttpInterceptorFn`: anexa `Authorization: Bearer <token>` a toda requisição quando há token armazenado — FR-012; no `catchError`, se `status === 401`, limpa o token e redireciona a `/login` via `Router` — FR-013 —, repassando o erro adiante) — depende de T020
-- [ ] T027 [US2] Reestruturar `frontend/src/app/app.routes.ts`: agrupar as 11 rotas existentes como `children` de uma rota pai sem componente com `canActivate: [authGuard]`, mantendo `/login` fora da guarda — depende de T023, T025
-- [ ] T028 [US2] Registrar `authInterceptor` em `frontend/src/app/app.config.ts`, depois de `errorInterceptor` (`withInterceptors([errorInterceptor, authInterceptor])` — ordem documentada em [research.md](./research.md)) — depende de T026
-- [ ] T029 [P] [US2] Escrever `frontend/src/app/core/auth.guard.spec.ts` (redireciona a `/login` sem token; permite ativação com token presente)
-- [ ] T030 [P] [US2] Escrever `frontend/src/app/core/auth.interceptor.spec.ts` (anexa o header `Authorization` quando há token; em resposta 401, limpa o token e navega a `/login`; erros não-401 passam adiante inalterados)
+- [X] T025 [P] [US2] Criar `frontend/src/app/core/auth.guard.ts` (`CanActivateFn` usando `AuthService.isAuthenticated()`; retorna `UrlTree` para `/login` quando não autenticado) — depende de T020
+- [X] T026 [US2] Criar `frontend/src/app/core/auth.interceptor.ts` (`HttpInterceptorFn`: anexa `Authorization: Bearer <token>` a toda requisição quando há token armazenado — FR-012; no `catchError`, se `status === 401`, limpa o token e redireciona a `/login` via `Router` — FR-013 —, repassando o erro adiante) — depende de T020
+- [X] T027 [US2] Reestruturar `frontend/src/app/app.routes.ts`: agrupar as 11 rotas existentes como `children` de uma rota pai sem componente com `canActivate: [authGuard]`, mantendo `/login` fora da guarda — depende de T023, T025
+- [X] T028 [US2] Registrar `authInterceptor` em `frontend/src/app/app.config.ts`, depois de `errorInterceptor` (`withInterceptors([errorInterceptor, authInterceptor])` — ordem documentada em [research.md](./research.md)) — depende de T026
+- [X] T029 [P] [US2] Escrever `frontend/src/app/core/auth.guard.spec.ts` (redireciona a `/login` sem token; permite ativação com token presente)
+- [X] T030 [P] [US2] Escrever `frontend/src/app/core/auth.interceptor.spec.ts` (anexa o header `Authorization` quando há token; em resposta 401, limpa o token e navega a `/login`; erros não-401 passam adiante inalterados)
 
 **Checkpoint**: aplicação íntegra de ponta a ponta — login, bloqueio de rotas, anexo automático de token e redirecionamento em 401 funcionam juntos sem loop quebrado.
 
@@ -109,9 +109,9 @@ Projeto Web já existente: `backend/src/main/java/com/financas/`, `backend/src/t
 
 ### Implementation for User Story 3
 
-- [ ] T031 [US3] Adicionar `logout()` a `frontend/src/app/shared/services/auth.service.ts` (remove o token de `localStorage`, atualiza o signal `isAuthenticated`) — depende de T020
-- [ ] T032 [US3] Adicionar botão de logout em `frontend/src/app/app.html`/`frontend/src/app/app.ts` (visível apenas quando `AuthService.isAuthenticated()`, aciona `logout()` e navega para `/login` — FR-013a) — depende de T031
-- [ ] T033 [P] [US3] Estender `frontend/src/app/shared/services/auth.service.spec.ts` cobrindo `logout()` (remove o token e atualiza `isAuthenticated` para `false`) — depende de T031
+- [X] T031 [US3] Adicionar `logout()` a `frontend/src/app/shared/services/auth.service.ts` (remove o token de `localStorage`, atualiza o signal `isAuthenticated`) — depende de T020
+- [X] T032 [US3] Adicionar botão de logout em `frontend/src/app/app.html`/`frontend/src/app/app.ts` (visível apenas quando `AuthService.isAuthenticated()`, aciona `logout()` e navega para `/login` — FR-013a) — depende de T031
+- [X] T033 [P] [US3] Estender `frontend/src/app/shared/services/auth.service.spec.ts` cobrindo `logout()` (remove o token e atualiza `isAuthenticated` para `false`) — depende de T031
 
 **Checkpoint**: todas as user stories funcionais de ponta a ponta.
 
@@ -119,7 +119,13 @@ Projeto Web já existente: `backend/src/main/java/com/financas/`, `backend/src/t
 
 ## Phase 6: Polish & Cross-Cutting Concerns
 
-- [ ] T034 Executar manualmente todos os cenários de [quickstart.md](./quickstart.md) (boot sem env vars, login via curl, bloqueio de rotas, fluxo completo no navegador, sobrevivência a reinício do backend, invalidação em uso) e confirmar os resultados esperados
+- [X] T034 Executar manualmente todos os cenários de [quickstart.md](./quickstart.md) (boot sem env vars, login via curl, bloqueio de rotas, fluxo completo no navegador, sobrevivência a reinício do backend, invalidação em uso) e confirmar os resultados esperados
+
+---
+
+## Phase 7: Convergence
+
+- [X] T035 Add test case(s) to `backend/src/test/java/com/financas/auth/AuthenticationFilterIT.java` asserting `GET /api/parties` with a malformed/bad-signature token and with an expired token both return `401 {message, status}` per FR-009 (partial)
 
 ---
 

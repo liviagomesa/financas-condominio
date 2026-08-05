@@ -1,6 +1,25 @@
 <!--
 Sync Impact Report
 ==================
+Versão: 1.22.0 → 1.23.0
+
+Seções modificadas:
+- Restrições Transversais — preenchido o placeholder que a própria constitution já previa: substituída a frase sobre autenticação/autorização "futuras" pela restrição transversal real agora em vigor — toda rota `/api/**`, exceto `POST /api/auth/login`, exige um token JWT válido (`Authorization: Bearer <token>`); não há distinção de papel/permissão (usuário único).
+- I. Arquitetura em Camadas — a enumeração de exceptions genéricas de `shared/exceptions/` ganha uma quarta base: `UnauthorizedException` → 401, mesmo padrão de `NotFoundException`/`ConflictException`/`BadRequestException`.
+
+Motivação: a feature 010-admin-authentication implementou o primeiro mecanismo de autenticação do sistema. A própria seção "Restrições Transversais" já previa este momento ("quando isso ocorrer, esta seção MUST ser emendada"), então a emenda só formaliza o que o código já implementa: proteção global de `/api/**` via JWT, sem papéis. `UnauthorizedException` foi criada seguindo exatamente o mesmo raciocínio já documentado no Princípio I para as outras três exceptions genéricas (status HTTP genérico, não regra de negócio de uma entidade específica) — a enumeração existente precisava só ser estendida, não uma diretriz nova.
+
+Templates a verificar:
+- ✅ .specify/templates/plan-template.md — genérico, sem alterações necessárias
+- ✅ .specify/templates/spec-template.md — genérico, sem alterações necessárias
+- ✅ .specify/templates/tasks-template.md — genérico, sem alterações necessárias
+
+Itens pendentes (TODO): nenhum — `UnauthorizedException` já implementada e mapeada no `GlobalExceptionHandler`; a restrição de `/api/**` já está em vigor via `SecurityConfig`.
+-->
+
+<!--
+Sync Impact Report (histórico — emenda anterior)
+==================
 Versão: 1.21.0 → 1.22.0
 
 Seções adicionadas:
@@ -311,7 +330,7 @@ Itens pendentes (TODO):
 ### I. Arquitetura em Camadas
 O sistema segue arquitetura em camadas, com frontend (Angular) e backend (Spring Boot) organizados por domínio. O pacote base do backend Java MUST ser `com.financas`, com cada entidade de domínio em seu próprio subpacote (ex.: `com.financas.unit`, `com.financas.account`) contendo `api/` (controllers e contratos/DTOs), `domain/` (entidade, enums, repository, service, e as exceptions que representam regras de negócio daquela entidade — ex.: unicidade de um identificador, bloqueio de remoção por vínculo) e `infra/` (implementação do repository). A ferramenta de build do backend MUST ser Maven; a migração de schema de banco MUST ser feita via Flyway, com migrations versionadas em `src/main/resources/db/migration`. Quando o nome de domínio natural de uma entidade colide com uma palavra reservada do SQL (ex.: `GROUP`), a classe e o pacote Java MUST manter o nome de domínio (ex.: `Group`, `com.financas.group`), mas a tabela física MUST usar um nome alternativo que evite a colisão (ex.: `party_group`) — evita ter que escapar o identificador em toda consulta manual ou ferramenta de inspeção do banco. Quando uma migration generaliza ou renomeia uma entidade já existente (ex.: `Receivable` → `Account`), MUST preferir `ALTER TABLE ... RENAME TO`/ `RENAME COLUMN` a criar a tabela do zero e copiar dados via `INSERT ... SELECT` — preserva os `id`s e o histórico de auto-incremento já existentes, além de ser mais direto que recriar e migrar. Essa preferência pressupõe que há dado real a preservar; quando o projeto determina explicitamente que não há (ex.: ambiente local de desenvolvimento, sem dado de produção em jogo), uma migration MAY truncar e recriar a coluna/tabela diretamente em vez de renomear — desde que essa decisão seja explícita e registrada no spec da feature (Assumptions ou Clarifications), nunca assumida por padrão. Quando uma coluna existente se torna inteiramente sem uso (nenhuma regra de negócio ou consulta depende do seu valor) e a decisão é removê-la — não renomear ou generalizar a entidade que a contém —, uma migration MAY remover a coluna diretamente via `ALTER TABLE ... DROP COLUMN`, sem o cuidado de preservação de dado real que motiva a preferência por `RENAME` acima; essa decisão também MUST ser explícita e registrada no spec da feature (Assumptions ou Clarifications), pelo mesmo motivo — introduzida na feature 008-partial-payment-split, ao remover `Account.recurring`.
 
-Recursos compartilhados ficam em `shared/`, mas essa pasta MUST conter apenas recursos verdadeiramente transversais a mais de uma entidade: `GlobalExceptionHandler`, exceptions genéricas de infraestrutura reaproveitáveis por qualquer entidade (`NotFoundException` → 404, `ConflictException` → 409, `BadRequestException` → 400) e configuração técnica (ex.: CORS). `BadRequestException` MUST ser usada quando uma regra de validação (ex.: "valor deve ser positivo") precisa ser reforçada no `Service` — porque é reaplicada em mais de um método (criar, editar, criar em lote) ou porque a regra de negócio em si não é puramente sintática — em vez de depender só de Bean Validation no DTO; quando a regra é puramente sintática e vale para um único ponto de entrada (campo obrigatório, formato), Bean Validation no DTO (`@NotBlank`, `@Positive`, etc.) já basta, sem duplicar a checagem no `Service`. Uma exception que representa uma regra de negócio específica de uma entidade NUNCA deve viver em `shared/` — deve viver no `domain/` da própria entidade, mesmo que estenda uma das três bases acima (ex.: `UnitHasAccountsException extends ConflictException`). `BadRequestException` também MUST ser usada para validar query params que não correspondem a nenhum campo de DTO (ex.: um filtro de listagem em formato livre, como um mês/ano) — Bean Validation não se aplica a esses parâmetros, então a validação/parsing ocorre diretamente no `Service`.
+Recursos compartilhados ficam em `shared/`, mas essa pasta MUST conter apenas recursos verdadeiramente transversais a mais de uma entidade: `GlobalExceptionHandler`, exceptions genéricas de infraestrutura reaproveitáveis por qualquer entidade (`NotFoundException` → 404, `ConflictException` → 409, `BadRequestException` → 400, `UnauthorizedException` → 401) e configuração técnica (ex.: CORS). `BadRequestException` MUST ser usada quando uma regra de validação (ex.: "valor deve ser positivo") precisa ser reforçada no `Service` — porque é reaplicada em mais de um método (criar, editar, criar em lote) ou porque a regra de negócio em si não é puramente sintática — em vez de depender só de Bean Validation no DTO; quando a regra é puramente sintática e vale para um único ponto de entrada (campo obrigatório, formato), Bean Validation no DTO (`@NotBlank`, `@Positive`, etc.) já basta, sem duplicar a checagem no `Service`. Uma exception que representa uma regra de negócio específica de uma entidade NUNCA deve viver em `shared/` — deve viver no `domain/` da própria entidade, mesmo que estenda uma das quatro bases acima (ex.: `UnitHasAccountsException extends ConflictException`). `BadRequestException` também MUST ser usada para validar query params que não correspondem a nenhum campo de DTO (ex.: um filtro de listagem em formato livre, como um mês/ano) — Bean Validation não se aplica a esses parâmetros, então a validação/parsing ocorre diretamente no `Service`.
 
 Quando uma entidade precisa de uma contraparte obrigatória que só pode ser exatamente uma dentre duas (ou mais) outras entidades não relacionadas entre si (ex.: `Account.unit`/ `Account.supplier`), MUST ser modelada como uma FK nullable por contraparte possível — nunca um campo `id` solto sem FK de banco de verdade — validada em duas camadas: uma `CHECK CONSTRAINT` no banco garantindo que exatamente uma está preenchida, coerente com o discriminador da entidade (ex.: `type`), e a mesma regra reforçada no `Service` (regra cruzada entre campos, não puramente sintática — mesmo critério de `BadRequestException` acima). Evita introduzir uma tabela de "contraparte" genérica com discriminador manual ou herança JPA entre entidades que não compartilham comportamento real além de "poder ser contraparte" — complexidade desproporcional ao tamanho deste projeto. Esse padrão foi aplicado a `Account.unit`/`Account.supplier` até a feature 005, que unificou `Unit` e `Supplier` numa única entidade (`Party`), eliminando a necessidade de duas FKs mutuamente exclusivas nesse caso específico — o padrão em si permanece válido e MUST ser reaplicado sempre que uma situação futura real exigir exatamente uma dentre duas (ou mais) entidades não relacionadas como contraparte obrigatória.
 
@@ -365,7 +384,9 @@ DTOs de resposta MUST expor um factory estático `from(Entity)` que constrói o 
 
 ## Restrições Transversais
 
-Não há, por enquanto, regras de negócio ou técnicas universais obrigatórias (ex.: formato monetário fixo, retrocompatibilidade de API) nem restrições de segurança, compliance ou performance em vigor. É possível que autenticação/autorização sejam implementadas futuramente; quando isso ocorrer, esta seção MUST ser emendada para registrar as novas restrições transversais antes de sua adoção no código.
+Não há regras de negócio ou técnicas universais obrigatórias (ex.: formato monetário fixo, retrocompatibilidade de API) além da restrição de segurança abaixo; nenhuma restrição de compliance ou performance está em vigor.
+
+Toda rota `/api/**`, exceto `POST /api/auth/login`, MUST exigir um token JWT válido no cabeçalho `Authorization: Bearer <token>` — implementado via `SecurityConfig`/`JwtAuthenticationFilter` no módulo `com.financas.auth` (feature 010-admin-authentication). O sistema tem um único usuário administrador (a síndica), sem distinção de papel/permissão por endpoint — autenticado ou não é a única checagem de autorização necessária, e MUST permanecer assim salvo decisão explícita e documentada em contrário (ex.: se o projeto um dia precisar de múltiplos usuários com papéis distintos).
 
 ## Índice do Codebase (docs/codebase-research.md)
 
@@ -409,5 +430,5 @@ Emendas a esta constituição exigem: (1) descrição clara da mudança e sua mo
 
 Toda revisão de spec, plano ou tarefas MUST verificar conformidade com os princípios definidos aqui. Complexidade adicional (novas camadas, dependências, padrões) MUST ser justificada em relação aos princípios de simplicidade implícitos na arquitetura em camadas descrita no Princípio I.
 
-**Version**: 1.22.0 | **Ratified**: 2026-07-24 | **Last Amended**: 2026-08-05
+**Version**: 1.23.0 | **Ratified**: 2026-07-24 | **Last Amended**: 2026-08-05
 </content>
