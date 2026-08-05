@@ -13,6 +13,12 @@ Sistema de gestão de recebimentos e pagamentos de um condomínio. Composto por 
     - [4. Frontend](#4-frontend)
   - [Decisões técnicas e premissas](#decisões-técnicas-e-premissas)
     - [Transações e lazy loading (`open-in-view: false`)](#transações-e-lazy-loading-open-in-view-false)
+    - [Duplicação de código](#duplicação-de-código)
+      - [Validação repetida entre DTO e Service](#validação-repetida-entre-dto-e-service)
+      - [O possível ciclo de dependência entre Services](#o-possível-ciclo-de-dependência-entre-services)
+      - [Busca repetida entre services](#busca-repetida-entre-services)
+      - [Conclusão sobre DRY: conhecimento repetido vs. texto repetido](#conclusão-sobre-dry-conhecimento-repetido-vs-texto-repetido)
+  - [Revisões e correções das entregas da IA](#revisões-e-correções-das-entregas-da-ia)
   - [Fluxo SDD](#fluxo-sdd)
   - [O que eu faria diferente ou melhoraria com mais tempo](#o-que-eu-faria-diferente-ou-melhoraria-com-mais-tempo)
 
@@ -84,6 +90,44 @@ O projeto roda com `spring.jpa.open-in-view: false` desde a feature 001 — deci
    - **`fetch = EAGER` direto na entidade** — só quando literalmente nenhum consumidor da entidade jamais precisaria dela sem aquela associação. É o caso de `Group.members`: a única razão de um `Group` existir é agrupar `Party`s, então carregar um `Group` sem seus integrantes não tem uso real — `EAGER` aqui é **preferível** a `JOIN FETCH` dedicado, não só uma exceção tolerada.
 3. **Coleção `@ManyToMany`/`@OneToMany` sem ordem de negócio própria MUST ser `Set`, não `List`** — evita a complexidade de `@OrderColumn`, e evita que um `JOIN FETCH` dessa coleção junto de outra coleção da mesma entidade quebre com `MultipleBagFetchException` (o Hibernate rejeita duas coleções `List` — "bags" sem ordem — carregadas via `JOIN FETCH` na mesma query; com `Set` isso não acontece). Se duas coleções precisarem mesmo ser `List` (ordem de negócio genuína nas duas) e precisarem ser lidas juntas, a saída é aceitar N+1 — tolerável dado o volume pequeno de dados deste projeto — mas só se o acesso ficar inteiramente dentro do `Service`; se o `Controller` precisar do campo, ele MUST vir por `JOIN FETCH`/`EAGER`, nunca por N+1 tocado na camada de apresentação (mesmo argumento do item 2).
 4. **Uma operação de negócio que escreve em mais de um `Service` MUST ser orquestrada por um único método `@Transactional`, nunca pelo `Controller` chamando os `Service`s em sequência** — se a segunda chamada falhar depois que o `Controller` já invocou a primeira, a primeira ficaria comitada de forma inconsistente. A propagação padrão do Spring (`Propagation.REQUIRED`) garante que qualquer `Service`/`Repository` chamado de dentro de um método `@Transactional` participa da mesma transação, sem precisar fundir os `Service`s numa classe só.
+
+### Duplicação de código
+
+#### Validação repetida entre DTO e Service
+
+`AccountService.create()`/`update()` validam valor não-negativo e obrigatoriedade de `party`, mesmo essas duas regras já estando cobertas por Bean Validation no `AccountRequest` — e a mesma duplicação se repete em `RecurringChargeService`/`RecurringChargeRequest`. 
+
+A explicação: se um método de serviço de entidade X salva uma entidade Y diretamente, sem passar pelo controller de Y (ex.: `RecurringChargeGenerationService.generateOne()` salvando `Account`), ela pula todas as validações do controller de Y e cria o risco de salvar no banco uma entidade inválida.
+
+Por isso, estabeleci três regras neste projeto:
+1. Validações do DTO no controller devem ser duplicadas para a entidade na camada de serviço.
+2. Toda operação de **escrita** deve passar pelo service dono da entidade (nunca vazar `Repository` para escrita cross-domain).
+
+As validações no DTO precisam ser mantidas: elas deixam o código mais eficiente e mais seguro (requisição com erro falha antes, sem chegar na camada de domínio).
+
+> Obs. 1: avaliei mover as validações do service para o construtor da entidade onde fosse possível, já que é o único ponto que todo `save` atravessa. Descartei porque isso seria aplicar DDD parcialmente, o que deixaria o projeto inconsistente. Fazer DDD de verdade (setters privados, métodos de domínio nomeados, entidade como guardiã de toda a própria consistência), por sua vez, é uma reestruturação grande, desproporcional ao tamanho e ao objetivo deste projeto.
+>
+> Obs. 2: **leitura de entidade de outro domínio ainda pode ir direto no `Repository`** (`findById`, `existsBy*`, etc.), pois não constrói nada, não arrisca criar um estado inválido, é só consulta.
+
+#### O possível ciclo de dependência entre Services
+
+Ao aplicar essa regra em geral, surgiu uma objeção importante: "Service depender de Service" é perigoso, porque eventualmente duas entidades vão precisar se escrever mutuamente e isso fecha um ciclo de dependência de bean do Spring (`ServiceA → ServiceB → ServiceA`), que quebra injeção via construtor. 
+
+Isso também deu uma regra geral: se um dia surgir uma dependência de escrita genuinamente bidirecional entre dois `Service`s de CRUD, a saída é introduzir um terceiro `Service` de caso de uso (como a `RecurringChargeGenerationService` já é) que depende dos dois lados, sem que os dois CRUDs dependam um do outro. Isso resolve o ciclo estruturalmente, sem abrir mão de nenhuma garantia de invariante. É, aliás, o mesmo motivo pelo qual DDD organiza `Service`s por caso de uso em vez de um por entidade: reduz drasticamente a chance de duas entidades precisarem depender uma da outra.
+
+#### Busca repetida entre services
+
+`findFundOrThrow`/`findPartyOrThrow`/`findGroupOrThrow` (métodos de leitura) existem duplicados dentro de `AccountService` e de `RecurringChargeService`, em vez de centralizados nos `Service`s donos de cada entidade. 
+
+A única razão pra centralizá-los seria eliminar duplicação de método. Isso representaria um ganho puramente cosmético, pago com um acoplamento entre `Service`s que não precisa existir (e que favoreceria a criação de uma dependência circular se esse padrão se estendesse).
+
+Além de eliminar esse acoplamento, manter os métodos duplicados entre services permite especificar a mensagem de exceção mais adequada para cada caso. Essa duplicação custa pouco e mantém cada `Service` dono do próprio texto de erro.
+
+#### Conclusão sobre DRY: conhecimento repetido vs. texto repetido
+
+Uma tendência que eu tinha era ler DRY como "todo código igual deve virar uma coisa só". Mas duas linhas podem ser idênticas hoje e representar conhecimentos diferentes: coisas que mudam por motivos diferentes, a pedido de contextos diferentes, em momentos diferentes. Sandi Metz, autora do livro *Practical Object-Oriented Design* (POODR), chama isso de duplicação incidental: *"duplication is far cheaper than the wrong abstraction"*.
+
+Ou seja, hoje, entendo que unificar código só é necessário se todos que o utilizam puderem mudar juntos. Se mudar um trecho de código pode criar um bug em um de seus chamadores, duplicá-lo é a opção mais correta.
 
 ## Revisões e correções das entregas da IA
 

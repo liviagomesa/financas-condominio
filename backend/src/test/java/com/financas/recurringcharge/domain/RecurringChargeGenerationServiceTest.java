@@ -2,13 +2,14 @@ package com.financas.recurringcharge.domain;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.financas.account.domain.Account;
 import com.financas.account.domain.AccountRepository;
+import com.financas.account.domain.AccountService;
 import com.financas.account.domain.AccountType;
 import com.financas.fund.domain.Fund;
 import com.financas.party.domain.Party;
@@ -33,11 +34,14 @@ class RecurringChargeGenerationServiceTest {
     @Mock
     private AccountRepository accountRepository;
 
+    @Mock
+    private AccountService accountService;
+
     private RecurringChargeGenerationService service;
 
     @BeforeEach
     void setUp() {
-        service = new RecurringChargeGenerationService(recurringChargeRepository, accountRepository);
+        service = new RecurringChargeGenerationService(recurringChargeRepository, accountRepository, accountService);
     }
 
     @Test
@@ -46,19 +50,18 @@ class RecurringChargeGenerationServiceTest {
         RecurringCharge chargeB = withId(recurringCharge(15, "Taxa de limpeza"), 2L);
         when(recurringChargeRepository.findAll()).thenReturn(List.of(chargeA, chargeB));
         when(accountRepository.existsByRecurringChargeIdAndDueDateBetween(any(), any(), any())).thenReturn(false);
-        when(accountRepository.save(any(Account.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(recurringChargeRepository.save(any(RecurringCharge.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
         service.generatePendingAccounts();
 
         YearMonth targetMonth = resolveTargetMonth();
-        ArgumentCaptor<Account> captor = ArgumentCaptor.forClass(Account.class);
-        verify(accountRepository, times(2)).save(captor.capture());
-        List<Account> saved = captor.getAllValues();
-        assertThat(saved).extracting(Account::getRecurringCharge).containsExactly(chargeA, chargeB);
-        assertThat(saved).allSatisfy(
-                account -> assertThat(YearMonth.from(account.getDueDate())).isEqualTo(targetMonth));
+        ArgumentCaptor<RecurringCharge> chargeCaptor = ArgumentCaptor.forClass(RecurringCharge.class);
+        ArgumentCaptor<LocalDate> dueDateCaptor = ArgumentCaptor.forClass(LocalDate.class);
+        verify(accountService, times(2)).createFromRecurringCharge(chargeCaptor.capture(), dueDateCaptor.capture());
+        assertThat(chargeCaptor.getAllValues()).containsExactly(chargeA, chargeB);
+        assertThat(dueDateCaptor.getAllValues())
+                .allSatisfy(dueDate -> assertThat(YearMonth.from(dueDate)).isEqualTo(targetMonth));
         assertThat(chargeA.isLastGenerationFailed()).isFalse();
         assertThat(chargeB.isLastGenerationFailed()).isFalse();
     }
@@ -71,7 +74,7 @@ class RecurringChargeGenerationServiceTest {
 
         service.generatePendingAccounts();
 
-        verify(accountRepository, never()).save(any());
+        verify(accountService, never()).createFromRecurringCharge(any(), any());
     }
 
     @Test
@@ -79,14 +82,15 @@ class RecurringChargeGenerationServiceTest {
         RecurringCharge charge = withId(recurringCharge(31, "Taxa condominial"), 1L);
         when(recurringChargeRepository.findAll()).thenReturn(List.of(charge));
         when(accountRepository.existsByRecurringChargeIdAndDueDateBetween(any(), any(), any())).thenReturn(false);
-        when(accountRepository.save(any(Account.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(recurringChargeRepository.save(any(RecurringCharge.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
 
         service.generatePendingAccounts();
 
         YearMonth targetMonth = resolveTargetMonth();
-        ArgumentCaptor<Account> captor = ArgumentCaptor.forClass(Account.class);
-        verify(accountRepository).save(captor.capture());
-        assertThat(captor.getValue().getDueDate()).isEqualTo(targetMonth.atEndOfMonth());
+        ArgumentCaptor<LocalDate> dueDateCaptor = ArgumentCaptor.forClass(LocalDate.class);
+        verify(accountService).createFromRecurringCharge(eq(charge), dueDateCaptor.capture());
+        assertThat(dueDateCaptor.getValue()).isEqualTo(targetMonth.atEndOfMonth());
     }
 
     @Test
@@ -95,7 +99,7 @@ class RecurringChargeGenerationServiceTest {
 
         service.generatePendingAccounts();
 
-        verify(accountRepository, never()).save(any());
+        verify(accountService, never()).createFromRecurringCharge(any(), any());
     }
 
     @Test
@@ -106,7 +110,7 @@ class RecurringChargeGenerationServiceTest {
 
         service.generatePendingAccounts();
 
-        verify(accountRepository, never()).save(any());
+        verify(accountService, never()).createFromRecurringCharge(any(), any());
         verify(accountRepository, never()).existsByRecurringChargeIdAndDueDateBetween(any(), any(), any());
     }
 
@@ -116,9 +120,9 @@ class RecurringChargeGenerationServiceTest {
         RecurringCharge succeeding = withId(recurringCharge(15, "Sucesso"), 2L);
         when(recurringChargeRepository.findAll()).thenReturn(List.of(failing, succeeding));
         when(accountRepository.existsByRecurringChargeIdAndDueDateBetween(any(), any(), any())).thenReturn(false);
-        when(accountRepository.save(any(Account.class)))
+        when(accountService.createFromRecurringCharge(any(), any()))
                 .thenThrow(new RuntimeException("fundo removido"))
-                .thenAnswer(invocation -> invocation.getArgument(0));
+                .thenReturn(null);
         when(recurringChargeRepository.save(any(RecurringCharge.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -126,7 +130,7 @@ class RecurringChargeGenerationServiceTest {
 
         assertThat(failing.isLastGenerationFailed()).isTrue();
         assertThat(succeeding.isLastGenerationFailed()).isFalse();
-        verify(accountRepository, times(2)).save(any(Account.class));
+        verify(accountService, times(2)).createFromRecurringCharge(any(), any());
     }
 
     @Test

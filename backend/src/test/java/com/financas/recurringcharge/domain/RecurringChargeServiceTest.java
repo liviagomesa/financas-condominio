@@ -7,26 +7,30 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.financas.account.domain.Account;
-import com.financas.account.domain.AccountRepository;
-import com.financas.account.domain.AccountType;
-import com.financas.fund.domain.Fund;
-import com.financas.fund.domain.FundRepository;
-import com.financas.group.domain.Group;
-import com.financas.group.domain.GroupRepository;
-import com.financas.party.domain.Party;
-import com.financas.party.domain.PartyRepository;
-import com.financas.shared.exceptions.NotFoundException;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
+
+import com.financas.account.domain.Account;
+import com.financas.account.domain.AccountRepository;
+import com.financas.account.domain.AccountService;
+import com.financas.account.domain.AccountType;
+import com.financas.fund.domain.Fund;
+import com.financas.fund.domain.FundRepository;
+import com.financas.group.domain.EmptyGroupException;
+import com.financas.group.domain.Group;
+import com.financas.group.domain.GroupRepository;
+import com.financas.party.domain.Party;
+import com.financas.party.domain.PartyRepository;
+import com.financas.shared.exceptions.NotFoundException;
 
 @ExtendWith(MockitoExtension.class)
 class RecurringChargeServiceTest {
@@ -253,14 +257,27 @@ class RecurringChargeServiceTest {
         AccountRepository accountRepository = org.mockito.Mockito.mock(AccountRepository.class);
         when(accountRepository.existsByRecurringChargeIdAndDueDateBetween(any(), any(), any()))
                 .thenReturn(false);
+        AccountService accountServiceMock = org.mockito.Mockito.mock(AccountService.class);
         java.util.concurrent.atomic.AtomicReference<Account> savedAccount = new java.util.concurrent.atomic.AtomicReference<>();
-        when(accountRepository.save(any(Account.class))).thenAnswer(invocation -> {
-            Account account = invocation.getArgument(0);
-            savedAccount.set(account);
-            return account;
-        });
+        when(accountServiceMock.createFromRecurringCharge(any(RecurringCharge.class), any(java.time.LocalDate.class)))
+                .thenAnswer(invocation -> {
+                    RecurringCharge charge = invocation.getArgument(0);
+                    java.time.LocalDate dueDate = invocation.getArgument(1);
+                    Account account = new Account(
+                            charge.getType(),
+                            charge.getAmount(),
+                            dueDate,
+                            charge.getDescription(),
+                            charge.getFund(),
+                            charge.getParty(),
+                            null,
+                            charge.getObservations());
+                    account.setRecurringCharge(charge);
+                    savedAccount.set(account);
+                    return account;
+                });
         RecurringChargeGenerationService generationService =
-                new RecurringChargeGenerationService(repository, accountRepository);
+                new RecurringChargeGenerationService(repository, accountRepository, accountServiceMock);
 
         generationService.generatePendingAccounts();
         Account generated = savedAccount.get();

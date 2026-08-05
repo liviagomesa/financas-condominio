@@ -1,13 +1,5 @@
 package com.financas.account.domain;
 
-import com.financas.fund.domain.Fund;
-import com.financas.fund.domain.FundRepository;
-import com.financas.group.domain.Group;
-import com.financas.group.domain.GroupRepository;
-import com.financas.party.domain.Party;
-import com.financas.party.domain.PartyRepository;
-import com.financas.shared.exceptions.BadRequestException;
-import com.financas.shared.exceptions.NotFoundException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
@@ -17,8 +9,20 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import com.financas.fund.domain.Fund;
+import com.financas.fund.domain.FundRepository;
+import com.financas.group.domain.EmptyGroupException;
+import com.financas.group.domain.Group;
+import com.financas.group.domain.GroupRepository;
+import com.financas.party.domain.Party;
+import com.financas.party.domain.PartyRepository;
+import com.financas.recurringcharge.domain.RecurringCharge;
+import com.financas.shared.exceptions.BadRequestException;
+import com.financas.shared.exceptions.NotFoundException;
 
 @Service
 public class AccountService {
@@ -55,6 +59,21 @@ public class AccountService {
         Party party = resolveParty(partyId);
         return repository.save(
                 new Account(type, amount, dueDate, description, fund, party, paymentDate, observations));
+    }
+
+    public Account createFromRecurringCharge(RecurringCharge recurringCharge, LocalDate dueDate) {
+        validateNonNegativeAmount(recurringCharge.getAmount());
+        Account account = new Account(
+                recurringCharge.getType(),
+                recurringCharge.getAmount(),
+                dueDate,
+                recurringCharge.getDescription(),
+                recurringCharge.getFund(),
+                recurringCharge.getParty(),
+                null,
+                recurringCharge.getObservations());
+        account.setRecurringCharge(recurringCharge);
+        return repository.save(account);
     }
 
     @Transactional

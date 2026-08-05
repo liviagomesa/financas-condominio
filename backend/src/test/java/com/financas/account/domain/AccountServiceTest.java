@@ -7,24 +7,28 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.financas.fund.domain.Fund;
-import com.financas.fund.domain.FundRepository;
-import com.financas.group.domain.Group;
-import com.financas.group.domain.GroupRepository;
-import com.financas.party.domain.Party;
-import com.financas.party.domain.PartyRepository;
-import com.financas.shared.exceptions.NotFoundException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
+
+import com.financas.fund.domain.Fund;
+import com.financas.fund.domain.FundRepository;
+import com.financas.group.domain.EmptyGroupException;
+import com.financas.group.domain.Group;
+import com.financas.group.domain.GroupRepository;
+import com.financas.party.domain.Party;
+import com.financas.party.domain.PartyRepository;
+import com.financas.recurringcharge.domain.RecurringCharge;
+import com.financas.shared.exceptions.NotFoundException;
 
 @ExtendWith(MockitoExtension.class)
 class AccountServiceTest {
@@ -148,6 +152,41 @@ class AccountServiceTest {
                         AccountType.RECEIVABLE, new BigDecimal("350.00"), LocalDate.now(), "Taxa", 1L, null, null,
                         null))
                 .isInstanceOf(com.financas.shared.exceptions.BadRequestException.class);
+    }
+
+    @Test
+    void createFromRecurringChargeCopiesFieldsAndLinksBackToTheCharge() {
+        Party party = withId(new Party("Bloco A - 101", null), 1L);
+        Fund fund = withId(new Fund("Piscina", BigDecimal.ZERO), 1L);
+        RecurringCharge charge = withId(
+                new RecurringCharge(AccountType.RECEIVABLE, new BigDecimal("300.00"), 10, "Taxa", fund, party, "obs"),
+                5L);
+        when(repository.save(any(Account.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        Account created = service.createFromRecurringCharge(charge, LocalDate.of(2026, 9, 10));
+
+        assertThat(created.getType()).isEqualTo(AccountType.RECEIVABLE);
+        assertThat(created.getAmount()).isEqualByComparingTo("300.00");
+        assertThat(created.getDueDate()).isEqualTo(LocalDate.of(2026, 9, 10));
+        assertThat(created.getDescription()).isEqualTo("Taxa");
+        assertThat(created.getFund()).isEqualTo(fund);
+        assertThat(created.getParty()).isEqualTo(party);
+        assertThat(created.getObservations()).isEqualTo("obs");
+        assertThat(created.getRecurringCharge()).isEqualTo(charge);
+    }
+
+    @Test
+    void createFromRecurringChargeRejectsNegativeAmountEvenThoughTheChargeAlreadyExists() {
+        Party party = withId(new Party("Bloco A - 101", null), 1L);
+        Fund fund = withId(new Fund("Piscina", BigDecimal.ZERO), 1L);
+        RecurringCharge charge = withId(
+                new RecurringCharge(AccountType.RECEIVABLE, new BigDecimal("-10.00"), 10, "Taxa", fund, party, null),
+                5L);
+
+        assertThatThrownBy(() -> service.createFromRecurringCharge(charge, LocalDate.of(2026, 9, 10)))
+                .isInstanceOf(InvalidAccountAmountException.class);
+
+        verify(repository, never()).save(any());
     }
 
     @Test
@@ -622,5 +661,10 @@ class AccountServiceTest {
     private Fund withId(Fund fund, Long id) {
         ReflectionTestUtils.setField(fund, "id", id);
         return fund;
+    }
+
+    private RecurringCharge withId(RecurringCharge recurringCharge, Long id) {
+        ReflectionTestUtils.setField(recurringCharge, "id", id);
+        return recurringCharge;
     }
 }
