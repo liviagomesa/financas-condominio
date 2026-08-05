@@ -1,4 +1,4 @@
-import { Fund } from './fund.model';
+import { FundSummary } from './fund.model';
 import { Party } from './party.model';
 
 export type AccountType = 'RECEIVABLE' | 'PAYABLE';
@@ -14,7 +14,7 @@ export interface Account {
   amount: number;
   dueDate: string;
   description: string;
-  fund: Fund;
+  fund: FundSummary;
   paymentDate: string | null;
   observations: string | null;
   party: Party;

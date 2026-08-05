@@ -10,7 +10,7 @@ function account(id: number): Account {
     amount: 350,
     dueDate: '2026-09-10',
     description: 'Taxa condominial',
-    fund: { id: 1, name: 'Piscina', initialBalance: 0, realBalance: 0 },
+    fund: { id: 1, name: 'Piscina', initialBalance: 0 },
     paymentDate: null,
     observations: null,
     party: { id: 1, name: 'Bloco A - 101', pixKey: null },

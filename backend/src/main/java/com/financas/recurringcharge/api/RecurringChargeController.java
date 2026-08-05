@@ -1,7 +1,6 @@
 package com.financas.recurringcharge.api;
 
-import com.financas.fund.api.FundResponse;
-import com.financas.fund.domain.FundService;
+import com.financas.fund.api.FundSummaryResponse;
 import com.financas.recurringcharge.domain.RecurringCharge;
 import com.financas.recurringcharge.domain.RecurringChargeService;
 import jakarta.validation.Valid;
@@ -22,11 +21,9 @@ import org.springframework.web.bind.annotation.RestController;
 public class RecurringChargeController {
 
     private final RecurringChargeService service;
-    private final FundService fundService;
 
-    public RecurringChargeController(RecurringChargeService service, FundService fundService) {
+    public RecurringChargeController(RecurringChargeService service) {
         this.service = service;
-        this.fundService = fundService;
     }
 
     @GetMapping
@@ -91,8 +88,6 @@ public class RecurringChargeController {
     }
 
     private RecurringChargeResponse toResponse(RecurringCharge recurringCharge) {
-        FundResponse fundResponse = FundResponse.from(
-                recurringCharge.getFund(), fundService.calculateRealBalance(recurringCharge.getFund()));
-        return RecurringChargeResponse.from(recurringCharge, fundResponse);
+        return RecurringChargeResponse.from(recurringCharge, FundSummaryResponse.from(recurringCharge.getFund()));
     }
 }

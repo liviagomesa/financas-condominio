@@ -3,8 +3,7 @@ package com.financas.account.api;
 import com.financas.account.domain.Account;
 import com.financas.account.domain.AccountService;
 import com.financas.account.domain.AccountType;
-import com.financas.fund.api.FundResponse;
-import com.financas.fund.domain.FundService;
+import com.financas.fund.api.FundSummaryResponse;
 import jakarta.validation.Valid;
 import java.util.List;
 import org.springframework.http.HttpStatus;
@@ -24,11 +23,9 @@ import org.springframework.web.bind.annotation.RestController;
 public class AccountController {
 
     private final AccountService service;
-    private final FundService fundService;
 
-    public AccountController(AccountService service, FundService fundService) {
+    public AccountController(AccountService service) {
         this.service = service;
-        this.fundService = fundService;
     }
 
     @GetMapping
@@ -117,8 +114,6 @@ public class AccountController {
     }
 
     private AccountResponse toResponse(Account account) {
-        FundResponse fundResponse =
-                FundResponse.from(account.getFund(), fundService.calculateRealBalance(account.getFund()));
-        return AccountResponse.from(account, fundResponse);
+        return AccountResponse.from(account, FundSummaryResponse.from(account.getFund()));
     }
 }

@@ -1,5 +1,5 @@
 import { AccountType } from './account.model';
-import { Fund } from './fund.model';
+import { FundSummary } from './fund.model';
 import { Party } from './party.model';
 
 export interface RecurringCharge {
@@ -8,7 +8,7 @@ export interface RecurringCharge {
   amount: number;
   dueDay: number;
   description: string;
-  fund: Fund;
+  fund: FundSummary;
   party: Party;
   observations: string | null;
   lastGenerationFailed: boolean;
