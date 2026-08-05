@@ -1,6 +1,29 @@
 <!--
 Sync Impact Report
 ==================
+Versão: 1.21.0 → 1.22.0
+
+Seções adicionadas:
+- Índice do Codebase (docs/codebase-research.md) — nova seção, inserida logo após "Restrições Transversais" e antes de "Checkpoints da Rodada de Trabalho": o projeto passa a manter `docs/codebase-research.md` como índice comprimido do codebase (módulos/entidades de domínio, specs que afetam cada um, onde vive cada regra de negócio), consultado como primeiro passo obrigatório antes de identificar a(s) feature(s) impactada(s) por uma alteração de funcionalidade, e revisado a cada um dos dois momentos já definidos em "Checkpoints da Rodada de Trabalho" (via `round-checkpoint`).
+
+Seções modificadas:
+- Edição de Features Já Implementadas — reescrita por completo: toda alteração pedida diretamente pela usuária passa a ser classificada primeiro em uma de três categorias. "Refactor/melhoria interna/ajuste visual/configuração" (sem mudança de requisito, regra de negócio ou resultado funcional — inclui ajuste puramente estético, já que "comportamento observável" nesta seção se refere a resultado funcional, não aparência — implementado direto no código, sem tocar spec/plan/tasks). "Correção de bug" (spec.md já descreve o comportamento correto, o código não o implementa fielmente — corrigir direto, exceto quando a correção expõe que a spec.md era ambígua/incompleta/errada, caso em que passa a ser tratada como alteração de funcionalidade). "Alteração de funcionalidade" (muda requisito/regra/comportamento — segue o fluxo documentado já existente). Dentro desta última: a busca pela feature impactada passa a começar por `docs/codebase-research.md`, em vez de varrer `specs/` diretamente ou perguntar à usuária como primeiro recurso; `plan.md` e `tasks.md` passam a ser descartáveis a cada rodada (podem ser sobrescritos com o escopo da mudança atual via `/speckit.plan`/`/speckit.tasks`, sem exigir preservar histórico completo ou status de tarefas antigas) — diferente de `spec.md`/`contracts/api.md`, que continuam obrigatoriamente alinhados com o comportamento real do sistema; o escopo de plan/tasks gerado pelos comandos usuais do Spec Kit passa a ser restrito por padrão ao diff da alteração em questão, nunca replanejando a feature inteira do zero, salvo pedido explícito da usuária.
+
+Motivação: localizar manualmente a spec afetada por uma alteração pontual ficou caro conforme o número de specs em `specs/` cresceu (10 features já registradas) — sem um índice, cada pedido de alteração direta exigia varrer pasta por pasta; `docs/codebase-research.md` resolve isso como um mapa de localização mantido vivo pelo próprio `round-checkpoint`, análogo em espírito ao que a `constitution.md` já faz para convenção técnica. Separadamente, a exigência de manter `plan.md`/`tasks.md` sincronizados a cada alteração pontual não trazia valor real na prática — o estado real do que foi implementado sempre viveu no código e no histórico do git, não nesses artefatos; `spec.md` e `contracts/api.md` continuam exigindo sincronia porque são a fonte de verdade de requisito e contrato de API, mas plan/tasks passam a ser tratados como descartáveis, gerados sob demanda com escopo restrito ao diff da mudança atual em vez de mantidos fielmente atualizados a cada pedido. As categorias "refactor" e "correção de bug" foram separadas para cobrir dois casos que a redação original ("refactor/melhoria interna" vs. "alteração de funcionalidade") deixava ambíguos: um ajuste puramente visual (ex.: trocar um checkbox nativo por um estilizado) é perceptível à usuária mas não muda nenhum resultado de negócio, e forçar esse caso pela categoria "alteração de funcionalidade" geraria trabalho de documentação desproporcional; já uma correção de bug — onde a spec.md já está correta e só o código diverge dela — não precisa do fluxo de revisão de spec porque não há requisito novo a registrar, só um desvio a fechar.
+
+Templates a verificar:
+- ✅ .specify/templates/plan-template.md — genérico, sem alterações necessárias
+- ✅ .specify/templates/spec-template.md — genérico, sem alterações necessárias
+- ✅ .specify/templates/tasks-template.md — genérico, sem alterações necessárias
+- ⚠ .claude/skills/round-checkpoint/SKILL.md — ganhou um novo Passo 4 (sugestões para `docs/codebase-research.md`), com renumeração dos passos subsequentes — aplicado na mesma rodada que esta emenda
+- ⚠ docs/codebase-research.md — arquivo novo, criado e populado nesta mesma rodada
+
+Itens pendentes (TODO): nenhum — as três mudanças (constitution.md, SKILL.md, docs/codebase-research.md) foram aplicadas juntas nesta rodada.
+-->
+
+<!--
+Sync Impact Report (histórico — emenda anterior)
+==================
 Versão: 1.17.0 → 1.18.0
 
 Princípios modificados:
@@ -344,6 +367,14 @@ DTOs de resposta MUST expor um factory estático `from(Entity)` que constrói o 
 
 Não há, por enquanto, regras de negócio ou técnicas universais obrigatórias (ex.: formato monetário fixo, retrocompatibilidade de API) nem restrições de segurança, compliance ou performance em vigor. É possível que autenticação/autorização sejam implementadas futuramente; quando isso ocorrer, esta seção MUST ser emendada para registrar as novas restrições transversais antes de sua adoção no código.
 
+## Índice do Codebase (docs/codebase-research.md)
+
+O projeto mantém `docs/codebase-research.md` como um índice comprimido do codebase: uma visão de alto nível de quais módulos/entidades de domínio existem, quais specs em `specs/` afetam cada um, e onde vive a lógica de cada regra de negócio relevante. Esse documento existe para que localizar a spec ou a área de código relevante para uma alteração não exija varrer `specs/` pasta por pasta a cada pedido — ver seção "Edição de Features Já Implementadas" abaixo, onde ele é o primeiro passo obrigatório de busca.
+
+Antes de identificar a(s) feature(s) impactada(s) por qualquer alteração de funcionalidade, MUST consultar `docs/codebase-research.md` primeiro. Se o índice não cobrir a área em questão com confiança suficiente (entrada ausente, ambígua, ou claramente desatualizada), MAY complementar com busca direta em `specs/` ou pergunta à usuária, mas o índice é sempre o primeiro passo, nunca pulado por padrão.
+
+`docs/codebase-research.md` MUST ser revisado a cada um dos dois momentos já definidos em "Checkpoints da Rodada de Trabalho" (fim de documentação, fim de implementação), como parte do fluxo da skill `round-checkpoint` (Passo 4). Se a rodada introduziu uma spec nova, alterou uma spec existente de forma que muda a resposta de "que módulo essa spec cobre", ou moveu responsabilidade de um módulo para outro, o índice MUST ser atualizado para refletir isso. Ausência de atualização necessária é uma conclusão válida, não um passo pulado silenciosamente.
+
 ## Checkpoints da Rodada de Trabalho
 
 Mensagens de commit MUST ser curtas, de uma linha (`tipo: descrição curta`, sempre em inglês — ex.: `fix: ...`, `feat: ...`, `docs: ...`), sem corpo com bullets; essa regra vale para qualquer commit proposto no projeto, não só nos dois momentos abaixo. Fora desses dois momentos (ex.: uma correção avulsa que não passa pelo fluxo SDD), preferir um único commit por tarefa — só dividir em commits separados quando houver unidades claramente distintas e independentes entre si (ex.: uma correção de bug não relacionada descoberta no meio do caminho), não apenas porque a mudança tocou várias camadas ou arquivos de uma mesma tarefa.
@@ -354,14 +385,21 @@ Cada um desses dois momentos MUST disparar proativamente (sem que a usuária pre
 
 ## Edição de Features Já Implementadas
 
-Sempre que a usuária pedir uma alteração de funcionalidade do projeto diretamente, sem ser via comando do Spec Kit — inclusive durante o desenvolvimento de uma feature ainda em andamento —, NUNCA altere o código diretamente: SEMPRE encontre a(s) feature(s) impactada(s) em `specs/` (perguntando à usuária se não for óbvio pelo pedido) e edite a documentação correspondente antes de qualquer código, nesta ordem:
+Toda alteração pedida diretamente pela usuária, sem ser via fluxo completo de uma feature nova (`/speckit.specify` → ... → `/speckit.implement`) — inclusive durante o desenvolvimento de uma feature ainda em andamento —, MUST ser classificada primeiro em uma das três categorias abaixo. Se a categoria não for óbvia pelo pedido, perguntar à usuária antes de prosseguir em vez de assumir.
+
+**Refactor / melhoria interna / ajuste visual / configuração** (nenhuma mudança de requisito, regra de negócio ou resultado funcional — ex.: extrair duplicação, reorganizar classes, renomear internamente, trocar checkbox nativa por estilizada em Bootstrap, ajustar espaçamento/cor/alinhamento, bump de dependência sem mudança de comportamento, variável de ambiente, tooling de build/CI): "comportamento observável", nesta seção, se refere a resultado de negócio/funcional, não a aparência visual — então ajuste puramente estético também entra aqui, mesmo sendo perceptível à usuária.
+
+Nenhuma spec, plan, tasks ou contrato precisa ser tocado. Implementar diretamente. A skill `round-checkpoint` dispara normalmente ao final, e sua varredura da `constitution.md` (Passo 5) é o único lugar onde uma atualização de documentação pode surgir — só se a mudança tiver estabelecido um padrão genuinamente novo e reaplicável (ex.: nova versão "adotada" de uma dependência, Princípio III), não como consequência automática da mudança em si.
+
+**Correção de bug** (a spec.md já descreve o comportamento correto; o código não o implementa fielmente): corrigir o código diretamente, sem tocar spec, plan, tasks ou contratos. Exceção: se a correção expuser que a spec.md era ambígua, incompleta ou descrevia o comportamento errado, tratar como alteração de funcionalidade em vez de correção de bug. Na dúvida entre as duas, perguntar à usuária antes de prosseguir.
+
+**Alteração de funcionalidade** (muda requisito, regra de negócio, edge case ou comportamento observável): NUNCA altere o código diretamente. Primeiro, identifique a(s) feature(s) impactada(s) consultando `docs/codebase-research.md` (ver "Índice do Codebase" acima) — recorrer a varrer `specs/` diretamente ou perguntar à usuária apenas se o índice não cobrir a área com confiança suficiente. Depois:
 
 1. **spec.md**: atualizar apenas as seções afetadas pela mudança (requisitos funcionais, regras de negócio, edge cases), preservando o resto do arquivo intacto. Se a mudança introduzir ambiguidade nova, sinalizar com `[NEEDS CLARIFICATION]` em vez de assumir uma resposta.
-2. **plan.md**: atualizar apenas as seções tecnicamente impactadas, sem regenerar o arquivo inteiro. Ao final, confirmar explicitamente, princípio por princípio desta constituição, como cada um relevante continua sendo respeitado após a mudança — mesmo que a resposta seja "sem alteração necessária".
-3. **tasks.md**: adicionar apenas as tarefas novas necessárias, sem regenerar a lista inteira e sem alterar o status de tarefas já concluídas (`[X]`). Se uma tarefa já concluída precisar ser refeita por causa da mudança, marcá-la explicitamente como pendente de novo, explicando o motivo, em vez de resetar tudo.
-4. **contracts/api.md** (se existir e for afetado): atualizar apenas os contratos de endpoint impactados.
-
-Antes de implementar, mostrar um resumo do que mudou em cada artefato de documentação para a usuária revisar. NÃO escrever nem alterar código de implementação até a aprovação explícita, a menos que a usuária já tenha pedido para pular essa espera na própria solicitação.
+2. Mostrar um resumo do que mudou na spec para a usuária revisar. NÃO escrever nem alterar código de implementação até a aprovação explícita, a menos que a usuária já tenha pedido para pular essa espera na própria solicitação.
+3. Após aprovação, os comandos usuais do Spec Kit (`/speckit.plan`, `/speckit.clarify`, `/speckit.tasks`, `/speckit.implement`) MAY ser usados para gerar plan/tasks/implementação. O escopo padrão, mesmo sem instrução explícita da usuária, MUST ser restrito à mudança em questão — gerar plan/tasks apenas para o que está no diff desta alteração, tratando o restante da spec como já implementado, nunca replanejando a feature inteira do zero. Só ampliar esse escopo se a própria usuária pedir explicitamente.
+4. **plan.md e tasks.md são descartáveis**: ao contrário do spec.md, não precisam permanecer fiéis ao histórico completo da feature nem preservar status de tarefas antigas — cada rodada MAY sobrescrevê-los com o escopo da mudança atual. O estado real do que foi implementado vive no código e no histórico do git, não nesses arquivos.
+5. **contracts/api.md** (se existir e for afetado): atualizar apenas os contratos de endpoint impactados — este, junto com spec.md, MUST permanecer sempre alinhado com o comportamento real do sistema, diferente de plan.md/tasks.md.
 
 ## Governance
 
@@ -371,5 +409,5 @@ Emendas a esta constituição exigem: (1) descrição clara da mudança e sua mo
 
 Toda revisão de spec, plano ou tarefas MUST verificar conformidade com os princípios definidos aqui. Complexidade adicional (novas camadas, dependências, padrões) MUST ser justificada em relação aos princípios de simplicidade implícitos na arquitetura em camadas descrita no Princípio I.
 
-**Version**: 1.21.0 | **Ratified**: 2026-07-24 | **Last Amended**: 2026-08-05
+**Version**: 1.22.0 | **Ratified**: 2026-07-24 | **Last Amended**: 2026-08-05
 </content>

@@ -20,7 +20,8 @@ Sistema de gestão de recebimentos e pagamentos de um condomínio. Composto por 
       - [Conclusão sobre DRY: conhecimento repetido vs. texto repetido](#conclusão-sobre-dry-conhecimento-repetido-vs-texto-repetido)
   - [Revisões e correções das entregas da IA](#revisões-e-correções-das-entregas-da-ia)
   - [Fluxo SDD](#fluxo-sdd)
-  - [O que eu faria diferente ou melhoraria com mais tempo](#o-que-eu-faria-diferente-ou-melhoraria-com-mais-tempo)
+    - [Edições de features já existentes](#edições-de-features-já-existentes)
+  - [Melhorias futuras](#melhorias-futuras)
 
 ## Instruções de execução
 
@@ -153,9 +154,17 @@ Utilizei o GitHub Spec Kit integrado ao Claude Code para conduzir o desenvolvime
 
 8. **Implementação**: implementei com `/speckit.implement` e rodei `/speckit.converge` para checar o código já implementado contra spec/plan/tasks. Em seguida, revisei a entrega (especialmente testando a aplicação via frontend) e disparei uma segunda revisão da constituição.
 
-9.  **Edições de features já existentes**: para mudanças depois do fluxo completo dos comandos do Spec Kit (sem criar feature ou branch nova, sem rodar `/speckit.specify` ou `/speckit.plan` de novo), o Claude adota automaticamente o procedimento formalizado na `constitution.md`, seção "Edição de Features Já Implementadas" — basta descrever a mudança desejada e referenciar esse fluxo.
+### Edições de features já existentes
 
-## O que eu faria diferente ou melhoraria com mais tempo
+Para mudanças depois do fluxo completo dos comandos do Spec Kit (sem criar feature ou branch nova, sem rodar `/speckit.specify` ou `/speckit.plan` de novo), o Claude classifica o pedido primeiro em uma de três categorias, formalizadas na `constitution.md`, seção "Edição de Features Já Implementadas":
+
+- **Refactor / melhoria interna / ajuste visual / configuração**: nenhuma mudança de requisito ou resultado funcional, mesmo quando o ajuste é visualmente perceptível (ex.: trocar um checkbox nativo por um estilizado, reorganizar classes, bump de dependência sem mudança de comportamento). Implementado direto no código, sem tocar spec, plan ou tasks.
+- **Correção de bug**: a spec já descreve o comportamento certo, e só o código diverge dela. Corrige direto, também sem tocar spec/plan/tasks — a menos que a correção revele que a própria spec estava ambígua ou errada, caso em que a mudança passa a ser tratada como alteração de funcionalidade.
+- **Alteração de funcionalidade**: muda requisito, regra de negócio ou comportamento. É a única categoria que segue o fluxo documentado completo — localizar a feature impactada consultando primeiro `docs/codebase-research.md` (um índice comprimido do codebase: módulos, specs que afetam cada um, onde vive cada regra, mantido atualizado a cada checkpoint da rodada), atualizar o `spec.md` afetado e, só depois de aprovação, gerar plan/tasks com escopo restrito ao diff da mudança em questão. Diferente do `spec.md`/`contracts/api.md` — que continuam como fonte de verdade permanente de requisito e contrato —, `plan.md`/`tasks.md` passaram a ser tratados como descartáveis a cada rodada.
+
+Essa distinção de categorias e o índice `docs/codebase-research.md` não fazem parte do Spec Kit oficial — são uma solução própria para um gap real e conhecido da metodologia, discutido em várias threads do fórum da ferramenta ([github.com/github/spec-kit/discussions](https://github.com/github/spec-kit/discussions)): o fluxo documentado da ferramenta cobre bem o caminho de criar uma feature nova do zero, mas não diz o que fazer depois que uma feature já foi implementada e você precisa mexer nela de novo. Sem resposta oficial da ferramenta até agora, o que temos aqui é a solução que fez sentido pro tamanho e ritmo deste projeto específico.
+
+## Melhorias futuras
 
 - **Editar um campo em lote, além de remover e duplicar** (ideia registrada durante a revisão do plano da feature 003): a seleção múltipla em contas já permite remover (`bulk-delete.ts`) e duplicar para o mês seguinte (`bulk-duplicate.ts`, feature 007). Falta ainda editar um campo (ex.: valor) de várias contas selecionadas de uma vez, útil por exemplo para reajustar o valor de várias contas recorrentes iguais em massa, sem abrir o formulário de cada uma individualmente.
 - **Paginação nas listagens (a começar pela de contas)**: as listagens atuais carregam todos os registros de uma vez, premissa aceitável enquanto o volume é de poucas dezenas (ver Assumptions das features 001/002/003). A listagem de contas tende a crescer indefinidamente (uma leva nova por mês, diferente de unidades/fornecedores, que têm cardinalidade praticamente fixa), então deve ser a primeira a precisar de paginação. Avaliação sobre reaproveitar em todas as listagens: como o projeto já tem o hábito de extrair um utilitário compartilhado assim que mais de uma tela precisa da mesma capacidade (`list-selection.ts`/`bulk-delete.ts`/`bulk-actions-bar`), a recomendação é construir a paginação também como um utilitário reaproveitável (mesmo padrão signal-based), mas aplicar de fato só na listagem de contas por enquanto — unidades e fornecedores não têm o mesmo padrão de crescimento e não devem ganhar paginação só por "manter padrão" sem necessidade real (YAGNI). Construir o utilitário já pensando em reuso custa pouco a mais do que uma solução específica da tela, e evita ter que extrair a abstração correndo depois, quando unidades/fornecedores eventualmente crescerem.
